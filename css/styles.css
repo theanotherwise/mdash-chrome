@@ -13,6 +13,7 @@
     --tile-radius:              18px;
     --tile-y-pad:               8px; /* top(6px) + bottom(2px) paddings -> keep text from clipping */
     --input-border:             #D1D5DB;
+    color-scheme:               light;
 }
 
 /* Explicit dark theme toggled by user */
@@ -26,6 +27,7 @@ html.theme-dark {
     --tile-hover-bg:            #1B2540;
     --tile-shadow:              0 8px 20px rgba(2, 6, 23, 0.45);
     --input-border:             #2A3550;
+    color-scheme:               dark;
 }
 
 /* Explicit light theme class to override system dark */
@@ -37,6 +39,7 @@ html.theme-light {
     --tile-bg:                  #FFFFFF;
     --tile-hover-bg:            #EAF0FF;
     --tile-shadow:              0 8px 20px rgba(33, 37, 41, 0.08);
+    color-scheme:               light;
 }
 
 html.theme-dark #controls {
@@ -355,9 +358,57 @@ a:hover {
     font: -webkit-small-control;
 }
 
+/* Dark-mode overrides for dialogs and notifications */
+html.theme-dark #dialog,
+html.theme-dark .notification,
+html.theme-dark #context-menu {
+    background: var(--tile-bg) !important;
+    border-color: rgba(255,255,255,0.08) !important;
+    -webkit-box-shadow: 0 6px 16px rgba(2,6,23,0.6) !important;
+    box-shadow: 0 6px 16px rgba(2,6,23,0.6) !important;
+}
+
+html.theme-dark #dialog .content,
+html.theme-dark .notification .content {
+    color: var(--text-color) !important;
+}
+
+html.theme-dark #dialog input,
+html.theme-dark #dialog select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--input-border);
+    background: var(--tile-bg);
+    color: var(--text-color);
+    box-sizing: border-box;
+}
+
+html.theme-dark #dialog .actions {
+    background: var(--tile-hover-bg) !important;
+    border-top: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+html.theme-dark #dialog .actions button.main {
+    background: linear-gradient(to bottom, var(--tile-bg) 20%, var(--tile-hover-bg));
+    border: 1px solid var(--input-border);
+}
+
+html.theme-dark #overlay {
+    background: rgba(0,0,0,.6) !important;
+}
+
 #notifications {
     top: auto !important;
     bottom: 10px;
+}
+
+/* Ensure dialog form fields never overflow the modal in any theme */
+#dialog .ui-add-form > input,
+#dialog .ui-edit-form > input,
+#dialog .ui-edit-form > select {
+    width: 100% !important;
+    box-sizing: border-box;
 }
 
 #filter {
@@ -437,14 +488,4 @@ html.theme-dark #search-input:focus {
     transform:                  translateY(0);
 }
 
-/* System dark default: use midnight palette when user hasn't explicitly chosen light */
-@media (prefers-color-scheme: dark) {
-    html:not(.theme-dark):not(.theme-light) {
-        --bg-color:             #0F172A;
-        --text-color:           #E7EEF9;
-        --muted-color:          #A8B3C7;
-        --tile-bg:              #131C2F;
-        --tile-hover-bg:        #1B2540;
-        --tile-shadow:          0 8px 20px rgba(2, 6, 23, 0.45);
-    }
-}
+/* Removed OS-level dark fallback to prevent light flash on load; explicit theme classes control palette */

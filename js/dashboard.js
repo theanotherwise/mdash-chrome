@@ -40,17 +40,22 @@
     {
         ui.Dialog.effect = 'fade';
 
-        $( document ).on( 'keyup', '#dialog', function( e )
+        // Handle Enter/Escape even when focus is in inputs/selects
+        $( document ).on( 'keydown', function( e )
         {
             var $dialog = $( '#dialog' );
+            if( !$dialog.length || !$dialog.is(':visible') ) return;
 
-            if( e.keyCode === 13 /* enter */ )
+            var code = e.which || e.keyCode;
+            if( code === 13 )
             {
-                $dialog.find( 'button.ok' ).click();
+                e.preventDefault();
+                $dialog.find( 'button.ok' ).trigger('click');
             }
-            else if( e.keyCode === 27 /* esc */ )
+            else if( code === 27 )
             {
-                $dialog.find( 'button.cancel' ).click();
+                e.preventDefault();
+                $dialog.find( 'button.cancel' ).trigger('click');
             }
         } );
     };

@@ -9,14 +9,50 @@
                 try {
                     var t = localStorage.getItem('mdash:theme');
                     var el = document.documentElement;
-                    if (t === 'dark') {
+                    function setDark(){
                         el.classList.add('theme-dark');
-                    } else if (t === 'light') {
-                        el.classList.add('theme-light');
+                        el.classList.remove('theme-light');
+                        el.style.setProperty('--bg-color', '#0F172A');
+                        el.style.setProperty('--text-color', '#E7EEF9');
+                        el.style.setProperty('--muted-color', '#A8B3C7');
+                        el.style.setProperty('--accent-color', '#9DB6FF');
+                        el.style.setProperty('--tile-bg', '#131C2F');
+                        el.style.setProperty('--tile-hover-bg', '#1B2540');
+                        el.style.setProperty('--input-border', '#2A3550');
+                        el.style.colorScheme = 'dark';
                     }
+                    function setLight(){
+                        el.classList.add('theme-light');
+                        el.classList.remove('theme-dark');
+                        el.style.setProperty('--bg-color', '#F5F7FB');
+                        el.style.setProperty('--text-color', '#24314A');
+                        el.style.setProperty('--muted-color', '#6B7280');
+                        el.style.setProperty('--accent-color', '#365ABA');
+                        el.style.setProperty('--tile-bg', '#FFFFFF');
+                        el.style.setProperty('--tile-hover-bg', '#EAF0FF');
+                        el.style.setProperty('--input-border', '#D1D5DB');
+                        el.style.colorScheme = 'light';
+                    }
+                    if (t === 'dark') { setDark(); }
+                    else { setLight(); }
                 } catch(e) {}
             })();
         </script>
+        <style>
+            /* Prevent initial flash of wrong theme on inputs before CSS loads */
+            html.theme-light #search-input {
+                background-color: #FFFFFF;
+                color: #111827;
+                border: 1px solid #D1D5DB;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            }
+            html.theme-dark #search-input {
+                background-color: #131C2F;
+                color: #E7EEF9;
+                border: 1px solid #2A3550;
+                box-shadow: 0 1px 2px rgba(2,6,23,0.35);
+            }
+        </style>
         <link rel="stylesheet" href="../css/styles.css" type="text/css" />
         <link rel="stylesheet" href="../js/lib/uikit/ui.css" type="text/css" />
     </head>
