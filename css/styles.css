@@ -12,6 +12,7 @@
     --tile-shadow:              0 8px 20px rgba(33, 37, 41, 0.08);
     --tile-radius:              18px;
     --tile-y-pad:               8px; /* top(6px) + bottom(2px) paddings -> keep text from clipping */
+    --input-border:             #D1D5DB;
 }
 
 /* Explicit dark theme toggled by user */
@@ -24,17 +25,18 @@ html.theme-dark {
     --tile-bg:                  #131C2F;
     --tile-hover-bg:            #1B2540;
     --tile-shadow:              0 8px 20px rgba(2, 6, 23, 0.45);
+    --input-border:             #2A3550;
 }
 
-html.theme-dark #search-input {
-    background-color:            var(--tile-bg);
-    border-color:                #2A3550;
-    color:                       var(--text-color);
-    box-shadow:                  0 1px 2px rgba(2,6,23,0.35);
-}
-
-html.theme-dark #search-input::placeholder {
-    color:                       #9AA6BE;
+/* Explicit light theme class to override system dark */
+html.theme-light {
+    --bg-color:                 #F5F7FB;
+    --text-color:               #24314A;
+    --muted-color:              #6B7280;
+    --accent-color:             #365ABA;
+    --tile-bg:                  #FFFFFF;
+    --tile-hover-bg:            #EAF0FF;
+    --tile-shadow:              0 8px 20px rgba(33, 37, 41, 0.08);
 }
 
 html.theme-dark #controls {
@@ -49,6 +51,16 @@ body {
     color:                      var(--text-color);
     margin:                     0px 0px 0px 0px;
     padding:                    0px 0px 0px 20px;
+    -ms-overflow-style:         none;           /* IE and old Edge */
+    scrollbar-width:            none;           /* Firefox */
+}
+
+/* Hide WebKit scrollbars but keep scrolling */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+    width:                      0px;
+    height:                     0px;
+    display:                    none;
 }
 
 .win body {
@@ -70,14 +82,14 @@ a:hover {
 
 #getstarted {
     display:                    none;
-    text-shadow:                0px 1px 0px #FFF;
+    text-shadow:                none;
     width:                      50%;
     font-size:                  1.1em;
     margin:                     5em auto;
 }
 
 #getstarted > h1 {
-    color:                      #666;
+    color:                      var(--muted-color);
     margin-bottom:              5px;
     margin-left:                10px;
     letter-spacing:             0.08em;
@@ -86,10 +98,11 @@ a:hover {
 
 #getstarted a {
     font-weight:                bold;
+    color:                      var(--accent-color);
 }
 
 #getstarted a:hover {
-    color:                      #666;
+    color:                      var(--accent-color);
 }
 
 #getstarted > section {
@@ -99,9 +112,9 @@ a:hover {
     font-weight:                normal;
     letter-spacing:             0.1em;
     line-height:                1.4;
-    background-color:           #FFFFFF;
+    background-color:           var(--tile-bg);
     border-radius:              6px 6px 6px 6px;
-    box-shadow:                 0 6px 16px rgba(0,0,0,0.08);
+    box-shadow:                 var(--tile-shadow);
     padding:                    14px 16px;
     margin:                     2px 6px 6px 2px;
 }
@@ -257,9 +270,9 @@ a:hover {
     z-index:                    10;
     padding:                    6px 10px;
     border-radius:              9999px;
-    background:                 rgba(255,255,255,0.7);
+    background:                 var(--tile-bg);
     border:                     1px solid rgba(0,0,0,0.05);
-    box-shadow:                 0 2px 8px rgba(33,37,41,0.08);
+    box-shadow:                 var(--tile-shadow);
     -webkit-backdrop-filter:    saturate(120%) blur(6px);
     backdrop-filter:            saturate(120%) blur(6px);
 }
@@ -373,16 +386,28 @@ a:hover {
     max-width:                   calc(100% - 140px);
     padding:                     10px 12px;
     border-radius:               10px;
-    border:                      1px solid #D1D5DB;
+    border:                      1px solid var(--input-border);
     box-shadow:                  0 1px 2px rgba(0,0,0,0.04);
-    background-color:            #FFFFFF;
-    color:                       #111827;
+    background-color:            var(--tile-bg);
+    color:                       var(--text-color);
+    transition:                  border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease, color 150ms ease;
 }
 
 #search-input:focus {
     outline:                     none;
     border-color:                #A7B7EF;
     box-shadow:                  0 0 0 3px rgba(54,90,186,0.15);
+}
+
+/* Dark mode specific border/ring tuning for search */
+html.theme-dark #search-input {
+    border-color:                var(--input-border);
+    box-shadow:                  0 1px 2px rgba(2,6,23,0.35);
+}
+
+html.theme-dark #search-input:focus {
+    border-color:                #9DB6FF;
+    box-shadow:                  0 0 0 3px rgba(157,182,255,0.25);
 }
 
 /* Tooltip with full title on hover - width fits the tile */
@@ -412,38 +437,14 @@ a:hover {
     transform:                  translateY(0);
 }
 
-/* Dark mode */
+/* System dark default: use midnight palette when user hasn't explicitly chosen light */
 @media (prefers-color-scheme: dark) {
-    :root {
-        /* Force a bright, readable palette even when system is in dark mode */
-        --bg-color:             #F5F7FB;
-        --text-color:           #24314A;
-        --muted-color:          #6B7280;
-        --tile-bg:              #FFFFFF;
-        --tile-hover-bg:        #EAF0FF;
-        --tile-shadow:          0 8px 20px rgba(33, 37, 41, 0.08);
+    html:not(.theme-dark):not(.theme-light) {
+        --bg-color:             #0F172A;
+        --text-color:           #E7EEF9;
+        --muted-color:          #A8B3C7;
+        --tile-bg:              #131C2F;
+        --tile-hover-bg:        #1B2540;
+        --tile-shadow:          0 8px 20px rgba(2, 6, 23, 0.45);
     }
-
-    a { color:                  var(--accent-color); }
-    a:hover { color:            var(--accent-color); }
-
-    #search-input {
-        background-color:        #FFFFFF;
-        border-color:            #D1D5DB;
-        color:                   #111827;
-    }
-
-    #getstarted > section {
-        background-color:        #FFFFFF;
-        box-shadow:              0 6px 16px rgba(0,0,0,0.08);
-    }
-
-    #controls {
-        background:              rgba(255,255,255,0.7);
-        border-color:            rgba(0,0,0,0.05);
-        box-shadow:              0 2px 8px rgba(33,37,41,0.08);
-    }
-
-    /* Make section headers stronger in this bright theme */
-    #bookmarks h1 { color: var(--muted-color); }
 }

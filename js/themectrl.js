@@ -15,16 +15,18 @@
         if( saved === 'dark' )
         {
             document.documentElement.classList.add( 'theme-dark' );
+            document.documentElement.classList.remove( 'theme-light' );
             this.select( 'dark' );
         }
         else if( saved === 'light' )
         {
+            document.documentElement.classList.add( 'theme-light' );
+            document.documentElement.classList.remove( 'theme-dark' );
             this.select( 'light' );
         }
         else
         {
             // default to light
-            localStorage.setItem( KEY, 'light' );
             this.select( 'light' );
         }
 
@@ -47,9 +49,11 @@
         if( theme === 'dark' )
         {
             document.documentElement.classList.add( 'theme-dark' );
+            document.documentElement.classList.remove( 'theme-light' );
         }
         else
         {
+            document.documentElement.classList.add( 'theme-light' );
             document.documentElement.classList.remove( 'theme-dark' );
         }
         localStorage.setItem( KEY, theme );
