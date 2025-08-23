@@ -32,7 +32,7 @@ html.theme-dark {
 
 /* Explicit light theme class to override system dark */
 html.theme-light {
-    --bg-color:                 #F5F7FB;
+    --bg-color:                 #e0e4eb;
     --text-color:               #24314A;
     --muted-color:              #6B7280;
     --accent-color:             #365ABA;
@@ -40,6 +40,7 @@ html.theme-light {
     --tile-hover-bg:            #EAF0FF;
     --tile-shadow:              0 8px 20px rgba(33, 37, 41, 0.08);
     color-scheme:               light;
+    
 }
 
 html.theme-dark #controls {
@@ -56,6 +57,13 @@ body {
     padding:                    0px 0px 0px 20px;
     -ms-overflow-style:         none;           /* IE and old Edge */
     scrollbar-width:            none;           /* Firefox */
+}
+
+/* Subtle dotted background in light mode */
+html.theme-light body {
+    background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.06) 1px, transparent 1px);
+    background-size: 22px 22px;
+    background-position: 0 0;
 }
 
 /* Hide WebKit scrollbars but keep scrolling */
@@ -173,7 +181,6 @@ a:hover {
     margin:                     2px 6px 6px 2px;
     overflow:                   hidden;
     text-overflow:              ellipsis;
-    position:                   relative;
     transition:                 transform 120ms ease, background-color 150ms ease, box-shadow 150ms ease;
     color:                      var(--text-color);
 }
