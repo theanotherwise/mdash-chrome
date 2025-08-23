@@ -239,7 +239,7 @@ a:hover {
     text-shadow:                0px 1px #FFF;
     border:                     2px dashed transparent;
     box-sizing:                 border-box;
-    display:                    inline-flex;
+    display:                    none;
     visibility:                 hidden;
     pointer-events:             none;
 }

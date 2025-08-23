@@ -1,23 +1,6 @@
-/*!
- * mdash bundle
- * Contains, in order:
- * - manager.js
- * - column.js
- * - fontctrl.js
- * - helpctrl.js
- * - editctrl.js
- * - themectrl.js
- * - keyboard_manager.js
- * - addbtn.js
- * - search.js
- * - dashboard.js
- * - app.js
- */
-
-/* --- manager.js --- */
-
 ( function( mdash )
 {
+    'use strict';
     
     var Manager = mdash.Manager = function() {},
         proto   = Manager.prototype;
@@ -174,7 +157,7 @@
             },
             function( folder )
             {
-                delete this.tree;
+                _this.tree = null;
                 
                 _this.folder = folder;
                 _this.createPlaceholder( callback );
@@ -205,6 +188,7 @@
 
 ( function( mdash )
 {
+    'use strict';
     
     mdash.links = {};
     
@@ -248,8 +232,7 @@
         } );
         
         $section.append( $addBtn );
-        $section.data.addBtn = new mdash.AddBtn( $addBtn );
-        $section.data.addBtn.init();
+        new mdash.AddBtn( $addBtn ).init();
         
         return $section;
     };
@@ -277,6 +260,7 @@
 
 ( function( mdash )
 {
+    'use strict';
     
     var FontCtrl = mdash.FontCtrl = function( $sizes )
     {
@@ -349,6 +333,7 @@
 
 ( function( mdash )
 {
+    'use strict';
     
     var HelpCtrl = mdash.HelpCtrl = function( $handle, $help, $interface )
     {
@@ -387,13 +372,9 @@
 } )( window.mdash || ( window.mdash = {} ) );
 
 
-/* --- editctrl.js --- */
-
-// FIXME: Refactor!
-// FIXME: Handle pressing alt while in edit mode.
-
 ( function( mdash, $ )
 {
+    'use strict';
     
     var EditCtrl = mdash.EditCtrl = function( $btn, $bookmarks )
     {
@@ -443,6 +424,11 @@
                 self.editMode = false;
                 self.$docEl.removeClass( 'edit' );
                 self.$btn.text( 'edit' );
+                var $searchInput = $( '#search-input' );
+                if( $searchInput.length )
+                {
+                    $searchInput.val( '' ).trigger( 'input' );
+                }
             }
             else
             {
@@ -479,7 +465,7 @@
     
     EditCtrl.prototype.edit = function( $b )
     {
-        var $form, $title, $url, $section, $remove, dialog,
+        var $form, $title, $url, $section, $rmBtn, dialog,
             self  = this,
             id    = $b.attr( 'id' ),
             title = $b.find( 'span' ).text(),
@@ -495,7 +481,7 @@
         {
             sectionsSelectHtml += '<option value="' + section.id + '">' + section.title + '</option>';
         } );
-        sectionsSelectHtml += '</section>';
+        sectionsSelectHtml += '</select>';
         $section = $( sectionsSelectHtml ).val( sectionId );
 
         $rmBtn = $( '<a class="remove" href="#">Remove</a>' ).click( function( e )
@@ -560,17 +546,14 @@
             props.title && $title.text( props.title );
             props.url   && $el.attr( 'href', props.url );
 
-            // Keep attributes in sync for live-search while editing
             if( props.title )
             {
                 $el.attr( 'title', props.title );
                 $el.attr( 'aria-label', props.title );
                 $el.attr( 'data-title', props.title );
-                // Also update jQuery's data cache used by legacy code
                 $el.data( 'title', props.title );
             }
             
-            // FIXME: So ugly I almost puked writing that stuff. Refactor!
             if( moveTo )
             {
                 self.api.move( id, { parentId: moveTo }, function()
@@ -595,10 +578,9 @@
 } )( window.mdash || ( window.mdash = {} ), window.jQuery || window.Zepto );
 
 
-/* --- themectrl.js --- */
-
 ( function( mdash )
 {
+    'use strict';
     var KEY = 'mdash:theme';
 
     var ThemeCtrl = mdash.ThemeCtrl = function( $links )
@@ -681,7 +663,7 @@
 
 ( function( mdash )
 {
-
+    'use strict';
         var ENABLED = 'mdash:keyboard:isEnabled';
 
         var KeyboardManager = mdash.KeyboardManager = function() {},
@@ -690,17 +672,17 @@
         // TODO: Use ES5 getter/setter.
         proto.enable = function()
         {
-            localStorage[ENABLED] = "enabled";
+            localStorage[ENABLED] = 'enabled';
         };
 
         proto.disable = function()
         {
-            localStorage[ENABLED] = "enabled";
+            localStorage[ENABLED] = 'disabled';
         };
 
         proto.toggle = function()
         {
-            localStorage[ENABLED] = (localStorage[ENABLED] === 'enabled') ? 'disabled' : 'enabled';
+            localStorage[ENABLED] = this.isEnabled() ? 'disabled' : 'enabled';
         };
 
         proto.isEnabled = function()
@@ -721,7 +703,7 @@
                 this.disable();
             }
 
-            if (localStorage[ENABLED]) {
+            if (this.isEnabled()) {
               this.bindKeyboard();
             }
         }
@@ -744,14 +726,12 @@
                 }
                 else if (e.which == 8)
                 {
-                    // Backspaces
                     if (_this.modifierPressed) {
                         _this.searchTerm = '';
                     } else {
                         _this.searchTerm = _this.searchTerm.slice(0, -1);
                     }
 
-                    // Prevents the address bar from getting focus
                     e.preventDefault();
                 }
                 else
@@ -801,10 +781,9 @@
 } )( window.mdash || ( window.mdash = {} ) );
 
 
-/* --- addbtn.js --- */
-
 ( function( mdash )
 {
+    'use strict';
     
     var _getForm = function()
     {
@@ -823,14 +802,10 @@
         value = value.trim();
         if( !value ) return value;
 
-        // If it already parses as a URL, keep as is
         try { new URL( value ); return value; } catch( e ) {}
 
-        // Allow protocol-relative URLs
         if( value.indexOf( '//' ) === 0 ) return 'https:' + value;
 
-        // If it looks like a plain hostname (including hosts entries), prefix http
-        // Accept characters commonly used in hostnames/paths
         return 'http://' + value;
     };
     
@@ -907,7 +882,8 @@
 
 ( function( mdash, $ )
 {
-
+    'use strict';
+    
     var Search = mdash.Search = function( $input )
     {
         this.$input = $input;
@@ -944,7 +920,6 @@
             }
         } );
 
-        // Hide sections that have no matches (recompute matches, don't rely on visibility)
         $( '#bookmarks section' ).each( function( _, section )
         {
             var $section = $( section );
@@ -956,14 +931,13 @@
                 if( !regex || !title || regex.test( title ) )
                 {
                     anyMatch = true;
-                    return false; // break
+                    return false;
                 }
             } );
 
             $section.toggle( anyMatch );
         } );
 
-        // Keep columns visible; sections handle emptiness
         $( '#bookmarks > .left, #bookmarks > .right' ).show();
     };
 
@@ -980,11 +954,10 @@
 } )( window.mdash || ( window.mdash = {} ), window.jQuery || window.Zepto );
 
 
-/* --- dashboard.js --- */
-
 ( function( mdash, $ )
 {
-
+    'use strict';
+    
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
@@ -1023,7 +996,6 @@
     {
         ui.Dialog.effect = 'fade';
 
-        // Handle Enter/Escape even when focus is in inputs/selects
         $( document ).on( 'keydown', function( e )
         {
             var $dialog = $( '#dialog' );
@@ -1066,10 +1038,9 @@
 } )( window.mdash || ( window.mdash = {} ), window.jQuery || window.Zepto );
 
 
-/* --- app.js --- */
-
 ( function( mdash )
 {
+    'use strict';
     
     if( navigator.platform.indexOf( 'Win' ) !== -1 )
     {
