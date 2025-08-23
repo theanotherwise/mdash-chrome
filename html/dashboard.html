@@ -53,15 +53,21 @@
                 <a id="edit" href="#">edit</a>
             </div>
             ·
-            <div id="fontctrl">
-                <a href="#" data-size="small">small</a>
-                <a href="#" data-size="medium">medium</a>
-                <a href="#" data-size="large" class="selected">large</a>
+            <div id="fontctrl" class="dropdown" data-current="large">
+                <a href="#" class="dropdown-toggle">large ▾</a>
+                <div class="dropdown-menu">
+                    <a href="#" data-size="small">small</a>
+                    <a href="#" data-size="medium">medium</a>
+                    <a href="#" data-size="large" class="selected">large</a>
+                </div>
             </div>
             ·
-            <div id="themectrl">
-                <a href="#" data-theme="light" class="selected">light</a>
-                <a href="#" data-theme="dark">dark</a>
+            <div id="themectrl" class="dropdown" data-current="light">
+                <a href="#" class="dropdown-toggle">light ▾</a>
+                <div class="dropdown-menu">
+                    <a href="#" data-theme="light" class="selected">light</a>
+                    <a href="#" data-theme="dark">dark</a>
+                </div>
             </div>
             ·
             <a id="helpctrl" href="#">?</a>

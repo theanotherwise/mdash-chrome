@@ -9,9 +9,9 @@
 
     proto.init = function()
     {
-        this.$fontSizes  = $( '#fontctrl > a' );
+        this.$fontSizes  = $( '#fontctrl .dropdown-menu a' );
         this.$helpCtrl   = $( '#helpctrl' );
-        this.$themeCtrl  = $( '#themectrl > a' );
+        this.$themeCtrl  = $( '#themectrl .dropdown-menu a' );
         this.$editBtn    = $( '#edit' );
         this.$getStarted = $( '#getstarted' );
         this.$bookmarks  = $( '#bookmarks' );
