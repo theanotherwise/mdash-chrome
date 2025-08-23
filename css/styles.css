@@ -16,10 +16,53 @@
     src:                        url( '../fonts/Lekton/Lekton-Bold.ttf' );
 }
 
+/* Design tokens */
+:root {
+    --bg-color:                 #F5F7FB;
+    --text-color:               #24314A;
+    --muted-color:              #6B7280;
+    --accent-color:             #365ABA;
+    --tile-bg:                  #FFFFFF;
+    --tile-hover-bg:            #EAF0FF;
+    --tile-shadow:              0 8px 20px rgba(33, 37, 41, 0.08);
+    --tile-radius:              18px;
+    --tile-y-pad:               2px;
+}
+
+/* Explicit dark theme toggled by user */
+html.theme-dark {
+    /* Midnight palette: deep navy background, readable bluish text */
+    --bg-color:                 #0F172A;
+    --text-color:               #E7EEF9;
+    --muted-color:              #A8B3C7;
+    --accent-color:             #9DB6FF;
+    --tile-bg:                  #131C2F;
+    --tile-hover-bg:            #1B2540;
+    --tile-shadow:              0 8px 20px rgba(2, 6, 23, 0.45);
+}
+
+html.theme-dark #search-input {
+    background-color:            var(--tile-bg);
+    border-color:                #2A3550;
+    color:                       var(--text-color);
+    box-shadow:                  0 1px 2px rgba(2,6,23,0.35);
+}
+
+html.theme-dark #search-input::placeholder {
+    color:                       #9AA6BE;
+}
+
+html.theme-dark #controls {
+    background:                  rgba(19, 28, 46, 0.6);
+    border-color:                rgba(255,255,255,0.06);
+    box-shadow:                  0 2px 10px rgba(2,6,23,0.45);
+}
+
 body {
-    background:                 #EFEFEF url( ../img/bg.png ) repeat top left;
+    background:                 radial-gradient(1200px 800px at 10% -10%, rgba(54,90,186,0.08), rgba(54,90,186,0) 60%),
+                                 var(--bg-color) url( ../img/bg.png ) repeat top left;
     font-family:                Lekton, Helvetica, Arial, sans-serif;
-    color:                      #365aba;
+    color:                      var(--text-color);
     margin:                     0px 0px 0px 0px;
     padding:                    0px 0px 0px 20px;
 }
@@ -33,12 +76,12 @@ body.medium { font-size:         14px; }
 body.small  { font-size:         12px; }
 
 a {
-    color:                      #365aba;
+    color:                      var(--accent-color);
     text-decoration:            none;
 }
 
 a:hover {
-    color:                      #365aba;
+    color:                      var(--accent-color);
 }
 
 #getstarted {
@@ -53,6 +96,8 @@ a:hover {
     color:                      #666;
     margin-bottom:              5px;
     margin-left:                10px;
+    letter-spacing:             0.08em;
+    text-transform:             uppercase;
 }
 
 #getstarted a {
@@ -72,8 +117,8 @@ a:hover {
     line-height:                1.4;
     background-color:           #FFFFFF;
     border-radius:              6px 6px 6px 6px;
-    box-shadow:                 0 1px 3px #CCCCCC;
-    padding:                    10px;
+    box-shadow:                 0 6px 16px rgba(0,0,0,0.08);
+    padding:                    14px 16px;
     margin:                     2px 6px 6px 2px;
 }
 
@@ -98,35 +143,44 @@ a:hover {
 }
 
 #bookmarks h1 {
-    font-size:                  0.9em;
-    color:                      #666666;
+    font-size:                  0.85em;
+    color:                      var(--muted-color);
     font-weight:                bold;
     padding-left:               8px;
+    letter-spacing:             0.06em;
+    text-transform:             uppercase;
 }
 
 #bookmarks a {
     position:                   relative;
-    display:                    inline-block;
+    display:                    inline-flex;
+    align-items:                flex-start;
+    gap:                        4px;
     vertical-align:             bottom;
     text-decoration:            none;
-    font-size:                  0.9em;
+    font-size:                  0.95em;
     font-weight:                normal;
-    letter-spacing:             0.1em;
-    line-height:                1.4;
-    background-color:           #FFFFFF;
-    border-radius:              6px 6px 6px 6px;
-    box-shadow:                 0 1px 3px #CCCCCC;
-    width:                      9.5em;
-    height:                     4em;
-    padding:                    10px 5px 5px 7px;
+    letter-spacing:             0.02em;
+    line-height:                1.35;
+    background-color:           var(--tile-bg);
+    border-radius:              var(--tile-radius);
+    box-shadow:                 var(--tile-shadow);
+    box-sizing:                 border-box;
+    width:                      10.5em;
+    height:                     calc(3 * 1.35em + var(--tile-y-pad));
+    padding:                    6px 8px 2px 6px;
     margin:                     2px 6px 6px 2px;
     overflow:                   hidden;
     text-overflow:              ellipsis;
     position:                   relative;
+    transition:                 transform 120ms ease, background-color 150ms ease, box-shadow 150ms ease;
+    color:                      var(--text-color);
 }
 
 #bookmarks a:hover {
-    background-color:           #b6c5ef;
+    background-color:           var(--tile-hover-bg);
+    transform:                  translateY(-1px);
+    box-shadow:                 0 10px 24px rgba(33, 37, 41, 0.12);
 }
 
 .edit #bookmarks a:hover {
@@ -135,49 +189,93 @@ a:hover {
 
 #bookmarks a > img {
     margin-right:               0px;
-    margin-bottom:              -3px;
+    margin-bottom:              0px;
     width:                      1.15em;
+    flex:                       0 0 auto;
+    align-self:                 flex-start;
+}
+
+#bookmarks a > span {
+    display:                    -webkit-box;
+    -webkit-line-clamp:         3;
+    -webkit-box-orient:         vertical;
+    line-clamp:                 3;
+    overflow:                   hidden;
+    text-overflow:              ellipsis;
+    white-space:                normal;
+    word-break:                 break-word;
+    flex:                       1 1 auto;
+    min-width:                  0;
+    height:                     calc(3 * 1.35em);
 }
 
 #bookmarks a.removed {
     opacity: 0;
     -webkit-transition: opacity 0.5s;
+    transition: opacity 0.5s;
 }
 
 #bookmarks a.add {
-    opacity:                    0.7;
-    background-color:           #F1F1F1;
+    opacity:                    1;
+    background-color:           transparent;
     -webkit-box-orient:         vertical;
     -webkit-box-pack:           center;
     -webkit-box-align:          center;
-    color:                      #CDCDCD;
-    width:                      2.13em;
-    height:                     0.9em;
-    line-height:                0.9;
-    font-size:                  4em;
+    color:                      #A3A3A3;
+    width:                      10.5em;
+    height:                     calc(3 * 1.35em + var(--tile-y-pad));
+    padding:                    6px 8px 2px 6px;
+    line-height:                1;
+    font-size:                  inherit;
     font-weight:                bold;
     text-shadow:                0px 1px #FFF;
-    display:                    none;
+    border:                     2px dashed transparent;
+    box-sizing:                 border-box;
+    display:                    inline-flex;
+    visibility:                 hidden;
+    pointer-events:             none;
 }
 
 .edit #bookmarks a.add {
-    display:                    -webkit-inline-box;
+    display:                    inline-flex;
+    align-items:                center;
+    justify-content:            center;
+    background-color:           var(--tile-hover-bg);
+    color:                      var(--accent-color);
+    border-color:               rgba(54,90,186,0.45);
+    visibility:                 visible;
+    pointer-events:             auto;
 }
 
 #bookmarks a.add:hover {
     opacity:                    1;
-    background-color:           #DDD;
-    color:                      #AAA;
+    background-color:           #E9EEFF;
+    color:                      #2B4FB5;
+    border-color:               #365ABA;
 }
 
-#bookmarks a.add img {
-    display:                    none;
+#bookmarks a.add span {
+    display:                    inline-block;
+    flex:                       0 0 auto;
+    font-size:                  1.6em;
+    line-height:                1;
+    height:                     auto;
 }
+
+#bookmarks a.add img { display: none; }
 
 #controls {
-    position:                   absolute;
+    position:                   fixed;
     top:                        5px;
     right:                      10px;
+    z-index:                    10;
+    padding:                    6px 10px;
+    border-radius:              9999px;
+    background:                 rgba(255,255,255,0.7);
+    border:                     1px solid rgba(0,0,0,0.05);
+    box-shadow:                 0 2px 8px rgba(33,37,41,0.08);
+    -webkit-backdrop-filter:    saturate(120%) blur(6px);
+    backdrop-filter:            saturate(120%) blur(6px);
 }
 
 #controls > div {
@@ -186,10 +284,14 @@ a:hover {
 
 #controls a {
     font-size:                  14px;
+    margin:                     0 6px;
+    padding:                    4px 8px;
+    border-radius:              8px;
 }
 
 #controls a:hover, #controls a.selected {
-    text-decoration:            underline;
+    text-decoration:            none;
+    background-color:           var(--tile-hover-bg);
 }
 
 :-webkit-any(.ui-edit-form,.ui-add-form) > input {
@@ -244,4 +346,94 @@ a:hover {
 
 #filter p {
     text-align: center;
+}
+
+/* Search bar */
+#search {
+    position:                    sticky;
+    top:                         8px;
+    padding:                     12px 16px 0 0;
+    z-index:                     9;
+}
+
+#search-input {
+    appearance:                  none;
+    -webkit-appearance:          none;
+    width:                       22rem;
+    max-width:                   calc(100% - 140px);
+    padding:                     10px 12px;
+    border-radius:               10px;
+    border:                      1px solid #D1D5DB;
+    box-shadow:                  0 1px 2px rgba(0,0,0,0.04);
+    background-color:            #FFFFFF;
+    color:                       #111827;
+}
+
+#search-input:focus {
+    outline:                     none;
+    border-color:                #A7B7EF;
+    box-shadow:                  0 0 0 3px rgba(54,90,186,0.15);
+}
+
+/* Tooltip with full title on hover - width fits the tile */
+#bookmarks a:not(.add)[title]::after {
+    content:                    attr(title);
+    position:                   absolute;
+    left:                       0;
+    bottom:                     calc(100% + 8px);
+    width:                      calc(100% - 4px);
+    max-width:                  none;
+    padding:                    6px 8px;
+    background:                 var(--tile-bg);
+    color:                      var(--text-color);
+    border:                     1px solid rgba(0,0,0,0.06);
+    border-radius:              6px;
+    box-shadow:                 var(--tile-shadow);
+    opacity:                    0;
+    transform:                  translateY(4px);
+    transition:                 opacity 120ms ease, transform 120ms ease;
+    pointer-events:             none;
+    z-index:                    50;
+    white-space:                normal;
+}
+
+#bookmarks a:not(.add)[title]:hover::after {
+    opacity:                    1;
+    transform:                  translateY(0);
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Force a bright, readable palette even when system is in dark mode */
+        --bg-color:             #F5F7FB;
+        --text-color:           #24314A;
+        --muted-color:          #6B7280;
+        --tile-bg:              #FFFFFF;
+        --tile-hover-bg:        #EAF0FF;
+        --tile-shadow:          0 8px 20px rgba(33, 37, 41, 0.08);
+    }
+
+    a { color:                  var(--accent-color); }
+    a:hover { color:            var(--accent-color); }
+
+    #search-input {
+        background-color:        #FFFFFF;
+        border-color:            #D1D5DB;
+        color:                   #111827;
+    }
+
+    #getstarted > section {
+        background-color:        #FFFFFF;
+        box-shadow:              0 6px 16px rgba(0,0,0,0.08);
+    }
+
+    #controls {
+        background:              rgba(255,255,255,0.7);
+        border-color:            rgba(0,0,0,0.05);
+        box-shadow:              0 2px 8px rgba(33,37,41,0.08);
+    }
+
+    /* Make section headers stronger in this bright theme */
+    #bookmarks h1 { color: var(--muted-color); }
 }

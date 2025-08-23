@@ -6,11 +6,28 @@
     {
         var $form  = $( '<div class="ui-add-form"></div>' ),
             $title = $( '<input autofocus id="title" type="text" placeholder="Title..." />' ),
-            $url   = $( '<input id="url" type="text" placeholder="http://www.example.com" />' );
+            $url   = $( '<input id="url" type="text" placeholder="https://example.com or intranet-host" />' );
         
         $form.append( $title, $url );
         
         return $form;
+    };
+    
+    var normalizeUrl = function( value )
+    {
+        if( !value ) return value;
+        value = value.trim();
+        if( !value ) return value;
+
+        // If it already parses as a URL, keep as is
+        try { new URL( value ); return value; } catch( e ) {}
+
+        // Allow protocol-relative URLs
+        if( value.indexOf( '//' ) === 0 ) return 'https:' + value;
+
+        // If it looks like a plain hostname (including hosts entries), prefix http
+        // Accept characters commonly used in hostnames/paths
+        return 'http://' + value;
     };
     
     var AddBtn = mdash.AddBtn = function( $btn )
@@ -44,7 +61,7 @@
             
             self.add(
                 $form.find( '#title' ).val(),
-                $form.find( '#url' ).val(),
+                normalizeUrl( $form.find( '#url' ).val() ),
                 function( added, bookmark )
                 {
                     if( !added )

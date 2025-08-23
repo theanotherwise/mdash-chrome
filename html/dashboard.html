@@ -8,6 +8,9 @@
         <link rel="stylesheet" href="../js/lib/uikit/ui.css" type="text/css" />
     </head>
     <body class="large">
+        <div id="search">
+            <input id="search-input" type="search" placeholder="Search bookmarks…" autocomplete="off" />
+        </div>
         <div id="getstarted">
             <h1>Get started</h1>
             <section>
@@ -56,6 +59,11 @@
                 <a href="#" data-size="large" class="selected">large</a>
             </div>
             ·
+            <div id="themectrl">
+                <a href="#" data-theme="light" class="selected">light</a>
+                <a href="#" data-theme="dark">dark</a>
+            </div>
+            ·
             <a id="helpctrl" href="#">?</a>
         </div>
 
@@ -69,7 +77,7 @@
         </section>
         </script>
         <script id="bookmark" type="text/html">
-        <a id="{{ id }}" href="{{ url }}" class="{{ className }}" data-title="{{ title }}">
+        <a id="{{ id }}" href="{{ url }}" class="{{ className }}" data-title="{{ title }}" title="{{ title }}" aria-label="{{ title }}">
             <img src="{{ favicon }}" alt="{{ title }}" />
             <span>{{ title }}</span>
         </a>
@@ -82,8 +90,10 @@
         <script src="../js/fontctrl.js"></script>
         <script src="../js/helpctrl.js"></script>
         <script src="../js/editctrl.js"></script>
+        <script src="../js/themectrl.js"></script>
         <script src="../js/keyboard_manager.js"></script>
         <script src="../js/addbtn.js"></script>
+        <script src="../js/search.js"></script>
         <script src="../js/dashboard.js"></script>
         <script src="../js/app.js"></script>
     </body>

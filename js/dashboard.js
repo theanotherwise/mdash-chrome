@@ -11,6 +11,7 @@
     {
         this.$fontSizes  = $( '#fontctrl > a' );
         this.$helpCtrl   = $( '#helpctrl' );
+        this.$themeCtrl  = $( '#themectrl > a' );
         this.$editBtn    = $( '#edit' );
         this.$getStarted = $( '#getstarted' );
         this.$bookmarks  = $( '#bookmarks' );
@@ -19,11 +20,13 @@
         this.manager         = new mdash.Manager();
         this.fontCtrl        = new mdash.FontCtrl( this.$fontSizes );
         this.helpCtrl        = new mdash.HelpCtrl( this.$helpCtrl, this.$getStarted, this.$bookmarks );
+        this.themeCtrl       = new mdash.ThemeCtrl( this.$themeCtrl );
         this.editCtrl        = new mdash.EditCtrl( this.$editBtn, this.$bookmarks );
         this.keyboardManager = new mdash.KeyboardManager();
 
         this.fontCtrl.init();
         this.helpCtrl.init();
+        this.themeCtrl.init();
         this.editCtrl.init();
 
         this.manager.init( this.loadBookmarks.bind( this ) );
