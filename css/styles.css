@@ -301,11 +301,20 @@ html.theme-dark .edit #bookmarks a:hover {
     box-shadow: none;
 }
 
+/* Collapsed placeholder used at the source position so items shift left */
+#bookmarks a.drop-placeholder.collapsed {
+    width: 0.01px;
+    margin: 0;
+    border: none;
+}
+
 /* While dragging, hide the original tile so it doesn't look duplicated */
 .edit #bookmarks a.dragging {
     opacity: 0;
     box-shadow: none;
     cursor: grabbing;
+    position: absolute; /* remove from document flow so neighbors shift left */
+    pointer-events: none;
 }
 
 #controls {

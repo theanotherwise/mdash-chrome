@@ -470,12 +470,17 @@
                 // Defer hiding the source element so the browser captures a proper drag image
                 var el = this;
                 setTimeout( function(){ $( el ).addClass( 'dragging' ); }, 0 );
+
+                // Insert a collapsed placeholder at the original position to collapse the gap
+                var $cur = $( this );
+                self.$placeholder.addClass( 'collapsed' );
+                $cur.before( self.$placeholder );
             } )
             .on( 'dragend.mdash', function()
             {
                 self._dragging = false;
                 $( this ).removeClass( 'dragging' );
-                if( self.$placeholder ) self.$placeholder.detach();
+                if( self.$placeholder ) { self.$placeholder.removeClass('collapsed').detach(); }
                 self.$bookmarks.find( 'section' ).removeClass( 'drop-target' );
             } );
 
@@ -488,6 +493,7 @@
             var $t = $( this );
             if( before ) { $t.before( self.$placeholder ); }
             else { $t.after( self.$placeholder ); }
+            self.$placeholder.removeClass( 'collapsed' );
             $t.closest( 'section' ).addClass( 'drop-target' );
         } );
 
@@ -504,6 +510,7 @@
                 {
                     var $add = $section.find( 'a.add' );
                     if( $add.length ) $add.before( self.$placeholder ); else $section.append( self.$placeholder );
+                    self.$placeholder.removeClass( 'collapsed' );
                 }
             } )
             .on( 'dragleave.mdash', function()
@@ -570,6 +577,8 @@
                         var $add  = $section.find( 'a.add' );
                         if( $add.length ) $add.before( $tile ); else $section.append( $tile );
                     }
+                    // Ensure the tile participates in flow again
+                    $tile.removeClass('dragging');
                     ui.notify( 'Moved', 'Bookmark moved.' );
                 } );
             } );
@@ -647,6 +656,14 @@
             {
                 self.$docEl.addClass( 'edit' );
                 self.editMode = self.altPressed = true;
+            }
+            else if( self.editMode && (e.key === 'Escape' || e.keyCode === 27) )
+            {
+                e.preventDefault();
+                e.stopPropagation();
+                // Wyjście z trybu edycji (zachowuje się jak kliknięcie w przycisk)
+                self.$btn.trigger( 'click' );
+                return;
             }
             else if( self.editMode && (e.key === 'Delete' || e.keyCode === 46 || e.keyCode === 8) )
             {
