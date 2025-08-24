@@ -624,12 +624,16 @@
             }
             else
             {
-                var best = null, bestDx = Infinity;
+                // Choose nearest tile by 2D distance so rows are respected
+                var best = null, bestDist2 = Infinity;
                 $tilesInside.each( function(){
                     var r = this.getBoundingClientRect();
                     var cx = r.left + r.width / 2;
-                    var dx = Math.abs( clientX - cx );
-                    if( dx < bestDx ) { bestDx = dx; best = this; }
+                    var cy = r.top + r.height / 2;
+                    var dx = clientX - cx;
+                    var dy = clientY - cy;
+                    var d2 = dx*dx + dy*dy;
+                    if( d2 < bestDist2 ) { bestDist2 = d2; best = this; }
                 } );
                 if( best )
                 {
@@ -1463,9 +1467,55 @@
                     
                     ui.notify( 'Added \'' + bookmark.title + '\'.' );
                     
-                    self.$btn.before(
-                        mdash.Column.prototype.renderBookmark( bookmark )
-                    );
+                    var $new = mdash.Column.prototype.renderBookmark( bookmark );
+                    self.$btn.before( $new );
+
+                    // If user is in edit mode, immediately enable DnD on the new tile
+                    try {
+                        var edit = mdash.dashboard && mdash.dashboard.editCtrl;
+                        if( edit && edit.editMode )
+                        {
+                            if( !edit.$placeholder || !edit.$placeholder.length )
+                            {
+                                edit.$placeholder = $('<a class="drop-placeholder" aria-hidden="true"></a>');
+                            }
+                            $new.attr( 'draggable', true )
+                                .on( 'dragstart.mdash', function( e )
+                                {
+                                    edit._dragging = true;
+                                    edit._handledDrop = false;
+                                    var id = $( this ).attr( 'id' );
+                                    var dt = e.originalEvent.dataTransfer;
+                                    try { dt.setData( 'application/x-mdash-bookmark-id', id ); } catch( _e ) {}
+                                    try { dt.setData( 'text/plain', '' ); } catch( _e ) {}
+                                    dt.effectAllowed = 'move';
+                                    var el = this;
+                                    setTimeout( function(){ $( el ).addClass( 'dragging' ); }, 0 );
+                                    var $cur = $( this );
+                                    edit.$placeholder.addClass( 'collapsed' );
+                                    $cur.before( edit.$placeholder );
+                                } )
+                                .on( 'dragend.mdash', function()
+                                {
+                                    edit._dragging = false;
+                                    $( this ).removeClass( 'dragging' );
+                                    if( edit.$placeholder ) edit.$placeholder.removeClass( 'collapsed' ).detach();
+                                    edit.$bookmarks.find( 'section' ).removeClass( 'drop-target' );
+                                } );
+
+                            $new.on( 'dragover.mdash', function( e )
+                            {
+                                e.preventDefault();
+                                var rect = this.getBoundingClientRect();
+                                var before = (e.originalEvent.clientX < rect.left + rect.width / 2);
+                                var $t = $( this );
+                                if( before ) { $t.before( edit.$placeholder ); }
+                                else { $t.after( edit.$placeholder ); }
+                                edit.$placeholder.removeClass( 'collapsed' );
+                                $t.closest( 'section' ).addClass( 'drop-target' );
+                            } );
+                        }
+                    } catch( _e ) {}
 
                     // Re-apply active search filter so nowo dodany link respektuje aktualne filtrowanie
                     var $input = $( '#search-input' );
