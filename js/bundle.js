@@ -456,10 +456,20 @@
         var $tiles = this.$bookmarks.find( 'a' ).not( '.add' );
         // Visual placeholder for insertion point
         this.$placeholder = $('<a class="drop-placeholder" aria-hidden="true"></a>');
+
+        // Helper to reliably reset UI state after any drop/move
+        function cleanupDrag()
+        {
+            self._dragging = false;
+            self.$bookmarks.find( 'a.dragging' ).removeClass( 'dragging' );
+            if( self.$placeholder ) self.$placeholder.removeClass( 'collapsed' ).detach();
+            self.$bookmarks.find( 'section' ).removeClass( 'drop-target' );
+        }
         $tiles.attr( 'draggable', true )
             .on( 'dragstart.mdash', function( e )
             {
                 self._dragging = true;
+                self._handledDrop = false;
                 var id = $( this ).attr( 'id' );
                 var dt = e.originalEvent.dataTransfer;
                 // Use a custom type so only our tiles are accepted by drop targets
@@ -478,10 +488,7 @@
             } )
             .on( 'dragend.mdash', function()
             {
-                self._dragging = false;
-                $( this ).removeClass( 'dragging' );
-                if( self.$placeholder ) { self.$placeholder.removeClass('collapsed').detach(); }
-                self.$bookmarks.find( 'section' ).removeClass( 'drop-target' );
+                cleanupDrag();
             } );
 
         // While dragging over a tile, show the placeholder before/after the tile
@@ -520,6 +527,7 @@
             .on( 'drop.mdash', function( e )
             {
                 e.preventDefault();
+                self._handledDrop = true;
                 var $section = $( this );
                 $( this ).removeClass( 'drop-target' );
                 var dt = e.originalEvent.dataTransfer;
@@ -564,24 +572,107 @@
                         }
                     }
                 }
-                self.api.move( id, { parentId: targetSectionId, index: index }, function()
+                // Move visually immediately for better feedback
+                var $tileImmediate = $( document.getElementById( id ) );
+                if( $tileImmediate.length )
                 {
-                    var $tile = $( document.getElementById( id ) );
-                    if( !$tile.length ) return; // Invalid id; do nothing
                     if( self.$placeholder && self.$placeholder.parent().length )
                     {
-                        self.$placeholder.replaceWith( $tile );
+                        self.$placeholder.replaceWith( $tileImmediate );
                     }
                     else
                     {
-                        var $add  = $section.find( 'a.add' );
-                        if( $add.length ) $add.before( $tile ); else $section.append( $tile );
+                        var $addImmediate  = $section.find( 'a.add' );
+                        if( $addImmediate.length ) $addImmediate.before( $tileImmediate ); else $section.append( $tileImmediate );
                     }
-                    // Ensure the tile participates in flow again
-                    $tile.removeClass('dragging');
+                    $tileImmediate.removeClass( 'dragging' );
+                }
+
+                self.api.move( id, { parentId: targetSectionId, index: index }, function()
+                {
+                    cleanupDrag();
                     ui.notify( 'Moved', 'Bookmark moved.' );
                 } );
             } );
+
+        // Global dragover handler on container: choose nearest section under pointer even over whitespace
+        this.$bookmarks.on( 'dragover.mdash', function( e )
+        {
+            if( !self._dragging ) return;
+            e.preventDefault();
+            var clientX = e.originalEvent.clientX, clientY = e.originalEvent.clientY;
+            var el = document.elementFromPoint( clientX, clientY );
+            if( !el ) return;
+            var $section = $( el ).closest( 'section' );
+            if( !$section.length ) return;
+
+            // Decide insertion before/after based on nearest tile center
+            var $tilesInside = $section.children( 'a' ).not( '.add' ).not( '.drop-placeholder' );
+            if( $tilesInside.length === 0 )
+            {
+                var $add = $section.find( 'a.add' );
+                if( $add.length ) $add.before( self.$placeholder ); else $section.append( self.$placeholder );
+            }
+            else
+            {
+                var best = null, bestDx = Infinity;
+                $tilesInside.each( function(){
+                    var r = this.getBoundingClientRect();
+                    var cx = r.left + r.width / 2;
+                    var dx = Math.abs( clientX - cx );
+                    if( dx < bestDx ) { bestDx = dx; best = this; }
+                } );
+                if( best )
+                {
+                    var r = best.getBoundingClientRect();
+                    var before = clientX < r.left + r.width / 2;
+                    if( before ) $( best ).before( self.$placeholder ); else $( best ).after( self.$placeholder );
+                }
+            }
+            self.$placeholder.removeClass( 'collapsed' );
+            $section.addClass( 'drop-target' );
+        } );
+
+        // Global drop handler to commit when dropping over whitespace
+        this.$bookmarks.on( 'drop.mdash', function( e )
+        {
+            if( !self._dragging || self._handledDrop ) return;
+            e.preventDefault();
+            var dt = e.originalEvent.dataTransfer;
+            var id = '';
+            try { id = dt.getData( 'application/x-mdash-bookmark-id' ); } catch( _e ) { id = ''; }
+            if( !id ) return;
+
+            var $section = self.$placeholder.closest( 'section' );
+            if( !$section.length ) return;
+
+            // Compute insertion index from placeholder position
+            var index = 0;
+            var children = $section.children( 'a' );
+            for( var i = 0; i < children.length; i++ )
+            {
+                var el = children[ i ];
+                if( el === self.$placeholder[0] ) break;
+                if( el.classList.contains( 'add' ) ) continue;
+                index++;
+            }
+
+            var targetSectionId = $section.attr( 'id' );
+            // Immediate visual move
+            var $tileImmediate2 = $( document.getElementById( id ) );
+            if( $tileImmediate2.length )
+            {
+                self.$placeholder.replaceWith( $tileImmediate2 );
+                $tileImmediate2.removeClass( 'dragging' );
+            }
+
+            self.api.move( id, { parentId: targetSectionId, index: index }, function()
+            {
+                var $tile = $( document.getElementById( id ) );
+                if( !$tile.length ) return;
+                cleanupDrag();
+            } );
+        } );
     };
 
     EditCtrl.prototype.disableDragAndDrop = function()
