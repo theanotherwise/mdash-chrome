@@ -1,0 +1,1 @@
+zip -r ../mdash-chrome-1.1.0.zip * -x "**/.git/**" "**/.DS_Store" "**/node_modules/**" -x "./pack.sh"
