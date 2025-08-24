@@ -159,6 +159,27 @@ a:hover {
     text-transform:             uppercase;
 }
 
+/* Inline input for renaming sections in edit mode */
+.edit #bookmarks .section-rename-input {
+    font: inherit;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted-color);
+    background: transparent;
+    border: 1px dashed rgba(54,90,186,0.45);
+    border-radius: 6px;
+    padding: 2px 6px;
+    display: block;            /* jak h1: nowa linia nad kafelkami */
+    box-sizing: border-box;
+    margin: 0 8px 0 8px;       /* zgodnie z paddingiem h1 */
+    /* Zostaw miejsce na przycisk "+" (28px) + odstępy ~22px */
+    width: calc(100% - 16px - 50px);
+    max-width: calc(100% - 16px - 50px);
+    line-height: 1.4;
+    outline: none;
+}
+
 #bookmarks a {
     position:                   relative;
     display:                    inline-flex;

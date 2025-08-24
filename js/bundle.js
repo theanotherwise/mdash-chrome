@@ -436,6 +436,15 @@
             }
         } );
 
+        // Rename section: click on section title while in edit mode
+        this.$docEl.on( 'click', '#bookmarks section > h1', function( e )
+        {
+            if( !self.editMode ) return;
+            e.preventDefault();
+            e.stopPropagation();
+            self.renameSection( $( this ) );
+        } );
+
         // Track hovered/active bookmark for keyboard delete
         this.$docEl.on( 'mouseenter', '#bookmarks a:not(.add)', function( e )
         {
@@ -750,9 +759,11 @@
             }
             else if( self.editMode && (e.key === 'Escape' || e.keyCode === 27) )
             {
+                // Ignore ESC when typing in inputs (e.g. section rename)
+                if( $( e.target ).is('input, textarea, select, [contenteditable="true"], .section-rename-input') ) return;
                 e.preventDefault();
                 e.stopPropagation();
-                // Wyjście z trybu edycji (zachowuje się jak kliknięcie w przycisk)
+                // Exit edit mode (same as clicking the button)
                 self.$btn.trigger( 'click' );
                 return;
             }
@@ -814,6 +825,60 @@
                 self.editMode = self.altPressed = false;
             }
         } );
+    };
+
+    EditCtrl.prototype.renameSection = function( $h1 )
+    {
+        var self = this;
+        var $section = $h1.closest( 'section' );
+        var id = $section.attr( 'id' );
+        var original = $h1.text();
+        var isLeft = $section.closest( '.left' ).length > 0;
+        var prefix = isLeft ? '+' : '-';
+
+        var $input = $( '<input type="text" class="section-rename-input" />' ).val( original );
+        $h1.replaceWith( $input );
+        $input.focus().select();
+
+        function commit()
+        {
+            var title = ($input.val() || '').trim();
+            if( !title )
+            {
+                cancel();
+                return;
+            }
+            // Update Chrome bookmarks folder title including side prefix
+            self.api.update( id, { title: prefix + title }, function()
+            {
+                var $newH1 = $( '<h1>' ).text( title );
+                $input.replaceWith( $newH1 );
+                ui.notify( 'Section renamed', 'Updated to \'' + title + '\'.' );
+            } );
+        }
+
+        function cancel()
+        {
+            var $newH1 = $( '<h1>' ).text( original );
+            $input.replaceWith( $newH1 );
+        }
+
+        $input.on( 'keydown', function( e )
+        {
+            if( e.key === 'Enter' )
+            {
+                e.preventDefault();
+                e.stopPropagation();
+                commit();
+            }
+            else if( e.key === 'Escape' )
+            {
+                e.preventDefault();
+                e.stopPropagation();
+                cancel();
+            }
+        } );
+        $input.on( 'blur', function(){ commit(); } );
     };
     
     EditCtrl.prototype.edit = function( $b )
