@@ -528,6 +528,42 @@
                     if( $add.length ) $add.before( self.$placeholder ); else $section.append( self.$placeholder );
                     self.$placeholder.removeClass( 'collapsed' );
                 }
+                else
+                {
+                    // Row-aware placement: if pointer is vertically inside any row, choose from that row only
+                    var clientX = e.originalEvent.clientX, clientY = e.originalEvent.clientY;
+                    var inRow = [];
+                    $tilesInside.each( function(){ var r = this.getBoundingClientRect(); if( clientY >= r.top && clientY <= r.bottom ) inRow.push({el:this, rect:r}); });
+                    var target = null, rect = null;
+                    if( inRow.length )
+                    {
+                        // Pick nearest by X within the row
+                        var bestDx = Infinity;
+                        inRow.forEach( function( it ){
+                            var midX = it.rect.left + it.rect.width / 2;
+                            var dx = Math.abs( clientX - midX );
+                            if( dx < bestDx ) { bestDx = dx; target = it.el; rect = it.rect; }
+                        } );
+                    }
+                    else
+                    {
+                        // Fallback: choose row by minimal |dy| then by |dx|
+                        var bestScore = Infinity;
+                        $tilesInside.each( function(){
+                            var r = this.getBoundingClientRect();
+                            var dy = Math.abs( clientY - (r.top + r.height/2) );
+                            var dx = Math.abs( clientX - (r.left + r.width/2) );
+                            var score = dy * 1000 + dx;
+                            if( score < bestScore ) { bestScore = score; target = this; rect = r; }
+                        } );
+                    }
+                    if( target )
+                    {
+                        var before = clientX < (rect.left + rect.width / 2);
+                        if( before ) $( target ).before( self.$placeholder ); else $( target ).after( self.$placeholder );
+                        self.$placeholder.removeClass( 'collapsed' );
+                    }
+                }
             } )
             .on( 'dragleave.mdash', function()
             {
@@ -624,22 +660,35 @@
             }
             else
             {
-                // Choose nearest tile by 2D distance so rows are respected
-                var best = null, bestDist2 = Infinity;
-                $tilesInside.each( function(){
-                    var r = this.getBoundingClientRect();
-                    var cx = r.left + r.width / 2;
-                    var cy = r.top + r.height / 2;
-                    var dx = clientX - cx;
-                    var dy = clientY - cy;
-                    var d2 = dx*dx + dy*dy;
-                    if( d2 < bestDist2 ) { bestDist2 = d2; best = this; }
-                } );
-                if( best )
+                // Prefer tiles whose vertical span contains pointer (row under cursor)
+                var candidates = [];
+                $tilesInside.each( function(){ var r = this.getBoundingClientRect(); if( clientY >= r.top && clientY <= r.bottom ) candidates.push({el:this, rect:r}); });
+                var target = null, rect = null;
+                if( candidates.length )
                 {
-                    var r = best.getBoundingClientRect();
-                    var before = clientX < r.left + r.width / 2;
-                    if( before ) $( best ).before( self.$placeholder ); else $( best ).after( self.$placeholder );
+                    var bestDx = Infinity;
+                    candidates.forEach( function( it ){
+                        var midX = it.rect.left + it.rect.width / 2;
+                        var dx = Math.abs( clientX - midX );
+                        if( dx < bestDx ) { bestDx = dx; target = it.el; rect = it.rect; }
+                    } );
+                }
+                else
+                {
+                    // Fallback: nearest by weighted Y then X
+                    var bestScore = Infinity;
+                    $tilesInside.each( function(){
+                        var r = this.getBoundingClientRect();
+                        var dy = Math.abs( clientY - (r.top + r.height/2) );
+                        var dx = Math.abs( clientX - (r.left + r.width/2) );
+                        var score = dy * 1000 + dx;
+                        if( score < bestScore ) { bestScore = score; target = this; rect = r; }
+                    } );
+                }
+                if( target )
+                {
+                    var before = clientX < rect.left + rect.width / 2;
+                    if( before ) $( target ).before( self.$placeholder ); else $( target ).after( self.$placeholder );
                 }
             }
             self.$placeholder.removeClass( 'collapsed' );
