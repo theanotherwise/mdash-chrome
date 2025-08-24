@@ -192,6 +192,8 @@
     
     mdash.links = {};
     
+    // favicon helpers not needed when using full reload; kept minimal inline logic elsewhere
+    
     var Column = mdash.Column = function( $el )
     {
         this.$el      = $el;
@@ -246,15 +248,24 @@
         var link = document.createElement( 'a' );
         
         link.href = bookmark.url;
-        
+        var faviconCandidates = [
+            'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( link.href ) + '&sz=64',
+            'https://www.google.com/s2/favicons?domain=' + encodeURIComponent( new URL( link.href ).hostname )
+        ];
+
         var data = {
             id      : bookmark.id,
             title   : bookmark.title,
             url     : link.href,
-            favicon : bookmark.favicon ? bookmark.favicon : 'http://www.google.com/s2/favicons?domain=' + link.origin
+            favicon : bookmark.favicon ? bookmark.favicon : faviconCandidates[ 0 ]
         };
         
-        return ich.bookmark( data );
+        var $el  = ich.bookmark( data );
+        var $img = $el.find( 'img' );
+        
+        // image src already set via template; no extra preloading needed here
+        
+        return $el;
     };
 
 } )( window.mdash || ( window.mdash = {} ) );
@@ -392,6 +403,9 @@
         this.$bookmarks = $bookmarks;
         this.api        = chrome.bookmarks;
         this.editMode   = false;
+        this.$activeBookmark = null;
+        this.currentEditId = null;
+        this._dragging = false;
     };
     
     EditCtrl.prototype.init = function()
@@ -408,6 +422,7 @@
                 e.preventDefault();
                 e.stopPropagation();
                 
+                if( self._dragging ) return; // ignore click right after drag
                 var $el = $( e.target );
                 
                 if( !$el.is( 'a' ) )
@@ -418,6 +433,74 @@
                 self.edit( $el );
             }
         } );
+
+        // Track hovered/active bookmark for keyboard delete
+        this.$docEl.on( 'mouseenter', '#bookmarks a:not(.add)', function( e )
+        {
+            self.$activeBookmark = $( e.currentTarget );
+        } );
+        this.$docEl.on( 'mouseleave', '#bookmarks a:not(.add)', function( e )
+        {
+            if( self.$activeBookmark && self.$activeBookmark[0] === e.currentTarget )
+            {
+                self.$activeBookmark = null;
+            }
+        } );
+    };
+    
+    EditCtrl.prototype.enableDragAndDrop = function()
+    {
+        var self = this;
+        var $tiles = this.$bookmarks.find( 'a' ).not( '.add' );
+        $tiles.attr( 'draggable', true )
+            .on( 'dragstart.mdash', function( e )
+            {
+                self._dragging = true;
+                e.originalEvent.dataTransfer.setData( 'text/plain', $( this ).attr( 'id' ) );
+                $( this ).addClass( 'dragging' );
+            } )
+            .on( 'dragend.mdash', function()
+            {
+                self._dragging = false;
+                $( this ).removeClass( 'dragging' );
+            } );
+
+        var $sections = this.$bookmarks.find( 'section' );
+        $sections
+            .on( 'dragover.mdash', function( e )
+            {
+                e.preventDefault();
+                $( this ).addClass( 'drop-target' );
+            } )
+            .on( 'dragleave.mdash', function()
+            {
+                $( this ).removeClass( 'drop-target' );
+            } )
+            .on( 'drop.mdash', function( e )
+            {
+                e.preventDefault();
+                $( this ).removeClass( 'drop-target' );
+                var id = e.originalEvent.dataTransfer.getData( 'text/plain' );
+                if( !id ) return;
+                var $section = $( this );
+                var targetSectionId = $section.attr( 'id' );
+                // If already in this section, append near end (before add)
+                self.api.move( id, { parentId: targetSectionId }, function()
+                {
+                    var $tile = $( document.getElementById( id ) );
+                    var $add  = $section.find( 'a.add' );
+                    if( $add.length ) $add.before( $tile ); else $section.append( $tile );
+                    ui.notify( 'Moved', 'Bookmark moved.' );
+                } );
+            } );
+    };
+
+    EditCtrl.prototype.disableDragAndDrop = function()
+    {
+        var $tiles = this.$bookmarks.find( 'a' ).not( '.add' );
+        $tiles.removeAttr( 'draggable' ).off( '.mdash' ).removeClass( 'dragging' );
+        this.$bookmarks.find( 'section' ).off( '.mdash' ).removeClass( 'drop-target' );
+        this._dragging = false;
     };
     
     EditCtrl.prototype.setupButton = function()
@@ -453,6 +536,9 @@
                     var visibleSections = $col.find( 'section' ).filter( function(){ return $(this).is(':visible'); } ).length;
                     $col.toggle( visibleSections > 0 );
                 } );
+
+                // Disable DnD
+                self.disableDragAndDrop();
             }
             else
             {
@@ -463,6 +549,9 @@
                 // Entering edit: show all sections and columns so add buttons are visible
                 $( '#bookmarks > .left, #bookmarks > .right' ).show();
                 $( '#bookmarks section' ).show();
+
+                // Enable DnD
+                self.enableDragAndDrop();
             }
         } );
     };
@@ -478,6 +567,54 @@
             {
                 self.$docEl.addClass( 'edit' );
                 self.editMode = self.altPressed = true;
+            }
+            else if( self.editMode && (e.key === 'Delete' || e.keyCode === 46 || e.keyCode === 8) )
+            {
+                // If user is typing inside an input/select/textarea, ignore
+                if( $( e.target ).is('input, textarea, select') ) return;
+
+                // If dialog is open, delete the currently edited bookmark
+                if( $('#dialog').is(':visible') && self.currentEditId )
+                {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var idFromDialog = self.currentEditId;
+                    self.remove( idFromDialog, function(){
+                        var $dlg = $('#dialog');
+                        if( $dlg.length )
+                        {
+                            $dlg.find('.cancel').trigger('click');
+                            $dlg.find('.close').trigger('click');
+                        }
+                        self.currentEditId = null;
+                    } );
+                    return;
+                }
+
+                // Otherwise delete hovered/focused tile
+                var $target = self.$activeBookmark || $( e.target ).closest( '#bookmarks a:not(.add)' );
+                if( !$target.length ) return;
+                e.preventDefault();
+                e.stopPropagation();
+                var id = $target.attr( 'id' );
+                self.remove( id, function()
+                {
+                    var $section = $target.closest( 'section' );
+                    setTimeout( function()
+                    {
+                        if( !document.documentElement.classList.contains( 'edit' ) )
+                        {
+                            var remaining = $section.find( 'a' ).not( '.add' ).length;
+                            if( remaining === 0 )
+                            {
+                                $section.hide();
+                                var $col = $section.parent();
+                                var visibleSections = $col.find( 'section' ).filter( function(){ return $(this).is(':visible'); } ).length;
+                                if( visibleSections === 0 ) $col.hide();
+                            }
+                        }
+                    }, 0 );
+                } );
             }
         } );
         
@@ -512,13 +649,17 @@
         sectionsSelectHtml += '</select>';
         $section = $( sectionsSelectHtml ).val( sectionId );
 
-        $rmBtn = $( '<a class="remove" href="#">Remove</a>' ).click( function( e )
+        // Track current edited bookmark id for keyboard Delete
+        this.currentEditId = id;
+
+        $rmBtn = $( '<a class="remove" href="#">DELETE (shortcut key: DELETE)</a>' ).click( function( e )
         {
             e.preventDefault();
             
             self.remove( id, function()
             {
                 dialog.hide();
+                self.currentEditId = null;
             } );
         } );
         
@@ -531,6 +672,7 @@
             if( !ok )
             {
                 dialog.hide();
+                self.currentEditId = null;
                 return;
             }
 
@@ -541,7 +683,7 @@
                     url     : $url.val()
                 },
                 $section.val() != sectionId ? $section.val() : null,
-                function() { dialog.hide(); }
+                function() { dialog.hide(); self.currentEditId = null; }
             );
         } );
     };
@@ -549,17 +691,82 @@
     EditCtrl.prototype.remove = function( id, callback )
     {
         var $el = $( document.getElementById( id ) );
-        
-        this.api.remove( id, function()
+        var self = this;
+
+        // Fetch node to capture undo info
+        this.api.get( id, function( nodes )
         {
-            $el.addClass( 'removed' );
-            
-            setTimeout( callback, 0 );
-            setTimeout( function() { $el.remove(); }, 500 );
-            
-            ui.notify(
-                'Bookmark \'' + $el.find( 'span' ).text() + '\' has been removed.'
-            );
+            var node = nodes && nodes[0];
+            if( !node )
+            {
+                // Fallback remove without undo if lookup failed
+                self.api.remove( id, function()
+                {
+                    $el.addClass( 'removed' );
+                    setTimeout( callback, 0 );
+                    setTimeout( function() { $el.remove(); }, 500 );
+                } );
+                return;
+            }
+
+            var undoInfo = {
+                parentId : node.parentId,
+                index    : node.index,
+                title    : node.title,
+                url      : node.url
+            };
+
+            self.api.remove( id, function()
+            {
+                $el.addClass( 'removed' );
+                setTimeout( callback, 0 );
+                setTimeout( function() { $el.remove(); }, 500 );
+
+                var seconds = 30, undone = false;
+                var $content = $( '<div>Bookmark \'' + undoInfo.title + '\' removed. <a href="#" class="undo">Undo (<span class="count">' + seconds + '</span>)</a></div>' );
+                var note = ui.notify( 'Removed', $content ).hide( 6000 );
+                var tick = setInterval( function()
+                {
+                    seconds -= 1;
+                    if( seconds <= 0 )
+                    {
+                        clearInterval( tick );
+                    }
+                    $content.find( '.count' ).text( Math.max( seconds, 0 ) );
+                }, 1000 );
+
+                $content.on( 'click', '.undo', function( e )
+                {
+                    e.preventDefault();
+                    if( undone ) return; undone = true;
+                    clearInterval( tick );
+                    note.hide( 1 );
+
+                    self.api.create( {
+                        parentId : undoInfo.parentId,
+                        index    : undoInfo.index,
+                        title    : undoInfo.title,
+                        url      : undoInfo.url
+                    }, function( created )
+                    {
+                        if( !created ) return;
+                        var $section = $( '#' + undoInfo.parentId );
+                        var $new = mdash.Column.prototype.renderBookmark( created );
+                        var $tiles = $section.children( 'a' ).not( '.add' );
+                        var $add   = $section.find( 'a.add' );
+                        if( undoInfo.index != null && undoInfo.index < $tiles.length )
+                        {
+                            $tiles.eq( undoInfo.index ).before( $new );
+                        }
+                        else
+                        {
+                            $add.before( $new );
+                        }
+                        $section.show();
+                        $section.parent().show();
+                    } );
+                } );
+            } );
         } );
     };
     
@@ -569,10 +776,97 @@
             $title = $el.find( 'span' ),
             self   = this;
 
+        // Capture previous state for undo
+        var prev = {
+            title    : $title.text(),
+            url      : $el.attr( 'href' ),
+            parentId : $el.closest( 'section' ).attr( 'id' ),
+            index    : (function(){
+                var $tiles = $el.closest('section').children('a').not('.add');
+                for( var i=0; i<$tiles.length; i++ ) if( $tiles[i] === $el[0] ) return i;
+                return null;
+            })()
+        };
+
+        function refreshFaviconForUrl( anchorEl, url )
+        {
+            var $img = anchorEl.find( 'img' );
+            try
+            {
+                var u    = new URL( url );
+                var host = u.hostname;
+                var cb   = Date.now() + '-' + Math.random().toString(36).slice(2);
+                var src  = 'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( url ) + '&sz=64&cb=' + cb;
+                $img.attr( 'src', src );
+            }
+            catch(e){}
+        }
+
+        function showUndoNotification()
+        {
+            var seconds = 30, undone = false;
+            var $content = $( '<div>Bookmark \'' + ($title.text()) + '\' updated. <a href="#" class="undo">Undo (<span class="count">' + seconds + '</span>)</a></div>' );
+            var note = ui.notify( 'Updated', $content ).hide( 31000 );
+            var tick = setInterval( function(){ seconds -= 1; if( seconds <= 0 ) clearInterval( tick ); $content.find('.count').text(Math.max(seconds,0)); }, 1000 );
+
+            $content.on( 'click', '.undo', function( e )
+            {
+                e.preventDefault();
+                if( undone ) return; undone = true;
+                clearInterval( tick );
+                note.hide( 1 );
+
+                // Move back if needed
+                var doneMove = function( next ) { next && next(); };
+                var currentParent = $el.closest('section').attr('id');
+                if( prev.parentId && currentParent !== prev.parentId )
+                {
+                    doneMove = function( next )
+                    {
+                        self.api.move( id, { parentId: prev.parentId, index: prev.index }, function()
+                        {
+                            // Reposition in DOM
+                            var $section = $( '#' + prev.parentId );
+                            var $tiles = $section.children('a').not('.add');
+                            var $add   = $section.find('a.add');
+                            var $cur   = $( document.getElementById( id ) );
+                            if( prev.index != null && prev.index < $tiles.length ) { $tiles.eq(prev.index).before( $cur ); }
+                            else { $add.before( $cur ); }
+                            $section.show(); $section.parent().show();
+                            next && next();
+                        } );
+                    };
+                }
+
+                doneMove( function()
+                {
+                    // Restore title/url
+                    self.api.update( id, { title: prev.title, url: prev.url }, function()
+                    {
+                        var $cur = $( document.getElementById( id ) );
+                        var $t = $cur.find('span');
+                        $t.text( prev.title );
+                        $cur.attr('href', prev.url );
+                        $cur.attr('title', prev.title );
+                        $cur.attr('aria-label', prev.title );
+                        $cur.attr( 'data-title', prev.title );
+                        $cur.data( 'title', prev.title );
+                        refreshFaviconForUrl( $cur, prev.url );
+                    } );
+                } );
+            });
+        }
+
         this.api.update( id, props, function()
         {
             props.title && $title.text( props.title );
-            props.url   && $el.attr( 'href', props.url );
+            if( props.url )
+            {
+                $el.attr( 'href', props.url );
+
+                // Refresh favicon immediately using the same fallback strategy as rendering
+                refreshFaviconForUrl( $el, props.url );
+            }
 
             if( props.title )
             {
@@ -582,23 +876,23 @@
                 $el.data( 'title', props.title );
             }
             
+            function afterUpdate()
+            {
+                setTimeout( callback, 0 );
+                showUndoNotification();
+            }
+            
             if( moveTo )
             {
                 self.api.move( id, { parentId: moveTo }, function()
                 {
                     $( '#' + id ).remove().appendTo( $( '#' + moveTo ) );
-                    setTimeout( callback, 0 );
-                    ui.notify(
-                        'Bookmark \'' + $title.text() + '\' has been updated.'
-                    );
+                    afterUpdate();
                 } );
             }
             else
             {
-                setTimeout( callback, 0 );
-                ui.notify(
-                    'Bookmark \'' + $title.text() + '\' has been updated.'
-                );
+                afterUpdate();
             }
         } );
     };
@@ -1017,6 +1311,7 @@
         this.$helpCtrl   = $( '#helpctrl' );
         this.$themeCtrl  = $( '#themectrl .dropdown-menu a' );
         this.$editBtn    = $( '#edit' );
+        this.$refresh    = $( '#refresh-icons' );
         this.$getStarted = $( '#getstarted' );
         this.$bookmarks  = $( '#bookmarks' );
         this.$version    = $( '#version' );
@@ -1038,6 +1333,23 @@
         this.setupUIKit();
 
         this.keyboardManager.init();
+
+        // Refresh icons action
+        var _this = this;
+        this.$refresh.on( 'click', function( e )
+        {
+            e.preventDefault();
+            if( e.altKey )
+            {
+                ui.notify( 'Refreshing', 'Refreshing favicons…' );
+                _this.refreshFavicons();
+            }
+            else
+            {
+                // Full page reload to mirror browser refresh and guarantee requests
+                window.location.reload();
+            }
+        } );
     };
 
     proto.setupUIKit = function()
@@ -1080,6 +1392,23 @@
         {
             _this.rightColumn.sections = sections;
             _this.rightColumn.render();
+        } );
+    };
+
+    proto.refreshFavicons = function()
+    {
+        $( '#bookmarks a:not(.add) img' ).each( function( _, img )
+        {
+            var $img = $( img );
+            var $a   = $img.closest( 'a' );
+            var href = $a.attr( 'href' );
+            try
+            {
+                var cb = Date.now() + '-' + Math.random().toString(36).slice(2);
+                var src = 'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( href ) + '&sz=64&cb=' + cb;
+                $img.attr( 'src', src );
+            }
+            catch( e ) {}
         } );
     };
 
