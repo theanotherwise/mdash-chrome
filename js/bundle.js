@@ -467,7 +467,9 @@
                 // Clear generic text to avoid browsers providing fallback text/url values
                 try { dt.setData( 'text/plain', '' ); } catch( _e ) {}
                 dt.effectAllowed = 'move';
-                $( this ).addClass( 'dragging' );
+                // Defer hiding the source element so the browser captures a proper drag image
+                var el = this;
+                setTimeout( function(){ $( el ).addClass( 'dragging' ); }, 0 );
             } )
             .on( 'dragend.mdash', function()
             {
@@ -530,6 +532,31 @@
                 }
 
                 var targetSectionId = $section.attr( 'id' );
+                // Guard: if dropping right next to itself in the same section, do nothing
+                var $tileBeforeMove = $( document.getElementById( id ) );
+                if( $tileBeforeMove.length )
+                {
+                    var $srcSection = $tileBeforeMove.closest( 'section' );
+                    if( $srcSection.length && $srcSection.attr( 'id' ) === $section.attr( 'id' ) )
+                    {
+                        // Compute source index within its section (excluding add button)
+                        var srcIndex = 0;
+                        var srcChildren = $srcSection.children( 'a' );
+                        for( var si = 0; si < srcChildren.length; si++ )
+                        {
+                            var srcEl = srcChildren[ si ];
+                            if( srcEl === $tileBeforeMove[0] ) break;
+                            if( srcEl.classList.contains( 'add' ) ) continue;
+                            srcIndex++;
+                        }
+                        // If target index equals current index (before) or current index + 1 (after), ignore
+                        if( index === srcIndex || index === srcIndex + 1 )
+                        {
+                            if( self.$placeholder ) self.$placeholder.detach();
+                            return;
+                        }
+                    }
+                }
                 self.api.move( id, { parentId: targetSectionId, index: index }, function()
                 {
                     var $tile = $( document.getElementById( id ) );
@@ -817,6 +844,41 @@
                         }
                         $section.show();
                         $section.parent().show();
+
+                        // If we are currently in edit mode, make the restored tile draggable and bind DnD handlers
+                        if( self.editMode )
+                        {
+                            $new.attr( 'draggable', true )
+                                .on( 'dragstart.mdash', function( e )
+                                {
+                                    self._dragging = true;
+                                    var id = $( this ).attr( 'id' );
+                                    var dt = e.originalEvent.dataTransfer;
+                                    try { dt.setData( 'application/x-mdash-bookmark-id', id ); } catch( _e ) {}
+                                    try { dt.setData( 'text/plain', '' ); } catch( _e ) {}
+                                    dt.effectAllowed = 'move';
+                                    var el = this;
+                                    setTimeout( function(){ $( el ).addClass( 'dragging' ); }, 0 );
+                                } )
+                                .on( 'dragend.mdash', function()
+                                {
+                                    self._dragging = false;
+                                    $( this ).removeClass( 'dragging' );
+                                    if( self.$placeholder ) self.$placeholder.detach();
+                                    self.$bookmarks.find( 'section' ).removeClass( 'drop-target' );
+                                } );
+
+                            $new.on( 'dragover.mdash', function( e )
+                            {
+                                e.preventDefault();
+                                var rect = this.getBoundingClientRect();
+                                var before = (e.originalEvent.clientX < rect.left + rect.width / 2);
+                                var $t = $( this );
+                                if( before ) { $t.before( self.$placeholder ); }
+                                else { $t.after( self.$placeholder ); }
+                                $t.closest( 'section' ).addClass( 'drop-target' );
+                            } );
+                        }
                     } );
                 } );
             } );

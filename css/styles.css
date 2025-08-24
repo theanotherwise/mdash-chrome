@@ -301,6 +301,13 @@ html.theme-dark .edit #bookmarks a:hover {
     box-shadow: none;
 }
 
+/* While dragging, hide the original tile so it doesn't look duplicated */
+.edit #bookmarks a.dragging {
+    opacity: 0;
+    box-shadow: none;
+    cursor: grabbing;
+}
+
 #controls {
     position:                   fixed;
     top:                        5px;
