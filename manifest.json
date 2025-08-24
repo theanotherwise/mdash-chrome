@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "mdash mod by taw",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "A minimal dashboard replacing the \"New Tab\" page which syncs with your bookmarks.",
     "icons": {
         "16": "img/icon.png",

@@ -1,1 +1,5 @@
-zip -r ../mdash-chrome-1.1.0.zip * -x "**/.git/**" "**/.DS_Store" "**/node_modules/**" -x "./pack.sh"
+#!/bin/bash
+
+EXT_VERSION=`cat manifest.json  | jq -r ".version"`
+
+zip -r ../mdash-chrome-${EXT_VERSION}.zip * -x "**/.git/**" "**/.DS_Store" "**/node_modules/**" -x "./pack.sh"
