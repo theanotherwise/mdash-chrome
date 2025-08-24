@@ -457,6 +457,16 @@
                 self.$activeBookmark = null;
             }
         } );
+
+        // Ensure $activeBookmark resets when search filter hides a hovered tile
+        $( '#search-input' ).on( 'input', function()
+        {
+            // If the currently tracked element is now hidden, clear it
+            if( self.$activeBookmark && !self.$activeBookmark.is(':visible') )
+            {
+                self.$activeBookmark = null;
+            }
+        } );
     };
     
     EditCtrl.prototype.enableDragAndDrop = function()
@@ -822,8 +832,10 @@
             }
             else if( self.editMode && (e.key === 'Delete' || e.keyCode === 46 || e.keyCode === 8) )
             {
-                // If user is typing inside an input/select/textarea, ignore
-                if( $( e.target ).is('input, textarea, select') ) return;
+                // Allow Delete even when focus is in search input IF a tile is hovered
+                var isFormField = $( e.target ).is('input, textarea, select');
+                var hasHoverTarget = !!self.$activeBookmark;
+                if( isFormField && !hasHoverTarget ) return;
 
                 // If dialog is open, delete the currently edited bookmark
                 if( $('#dialog').is(':visible') && self.currentEditId )
