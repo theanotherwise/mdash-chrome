@@ -290,6 +290,17 @@ html.theme-dark .edit #bookmarks a:hover {
 
 #bookmarks a.add img { display: none; }
 
+#bookmarks a.drop-placeholder {
+    display: inline-block;
+    width: 10.5em;
+    height: calc(3 * 1.35em + var(--tile-y-pad));
+    margin: 2px 6px 6px 2px;
+    border-radius: var(--tile-radius);
+    border: 2px dashed rgba(54,90,186,0.55);
+    background: transparent;
+    box-shadow: none;
+}
+
 #controls {
     position:                   fixed;
     top:                        5px;

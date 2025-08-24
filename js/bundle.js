@@ -229,8 +229,10 @@
             mdash.links[ $link.attr( 'href' ) ] = $link;
         } );
         
-        var $addBtn = $( '<a href="#add" class="add" aria-label="Add bookmark" title="Add">+</a>' );
+        var $addBtn = $( '<a href="#add" class="add" aria-label="Add bookmark" title="Add" draggable="false">+</a>' );
         $section.append( $addBtn );
+        // Prevent default link-drag behaviour so the "+" button is never treated as a draggable item
+        $addBtn.on( 'dragstart', function( e ){ e.preventDefault(); } );
         new mdash.AddBtn( $addBtn ).init();
         
         // Hide empty sections by default (shown in edit mode)
@@ -452,25 +454,55 @@
     {
         var self = this;
         var $tiles = this.$bookmarks.find( 'a' ).not( '.add' );
+        // Visual placeholder for insertion point
+        this.$placeholder = $('<a class="drop-placeholder" aria-hidden="true"></a>');
         $tiles.attr( 'draggable', true )
             .on( 'dragstart.mdash', function( e )
             {
                 self._dragging = true;
-                e.originalEvent.dataTransfer.setData( 'text/plain', $( this ).attr( 'id' ) );
+                var id = $( this ).attr( 'id' );
+                var dt = e.originalEvent.dataTransfer;
+                // Use a custom type so only our tiles are accepted by drop targets
+                try { dt.setData( 'application/x-mdash-bookmark-id', id ); } catch( _e ) {}
+                // Clear generic text to avoid browsers providing fallback text/url values
+                try { dt.setData( 'text/plain', '' ); } catch( _e ) {}
+                dt.effectAllowed = 'move';
                 $( this ).addClass( 'dragging' );
             } )
             .on( 'dragend.mdash', function()
             {
                 self._dragging = false;
                 $( this ).removeClass( 'dragging' );
+                if( self.$placeholder ) self.$placeholder.detach();
+                self.$bookmarks.find( 'section' ).removeClass( 'drop-target' );
             } );
+
+        // While dragging over a tile, show the placeholder before/after the tile
+        $tiles.on( 'dragover.mdash', function( e )
+        {
+            e.preventDefault();
+            var rect = this.getBoundingClientRect();
+            var before = (e.originalEvent.clientX < rect.left + rect.width / 2);
+            var $t = $( this );
+            if( before ) { $t.before( self.$placeholder ); }
+            else { $t.after( self.$placeholder ); }
+            $t.closest( 'section' ).addClass( 'drop-target' );
+        } );
 
         var $sections = this.$bookmarks.find( 'section' );
         $sections
             .on( 'dragover.mdash', function( e )
             {
                 e.preventDefault();
-                $( this ).addClass( 'drop-target' );
+                var $section = $( this );
+                $section.addClass( 'drop-target' );
+                // For empty sections, place placeholder before the add button
+                var $tilesInside = $section.children( 'a' ).not( '.add' ).not( '.drop-placeholder' );
+                if( $tilesInside.length === 0 )
+                {
+                    var $add = $section.find( 'a.add' );
+                    if( $add.length ) $add.before( self.$placeholder ); else $section.append( self.$placeholder );
+                }
             } )
             .on( 'dragleave.mdash', function()
             {
@@ -479,17 +511,38 @@
             .on( 'drop.mdash', function( e )
             {
                 e.preventDefault();
-                $( this ).removeClass( 'drop-target' );
-                var id = e.originalEvent.dataTransfer.getData( 'text/plain' );
-                if( !id ) return;
                 var $section = $( this );
+                $( this ).removeClass( 'drop-target' );
+                var dt = e.originalEvent.dataTransfer;
+                var id = '';
+                try { id = dt.getData( 'application/x-mdash-bookmark-id' ); } catch( _e ) { id = ''; }
+                if( !id ) return; // Ignore drops not originating from our tiles
+
+                // Compute insertion index from placeholder position
+                var index = 0;
+                var children = $section.children( 'a' );
+                for( var i = 0; i < children.length; i++ )
+                {
+                    var el = children[ i ];
+                    if( el === self.$placeholder[0] ) break;
+                    if( el.classList.contains( 'add' ) ) continue;
+                    index++;
+                }
+
                 var targetSectionId = $section.attr( 'id' );
-                // If already in this section, append near end (before add)
-                self.api.move( id, { parentId: targetSectionId }, function()
+                self.api.move( id, { parentId: targetSectionId, index: index }, function()
                 {
                     var $tile = $( document.getElementById( id ) );
-                    var $add  = $section.find( 'a.add' );
-                    if( $add.length ) $add.before( $tile ); else $section.append( $tile );
+                    if( !$tile.length ) return; // Invalid id; do nothing
+                    if( self.$placeholder && self.$placeholder.parent().length )
+                    {
+                        self.$placeholder.replaceWith( $tile );
+                    }
+                    else
+                    {
+                        var $add  = $section.find( 'a.add' );
+                        if( $add.length ) $add.before( $tile ); else $section.append( $tile );
+                    }
                     ui.notify( 'Moved', 'Bookmark moved.' );
                 } );
             } );
@@ -1085,7 +1138,7 @@
     proto.filterTiles = function()
     {
         var _this = this;
-        var filterable = $('#bookmarks a').not('.add');
+        var filterable = $('#bookmarks a').not('.add,.drop-placeholder');
 
         $.each(filterable, function(i, item) {
             var $item = $(item);
@@ -1239,7 +1292,7 @@
         var regex = null;
         try { regex = new RegExp( this.query, 'i' ); } catch( e ) {}
 
-        $( '#bookmarks a' ).not( '.add' ).each( function( _, el )
+        $( '#bookmarks a' ).not( '.add,.drop-placeholder' ).each( function( _, el )
         {
             var $el   = $( el );
             var title = $el.find( 'span' ).text() || $el.attr( 'data-title' ) || $el.data( 'title' );
@@ -1258,7 +1311,7 @@
         {
             var $section = $( section );
             var anyMatch = false;
-            $section.find( 'a' ).not( '.add' ).each( function( _, a )
+            $section.find( 'a' ).not( '.add,.drop-placeholder' ).each( function( _, a )
             {
                 var $a    = $( a );
                 var title = $a.find( 'span' ).text() || $a.attr( 'data-title' ) || $a.data( 'title' );
