@@ -3,7 +3,7 @@
 
 /* Design tokens */
 :root {
-    --bg-color:                 #F5F7FB;
+    --bg-color:                 #d7dce4;
     --text-color:               #24314A;
     --muted-color:              #6B7280;
     --accent-color:             #365ABA;
@@ -32,7 +32,7 @@ html.theme-dark {
 
 /* Explicit light theme class to override system dark */
 html.theme-light {
-    --bg-color:                 #e0e4eb;
+    --bg-color:                 #d7dce4;
     --text-color:               #24314A;
     --muted-color:              #6B7280;
     --accent-color:             #365ABA;
@@ -191,8 +191,34 @@ a:hover {
     box-shadow:                 0 10px 24px rgba(33, 37, 41, 0.12);
 }
 
+/* Stronger hover contrast in dark mode (non-edit) */
+html.theme-dark #bookmarks a:hover {
+    background-color:           #243356; /* lighter than tile-bg for clear contrast */
+    border-color:               rgba(157,182,255,0.32);
+    box-shadow:                 0 10px 24px rgba(2, 6, 23, 0.6);
+}
+
+/* Stronger hover contrast in light mode (non-edit) */
+html.theme-light #bookmarks a:hover {
+    background-color:           #E7EEFF; /* stronger hover */
+    border-color:               rgba(54,90,186,0.55); /* more pronounced border */
+    box-shadow:                 0 0 0 2px rgba(54,90,186,0.35), 0 10px 24px rgba(33, 37, 41, 0.16); /* visible ring + depth */
+}
+
+/* Edit-mode hover tuning for light mode for readability */
+html.theme-light .edit #bookmarks a:hover {
+    background-color:           #FFE1B2;
+    color:                      #24314A;
+}
+
 .edit #bookmarks a:hover {
     background-color:           #FFDBA9;
+}
+
+/* Improve contrast in dark mode while hovering tiles in edit mode */
+html.theme-dark .edit #bookmarks a:hover {
+    background-color:           #FFD9A3; /* slightly deeper for dark bg */
+    color:                      #0F172A; /* dark text for readability */
 }
 
 #bookmarks a > img {
@@ -224,37 +250,28 @@ a:hover {
 }
 
 #bookmarks a.add {
-    opacity:                    1;
-    background-color:           transparent;
-    -webkit-box-orient:         vertical;
-    -webkit-box-pack:           center;
-    -webkit-box-align:          center;
-    color:                      #A3A3A3;
-    width:                      10.5em;
-    height:                     calc(3 * 1.35em + var(--tile-y-pad));
-    padding:                    6px 8px 2px 6px;
-    line-height:                1;
-    font-size:                  inherit;
-    font-weight:                bold;
-    text-shadow:                0px 1px #FFF;
-    border:                     2px dashed transparent;
-    box-sizing:                 border-box;
+    position:                   absolute;
+    right:                      6px;
+    top:                        6px;
+    width:                      28px;
+    height:                     28px;
     display:                    none;
-    visibility:                 hidden;
-    pointer-events:             none;
-}
-
-.edit #bookmarks a.add {
-    display:                    inline-flex;
     align-items:                center;
     justify-content:            center;
-    background-color:           var(--tile-hover-bg);
+    border-radius:              8px;
+    background:                 var(--tile-hover-bg);
     color:                      var(--accent-color);
-    border-color:               rgba(54,90,186,0.45);
+    border:                     1px dashed rgba(54,90,186,0.45);
+    box-shadow:                 none;
+    padding:                    0;
+    line-height:                1;
     visibility:                 visible;
     pointer-events:             auto;
-    height:                     calc(3 * 1.35em + var(--tile-y-pad));
 }
+
+.edit #bookmarks a.add { display: inline-flex; }
+
+#bookmarks section { position: relative; }
 
 #bookmarks a.add:hover {
     opacity:                    1;

@@ -209,6 +209,10 @@
         {
             _this.$el.append( _this.renderSection( section ) );
         } );
+        
+        // If all sections are empty and hidden, also hide the column wrapper to remove gaps
+        var anyVisible = _this.$el.find( 'section' ).filter( function(){ return $(this).is(':visible'); } ).length > 0;
+        _this.$el.toggle( anyVisible || document.documentElement.classList.contains( 'edit' ) );
     };
     
     proto.renderSection = function( section )
@@ -223,16 +227,16 @@
             mdash.links[ $link.attr( 'href' ) ] = $link;
         } );
         
-        var $addBtn = ich.bookmark( {
-            id        : ( this.sections.length + 1 ) + '-section-add',
-            className : 'add',
-            title     : '+',
-            url       : '#add',
-            favicon   : 'http://www.google.com/s2/favicons?domain=default'
-        } );
-        
+        var $addBtn = $( '<a href="#add" class="add" aria-label="Add bookmark" title="Add">+</a>' );
         $section.append( $addBtn );
         new mdash.AddBtn( $addBtn ).init();
+        
+        // Hide empty sections by default (shown in edit mode)
+        var hasBookmarks = Array.isArray( section.children ) && section.children.length > 0;
+        if( !hasBookmarks && !document.documentElement.classList.contains( 'edit' ) )
+        {
+            $section.hide();
+        }
         
         return $section;
     };
@@ -271,26 +275,29 @@
     
     FontCtrl.prototype.init = function()
     {
-        var size;
-        
-        if( (size = localStorage.fontSize) )
-        {
-            document.body.className = size;
-            
-            this.select( size );
-        }
-        else
-        {
-            // initialize from current class on body or default to 'large'
-            size = document.body.className || 'large';
-            document.body.className = size;
-            localStorage.fontSize = size;
-            this.select( size );
-        }
+        var sizeFromStorage = localStorage.fontSize;
+        var valid = { small: true, medium: true, large: true };
+
+        var size = valid[sizeFromStorage] ? sizeFromStorage : (function(){
+            if( document.body.classList.contains('small') ) return 'small';
+            if( document.body.classList.contains('medium') ) return 'medium';
+            if( document.body.classList.contains('large') ) return 'large';
+            return 'large';
+        })();
+
+        this.applySize( size );
+        localStorage.fontSize = size;
+        this.select( size );
         
         this.$sizes.bind( 'click', this.sizeSelected.bind( this ) );
         this.$toggle.on('click', this.toggleOpen.bind(this));
         $(document).on('click', this.closeOnOutsideClick.bind(this));
+    };
+
+    FontCtrl.prototype.applySize = function( size )
+    {
+        document.body.classList.remove('small','medium','large');
+        document.body.classList.add( size );
     };
     
     FontCtrl.prototype.select = function( size )
@@ -307,8 +314,10 @@
         $this.siblings().removeClass( 'selected' );
         $this.addClass( 'selected' );
         
-        document.body.className = localStorage.fontSize = $this.attr( 'data-size' );
-        this.$toggle.text($this.attr('data-size') + ' ▾');
+        var size = $this.attr( 'data-size' );
+        this.applySize( size );
+        localStorage.fontSize = size;
+        this.$toggle.text( size + ' ▾');
         this.$dropdown.removeClass('open');
     };
 
@@ -429,12 +438,31 @@
                 {
                     $searchInput.val( '' ).trigger( 'input' );
                 }
+
+                // Leaving edit: hide empty sections and columns again
+                $( '#bookmarks section' ).each( function( _, section )
+                {
+                    var $section = $( section );
+                    var hasLinks = $section.find( 'a' ).not( '.add' ).length > 0;
+                    $section.toggle( hasLinks );
+                } );
+                var $cols = $( '#bookmarks > .left, #bookmarks > .right' );
+                $cols.each( function( _, col )
+                {
+                    var $col = $( col );
+                    var visibleSections = $col.find( 'section' ).filter( function(){ return $(this).is(':visible'); } ).length;
+                    $col.toggle( visibleSections > 0 );
+                } );
             }
             else
             {
                 self.editMode = true;
                 self.$docEl.addClass( 'edit' );
                 self.$btn.text( 'done' );
+
+                // Entering edit: show all sections and columns so add buttons are visible
+                $( '#bookmarks > .left, #bookmarks > .right' ).show();
+                $( '#bookmarks section' ).show();
             }
         } );
     };
@@ -856,6 +884,18 @@
                     self.$btn.before(
                         mdash.Column.prototype.renderBookmark( bookmark )
                     );
+
+                    // Re-apply active search filter so nowo dodany link respektuje aktualne filtrowanie
+                    var $input = $( '#search-input' );
+                    if( $input.length )
+                    {
+                        var q = $input.val();
+                        try {
+                            var search = new mdash.Search( $input );
+                            search.query = q;
+                            search.filter();
+                        } catch( e ) {}
+                    }
                 }
             );
         } );
@@ -935,7 +975,15 @@
                 }
             } );
 
-            $section.toggle( anyMatch );
+            if( document.documentElement.classList.contains( 'edit' ) )
+            {
+                $section.show();
+                // In edit mode, still hide individual non-matching links so nowo dodane lub niematchujące nie widać przy aktywnym filtrze
+            }
+            else
+            {
+                $section.toggle( anyMatch );
+            }
         } );
 
         $( '#bookmarks > .left, #bookmarks > .right' ).show();
