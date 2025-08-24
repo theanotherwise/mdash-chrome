@@ -191,6 +191,79 @@
     'use strict';
     
     mdash.links = {};
+
+    // Shared favicon helpers
+    mdash.util = mdash.util || {};
+    mdash.util.getFaviconCandidates = function( href )
+    {
+        try
+        {
+            var u = new URL( href );
+            var host = u.hostname || '';
+            var labels = host.split( '.' );
+            // If subdomain present and not 'www', use registrable root (last two labels). Keep protocol.
+            if( labels.length > 2 && labels[0] !== 'www' )
+            {
+                host = labels.slice( -2 ).join( '.' );
+            }
+            var canonical = u.protocol + '//' + host;
+            return [ 'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( canonical ) + '&sz=64' ];
+        }
+        catch( _e )
+        {
+            return [ 'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( href ) + '&sz=64' ];
+        }
+    };
+    mdash.util.getFaviconPair = function( href )
+    {
+        try
+        {
+            var u = new URL( href );
+            var host = u.hostname || '';
+            var labels = host.split( '.' );
+            // Always use root for non-www subdomains; keep www as-is
+            if( labels.length > 2 && labels[0] !== 'www' )
+            {
+                host = labels.slice( -2 ).join( '.' );
+            }
+            var canonical = u.protocol + '//' + host;
+            return { origin: 'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( canonical ) + '&sz=64', root: null, isSub: false };
+        }
+        catch( _e )
+        {
+            return { origin: 'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( href ) + '&sz=64', root: null, isSub: false };
+        }
+    };
+    mdash.util.applyFaviconWithFallback = function( $img, href )
+    {
+        var pair = mdash.util.getFaviconPair( href );
+        var candidates = pair.root && pair.isSub ? [ pair.origin, pair.root ] : [ pair.origin ];
+        // add cache-buster for refresh calls
+        var cb = Date.now() + '-' + Math.random().toString(36).slice(2);
+        candidates = candidates.map( function( url )
+        {
+            if( url.indexOf( '&cb=' ) === -1 ) return url + '&cb=' + cb;
+            return url;
+        } );
+        $img.off( 'error.mdash' );
+        $img.data( 'favicon:candidates', candidates );
+        $img.data( 'favicon:index', 0 );
+        $img.on( 'error.mdash', function()
+        {
+            var $i = $( this );
+            var list = $i.data( 'favicon:candidates' ) || [];
+            var idx  = ($i.data( 'favicon:index' ) || 0) + 1;
+            if( idx < list.length )
+            {
+                $i.data( 'favicon:index', idx );
+                this.src = list[ idx ];
+            }
+        } );
+        // set first candidate
+        if( candidates.length ) $img.attr( 'src', candidates[0] );
+
+        // Nie używamy fetch (CORS). Polegamy na onerror <img>, który przełączy na root przy 404.
+    };
     
     // favicon helpers not needed when using full reload; kept minimal inline logic elsewhere
     
@@ -250,10 +323,7 @@
         var link = document.createElement( 'a' );
         
         link.href = bookmark.url;
-        var faviconCandidates = [
-            'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( link.href ) + '&sz=64',
-            'https://www.google.com/s2/favicons?domain=' + encodeURIComponent( new URL( link.href ).hostname )
-        ];
+        var faviconCandidates = mdash.util.getFaviconCandidates( link.href );
 
         var data = {
             id      : bookmark.id,
@@ -265,7 +335,8 @@
         var $el  = ich.bookmark( data );
         var $img = $el.find( 'img' );
         
-        // image src already set via template; no extra preloading needed here
+        // Attach fallback so if subdomain 404s we retry with root
+        mdash.util.applyFaviconWithFallback( $img, link.href );
         
         return $el;
     };
@@ -1144,15 +1215,7 @@
         function refreshFaviconForUrl( anchorEl, url )
         {
             var $img = anchorEl.find( 'img' );
-            try
-            {
-                var u    = new URL( url );
-                var host = u.hostname;
-                var cb   = Date.now() + '-' + Math.random().toString(36).slice(2);
-                var src  = 'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( url ) + '&sz=64&cb=' + cb;
-                $img.attr( 'src', src );
-            }
-            catch(e){}
+            try { mdash.util.applyFaviconWithFallback( $img, url ); } catch(e){}
         }
 
         function showUndoNotification()
@@ -1801,13 +1864,7 @@
             var $img = $( img );
             var $a   = $img.closest( 'a' );
             var href = $a.attr( 'href' );
-            try
-            {
-                var cb = Date.now() + '-' + Math.random().toString(36).slice(2);
-                var src = 'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( href ) + '&sz=64&cb=' + cb;
-                $img.attr( 'src', src );
-            }
-            catch( e ) {}
+            try { mdash.util.applyFaviconWithFallback( $img, href ); } catch( e ) {}
         } );
     };
 
