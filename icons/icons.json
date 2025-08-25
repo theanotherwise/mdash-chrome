@@ -1,4 +1,8 @@
 {
-    "argocd": "argocd-32x32.png",
-    "kibana": "kibana-64x64.png"
+    "argocd": "argocd.png",
+    "kibana": "kibana.png",
+    "graylog": "graylog.png",
+    "redpanda": "redpanda.png",
+    "jenkins": "jenkins.png",
+    "okd": "jenkins.png"
 }
