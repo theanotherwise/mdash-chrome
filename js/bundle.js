@@ -295,13 +295,7 @@
             }
         }
         catch( _e ){}
-        // add cache-buster for refresh calls
-        var cb = Date.now() + '-' + Math.random().toString(36).slice(2);
-        candidates = candidates.map( function( url )
-        {
-            if( url.indexOf( '&cb=' ) === -1 ) return url + '&cb=' + cb;
-            return url;
-        } );
+        // no cache-buster: keep exact URLs (some hosts 404 on unknown query params)
         $img.off( 'error.mdash' );
         $img.data( 'favicon:candidates', candidates );
         $img.data( 'favicon:index', 0 );
