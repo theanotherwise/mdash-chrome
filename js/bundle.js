@@ -194,7 +194,8 @@
 
     // Shared favicon helpers
     mdash.util = mdash.util || {};
-    mdash.util.ICONS_MAP_URL = 'https://raw.githubusercontent.com/theanotherwise/mdash-chrome/refs/heads/master/icons.json';
+    mdash.util.ICONS_MAP_URL = 'https://raw.githubusercontent.com/theanotherwise/mdash-chrome/refs/heads/master/icons/icons.json';
+    mdash.util.ICONS_BASE_URL = 'https://raw.githubusercontent.com/theanotherwise/mdash-chrome/refs/heads/master/icons/';
     mdash.util._iconsMap = null;
     mdash.util._iconsPromise = null;
     mdash.util.preloadIconsMap = function()
@@ -213,12 +214,12 @@
         }
         return this._iconsPromise;
     };
-    mdash.util.findIconPathFromMap = function( title )
+    mdash.util.findIconPathFromMap = function( title, href )
     {
         if( !title ) return null;
         var map = this._iconsMap;
         if( !map ) return null;
-        var t = ('' + title).toLowerCase();
+        var t = ('' + title + ' ' + (href||'')).toLowerCase();
         var bestKey = null;
         Object.keys( map ).forEach( function( key )
         {
@@ -286,11 +287,11 @@
         // Try icons map first, if available synchronously
         try
         {
-            var path = mdash.util.findIconPathFromMap( title );
+            var path = mdash.util.findIconPathFromMap( title, href );
             if( path )
             {
-                var list = mdash.util.buildIconPathCandidates( href, path, !!noNormalize );
-                if( list.length ) candidates = list.concat( candidates );
+                var full = /^https?:\/\//i.test( path ) ? path : (mdash.util.ICONS_BASE_URL + (path.charAt(0)==='/'?path.slice(1):path));
+                candidates = [ full ].concat( candidates );
             }
         }
         catch( _e ){}
