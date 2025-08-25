@@ -4,5 +4,9 @@
     "graylog": "graylog.png",
     "redpanda": "redpanda.png",
     "jenkins": "jenkins.png",
-    "okd": "jenkins.png"
+    "okd": "jenkins.png",
+    "kiali": "kiali.png",
+    "bitbucket": "bitbucket.png",
+    "gitlab": "gitlab.png",
+    "grafana": "grafana.png"
 }
