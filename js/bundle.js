@@ -238,6 +238,11 @@
         var t = (title || '');
         return t.replace( /\s*ICON_OVERRIDE\s*$/, '' );
     };
+    mdash.util.hasIconOverride = function( title )
+    {
+        if( !title ) return false;
+        return /\s*ICON_OVERRIDE\s*$/.test( title );
+    };
     mdash.util.buildIconPathCandidates = function( href, relPath, noNormalize )
     {
         try
@@ -288,17 +293,24 @@
             return [ 'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( href ) + '&sz=64' ];
         }
     };
-    mdash.util.applyFaviconWithFallback = function( $img, href, noNormalize, title )
+    mdash.util.applyFaviconWithFallback = function( $img, href, noNormalize, title, overrideOnly )
     {
-        var candidates = mdash.util.getFaviconCandidates( href, !!noNormalize );
-        // Try icons map first, if available synchronously
+        var candidates = overrideOnly ? [] : mdash.util.getFaviconCandidates( href, !!noNormalize );
         try
         {
             var path = mdash.util.findIconPathFromMap( title, href );
-            if( path )
+            if( overrideOnly )
             {
-                var full = /^https?:\/\//i.test( path ) ? path : (mdash.util.ICONS_BASE_URL + (path.charAt(0)==='/'?path.slice(1):path));
-                candidates = [ full ].concat( candidates );
+                if( path )
+                {
+                    var full1 = /^https?:\/\//i.test( path ) ? path : (mdash.util.ICONS_BASE_URL + (path.charAt(0)==='/'?path.slice(1):path));
+                    candidates = [ full1 ];
+                }
+                else
+                {
+                    // No map match: fall back to Google S2
+                    candidates = mdash.util.getFaviconCandidates( href, !!noNormalize );
+                }
             }
         }
         catch( _e ){}
@@ -384,11 +396,12 @@
 
         var isVpnMarker = (bookmark.title || '').indexOf('[VPN]') !== -1;
         var displayTitle = mdash.util.stripIconOverride( bookmark.title );
+        var hasOverride = mdash.util.hasIconOverride( bookmark.title );
         var data = {
             id      : bookmark.id,
             title   : displayTitle,
             url     : link.href,
-            favicon : bookmark.favicon ? bookmark.favicon : faviconCandidates[ 0 ]
+            favicon : bookmark.favicon ? bookmark.favicon : (hasOverride ? '' : faviconCandidates[ 0 ])
         };
         
         var $el  = ich.bookmark( data );
@@ -396,7 +409,7 @@
         $el.attr( 'data-raw-title', bookmark.title );
         
         // Attach fallback; if [VPN] in title, skip normalization (use exact host)
-        mdash.util.applyFaviconWithFallback( $img, link.href, isVpnMarker, displayTitle );
+        mdash.util.applyFaviconWithFallback( $img, link.href, isVpnMarker, displayTitle, hasOverride );
         
         return $el;
     };
@@ -1309,8 +1322,11 @@
         {
             var $img = anchorEl.find( 'img' );
             try {
-                var vpn = (forTitle || '').indexOf('[VPN]') !== -1;
-                mdash.util.applyFaviconWithFallback( $img, url, vpn, forTitle );
+                var rawTitle = anchorEl.attr( 'data-raw-title' ) || forTitle || '';
+                var overrideOnly = mdash.util.hasIconOverride( rawTitle );
+                var effectiveTitle = mdash.util.stripIconOverride( rawTitle );
+                var vpn = (rawTitle || '').indexOf('[VPN]') !== -1 || (forTitle || '').indexOf('[VPN]') !== -1;
+                mdash.util.applyFaviconWithFallback( $img, url, vpn, effectiveTitle, overrideOnly );
             } catch(e){}
         }
 
