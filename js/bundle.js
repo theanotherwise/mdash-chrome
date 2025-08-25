@@ -194,6 +194,69 @@
 
     // Shared favicon helpers
     mdash.util = mdash.util || {};
+    mdash.util.ICONS_MAP_URL = 'https://raw.githubusercontent.com/theanotherwise/mdash-chrome/refs/heads/master/icons.json';
+    mdash.util._iconsMap = null;
+    mdash.util._iconsPromise = null;
+    mdash.util.preloadIconsMap = function()
+    {
+        if( this._iconsPromise ) return this._iconsPromise;
+        try
+        {
+            this._iconsPromise = fetch( this.ICONS_MAP_URL, { method: 'GET', cache: 'no-store' } )
+                .then( function( r ){ return r.ok ? r.json() : {}; } )
+                .then( function( json ){ mdash.util._iconsMap = json || {}; return mdash.util._iconsMap; } )
+                .catch( function(){ mdash.util._iconsMap = {}; } );
+        }
+        catch( _e )
+        {
+            this._iconsPromise = Promise.resolve( mdash.util._iconsMap || {} );
+        }
+        return this._iconsPromise;
+    };
+    mdash.util.findIconPathFromMap = function( title )
+    {
+        if( !title ) return null;
+        var map = this._iconsMap;
+        if( !map ) return null;
+        var t = ('' + title).toLowerCase();
+        var bestKey = null;
+        Object.keys( map ).forEach( function( key )
+        {
+            var k = key.toLowerCase();
+            if( t.indexOf( k ) !== -1 )
+            {
+                if( !bestKey || k.length > bestKey.length ) bestKey = key;
+            }
+        } );
+        return bestKey ? map[ bestKey ] : null;
+    };
+    mdash.util.buildIconPathCandidates = function( href, relPath, noNormalize )
+    {
+        try
+        {
+            if( /^https?:\/\//i.test( relPath ) ) return [ relPath ];
+            var u = new URL( href );
+            var host = u.hostname || '';
+            var out = [];
+            var base = u.protocol + '//' + host + (relPath.startsWith('/')?relPath:'/' + relPath);
+            out.push( base );
+            if( !noNormalize )
+            {
+                var labels = host.split('.');
+                if( labels.length > 2 && labels[0] !== 'www' )
+                {
+                    var root = labels.slice(-2).join('.');
+                    out.push( u.protocol + '//' + root + (relPath.startsWith('/')?relPath:'/' + relPath) );
+                    out.push( u.protocol + '//www.' + root + (relPath.startsWith('/')?relPath:'/' + relPath) );
+                }
+            }
+            // dedupe
+            var seen = {}; var uniq = [];
+            out.forEach(function(v){ if(!seen[v]){ seen[v]=1; uniq.push(v); } });
+            return uniq;
+        }
+        catch(_e){ return []; }
+    };
     mdash.util.getFaviconCandidates = function( href, noNormalize )
     {
         try
@@ -207,9 +270,8 @@
                 host = labels.slice( -2 ).join( '.' );
             }
             var canonical = u.protocol + '//' + host;
-            // Minimal policy: try only favicon.ico, then Google S2
+            // Policy: never hit local favicon.ico; only Google S2 as base fallback
             return [
-                canonical + '/favicon.ico',
                 'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( canonical ) + '&sz=64'
             ];
         }
@@ -218,9 +280,20 @@
             return [ 'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( href ) + '&sz=64' ];
         }
     };
-    mdash.util.applyFaviconWithFallback = function( $img, href, noNormalize )
+    mdash.util.applyFaviconWithFallback = function( $img, href, noNormalize, title )
     {
         var candidates = mdash.util.getFaviconCandidates( href, !!noNormalize );
+        // Try icons map first, if available synchronously
+        try
+        {
+            var path = mdash.util.findIconPathFromMap( title );
+            if( path )
+            {
+                var list = mdash.util.buildIconPathCandidates( href, path, !!noNormalize );
+                if( list.length ) candidates = list.concat( candidates );
+            }
+        }
+        catch( _e ){}
         // add cache-buster for refresh calls
         var cb = Date.now() + '-' + Math.random().toString(36).slice(2);
         candidates = candidates.map( function( url )
@@ -319,7 +392,7 @@
         var $img = $el.find( 'img' );
         
         // Attach fallback; if [VPN] in title, skip normalization (use exact host)
-        mdash.util.applyFaviconWithFallback( $img, link.href, isVpnMarker );
+        mdash.util.applyFaviconWithFallback( $img, link.href, isVpnMarker, bookmark.title );
         
         return $el;
     };
@@ -1773,7 +1846,15 @@
         this.themeCtrl.init();
         this.editCtrl.init();
 
-        this.manager.init( this.loadBookmarks.bind( this ) );
+        // Preload icons map FIRST so favicon lookup prefers icons.json before any fallbacks
+        try
+        {
+            mdash.util.preloadIconsMap().finally( this.manager.init.bind( this.manager, this.loadBookmarks.bind( this ) ) );
+        }
+        catch( _e )
+        {
+            this.manager.init( this.loadBookmarks.bind( this ) );
+        }
 
         this.setupUIKit();
 
