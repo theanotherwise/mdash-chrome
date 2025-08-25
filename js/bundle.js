@@ -233,6 +233,11 @@
         } );
         return bestKey ? map[ bestKey ] : null;
     };
+    mdash.util.stripIconOverride = function( title )
+    {
+        var t = (title || '');
+        return t.replace( /\s*ICON_OVERRIDE\s*$/, '' );
+    };
     mdash.util.buildIconPathCandidates = function( href, relPath, noNormalize )
     {
         try
@@ -378,18 +383,20 @@
         var faviconCandidates = mdash.util.getFaviconCandidates( link.href );
 
         var isVpnMarker = (bookmark.title || '').indexOf('[VPN]') !== -1;
+        var displayTitle = mdash.util.stripIconOverride( bookmark.title );
         var data = {
             id      : bookmark.id,
-            title   : bookmark.title,
+            title   : displayTitle,
             url     : link.href,
             favicon : bookmark.favicon ? bookmark.favicon : faviconCandidates[ 0 ]
         };
         
         var $el  = ich.bookmark( data );
         var $img = $el.find( 'img' );
+        $el.attr( 'data-raw-title', bookmark.title );
         
         // Attach fallback; if [VPN] in title, skip normalization (use exact host)
-        mdash.util.applyFaviconWithFallback( $img, link.href, isVpnMarker, bookmark.title );
+        mdash.util.applyFaviconWithFallback( $img, link.href, isVpnMarker, displayTitle );
         
         return $el;
     };
@@ -879,6 +886,27 @@
         this._dragging = false;
     };
     
+    EditCtrl.prototype.applyDisplayTitlesBasedOnMode = function()
+    {
+        var self = this;
+        this.$bookmarks.find( 'a' ).not( '.add,.drop-placeholder' ).each( function( _i, a )
+        {
+            var $a = $( a );
+            var raw = $a.attr( 'data-raw-title' ) || $a.find( 'span' ).text() || '';
+            var visible = self.editMode ? raw : mdash.util.stripIconOverride( raw );
+            $a.find( 'span' ).text( visible );
+            $a.attr( 'title', visible );
+            $a.attr( 'aria-label', visible );
+            $a.attr( 'data-title', visible );
+            $a.data( 'title', visible );
+            var $img = $a.find( 'img' );
+            if( $img && $img.length )
+            {
+                try { $img.attr( 'alt', visible ); } catch( _e ) {}
+            }
+        } );
+    };
+    
     EditCtrl.prototype.setupButton = function()
     {
         var self = this;
@@ -915,6 +943,9 @@
 
                 // Disable DnD
                 self.disableDragAndDrop();
+
+                // Switch titles back to stripped display in normal mode
+                self.applyDisplayTitlesBasedOnMode();
             }
             else
             {
@@ -928,6 +959,9 @@
 
                 // Enable DnD
                 self.enableDragAndDrop();
+
+                // Show raw titles (with ICON_OVERRIDE) while editing
+                self.applyDisplayTitlesBasedOnMode();
             }
         } );
     };
@@ -943,6 +977,8 @@
             {
                 self.$docEl.addClass( 'edit' );
                 self.editMode = self.altPressed = true;
+                // Show raw titles when Alt-edit is active
+                self.applyDisplayTitlesBasedOnMode();
             }
             else if( self.editMode && (e.key === 'Escape' || e.keyCode === 27) )
             {
@@ -1012,6 +1048,8 @@
             {
                 self.$docEl.removeClass( 'edit' );
                 self.editMode = self.altPressed = false;
+                // Return to stripped titles
+                self.applyDisplayTitlesBasedOnMode();
             }
         } );
     };
@@ -1076,11 +1114,12 @@
             self  = this,
             id    = $b.attr( 'id' ),
             title = $b.find( 'span' ).text(),
+            rawTitle = $b.attr( 'data-raw-title' ) || title,
             sections = mdash.dashboard.manager.folder.children,
             sectionId = +$b.closest( 'section' ).attr( 'id' );
         
         $form  = $( '<div class="ui-edit-form">' );
-        $title = $( '<input autofocus id="title" type="text"/>' ).val( title ).focus();
+        $title = $( '<input autofocus id="title" type="text"/>' ).val( rawTitle ).focus();
         $url   = $( '<input id="url" type="text"/>' ).val( $b.attr( 'href' ) );
 
         var sectionsSelectHtml = '<select id="section">';
@@ -1256,6 +1295,7 @@
         // Capture previous state for undo
         var prev = {
             title    : $title.text(),
+            rawTitle : $el.attr( 'data-raw-title' ) || $title.text(),
             url      : $el.attr( 'href' ),
             parentId : $el.closest( 'section' ).attr( 'id' ),
             index    : (function(){
@@ -1265,10 +1305,13 @@
             })()
         };
 
-        function refreshFaviconForUrl( anchorEl, url )
+        function refreshFaviconForUrl( anchorEl, url, forTitle )
         {
             var $img = anchorEl.find( 'img' );
-            try { mdash.util.applyFaviconWithFallback( $img, url ); } catch(e){}
+            try {
+                var vpn = (forTitle || '').indexOf('[VPN]') !== -1;
+                mdash.util.applyFaviconWithFallback( $img, url, vpn, forTitle );
+            } catch(e){}
         }
 
         function showUndoNotification()
@@ -1309,18 +1352,20 @@
 
                 doneMove( function()
                 {
-                    // Restore title/url
-                    self.api.update( id, { title: prev.title, url: prev.url }, function()
+                    // Restore title/url (raw title)
+                    self.api.update( id, { title: prev.rawTitle, url: prev.url }, function()
                     {
                         var $cur = $( document.getElementById( id ) );
                         var $t = $cur.find('span');
-                        $t.text( prev.title );
+                        $cur.attr( 'data-raw-title', prev.rawTitle );
+                        var displayPrev = self.editMode ? prev.rawTitle : mdash.util.stripIconOverride( prev.rawTitle );
+                        $t.text( displayPrev );
                         $cur.attr('href', prev.url );
-                        $cur.attr('title', prev.title );
-                        $cur.attr('aria-label', prev.title );
-                        $cur.attr( 'data-title', prev.title );
-                        $cur.data( 'title', prev.title );
-                        refreshFaviconForUrl( $cur, prev.url );
+                        $cur.attr('title', displayPrev );
+                        $cur.attr('aria-label', displayPrev );
+                        $cur.attr( 'data-title', displayPrev );
+                        $cur.data( 'title', displayPrev );
+                        refreshFaviconForUrl( $cur, prev.url, displayPrev );
                     } );
                 } );
             });
@@ -1328,21 +1373,32 @@
 
         this.api.update( id, props, function()
         {
-            props.title && $title.text( props.title );
+            var newRawTitle = (props.title != null) ? props.title : ( $el.attr('data-raw-title') || $title.text() );
+            $el.attr( 'data-raw-title', newRawTitle );
+            var displayNow = self.editMode ? newRawTitle : mdash.util.stripIconOverride( newRawTitle );
+            if( props.title )
+            {
+                $title.text( displayNow );
+            }
             if( props.url )
             {
                 $el.attr( 'href', props.url );
 
                 // Refresh favicon immediately using the same fallback strategy as rendering
-                refreshFaviconForUrl( $el, props.url );
+                refreshFaviconForUrl( $el, props.url, displayNow );
+            }
+            else
+            {
+                // If only title changed, still refresh favicon to respect icons map lookups
+                refreshFaviconForUrl( $el, $el.attr('href'), displayNow );
             }
 
             if( props.title )
             {
-                $el.attr( 'title', props.title );
-                $el.attr( 'aria-label', props.title );
-                $el.attr( 'data-title', props.title );
-                $el.data( 'title', props.title );
+                $el.attr( 'title', displayNow );
+                $el.attr( 'aria-label', displayNow );
+                $el.attr( 'data-title', displayNow );
+                $el.data( 'title', displayNow );
             }
             
             function afterUpdate()
