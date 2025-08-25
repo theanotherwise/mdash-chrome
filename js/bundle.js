@@ -194,7 +194,7 @@
 
     // Shared favicon helpers
     mdash.util = mdash.util || {};
-    mdash.util.getFaviconCandidates = function( href )
+    mdash.util.getFaviconCandidates = function( href, noNormalize )
     {
         try
         {
@@ -202,42 +202,25 @@
             var host = u.hostname || '';
             var labels = host.split( '.' );
             // If subdomain present and not 'www', use registrable root (last two labels). Keep protocol.
-            if( labels.length > 2 && labels[0] !== 'www' )
+            if( !noNormalize && labels.length > 2 && labels[0] !== 'www' )
             {
                 host = labels.slice( -2 ).join( '.' );
             }
             var canonical = u.protocol + '//' + host;
-            return [ 'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( canonical ) + '&sz=64' ];
+            // Minimal policy: try only favicon.ico, then Google S2
+            return [
+                canonical + '/favicon.ico',
+                'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( canonical ) + '&sz=64'
+            ];
         }
         catch( _e )
         {
             return [ 'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( href ) + '&sz=64' ];
         }
     };
-    mdash.util.getFaviconPair = function( href )
+    mdash.util.applyFaviconWithFallback = function( $img, href, noNormalize )
     {
-        try
-        {
-            var u = new URL( href );
-            var host = u.hostname || '';
-            var labels = host.split( '.' );
-            // Always use root for non-www subdomains; keep www as-is
-            if( labels.length > 2 && labels[0] !== 'www' )
-            {
-                host = labels.slice( -2 ).join( '.' );
-            }
-            var canonical = u.protocol + '//' + host;
-            return { origin: 'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( canonical ) + '&sz=64', root: null, isSub: false };
-        }
-        catch( _e )
-        {
-            return { origin: 'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( href ) + '&sz=64', root: null, isSub: false };
-        }
-    };
-    mdash.util.applyFaviconWithFallback = function( $img, href )
-    {
-        var pair = mdash.util.getFaviconPair( href );
-        var candidates = pair.root && pair.isSub ? [ pair.origin, pair.root ] : [ pair.origin ];
+        var candidates = mdash.util.getFaviconCandidates( href, !!noNormalize );
         // add cache-buster for refresh calls
         var cb = Date.now() + '-' + Math.random().toString(36).slice(2);
         candidates = candidates.map( function( url )
@@ -259,10 +242,9 @@
                 this.src = list[ idx ];
             }
         } );
-        // set first candidate
-        if( candidates.length ) $img.attr( 'src', candidates[0] );
-
-        // Nie używamy fetch (CORS). Polegamy na onerror <img>, który przełączy na root przy 404.
+        if( candidates.length ) {
+            $img.attr( 'src', candidates[0] );
+        }
     };
     
     // favicon helpers not needed when using full reload; kept minimal inline logic elsewhere
@@ -325,6 +307,7 @@
         link.href = bookmark.url;
         var faviconCandidates = mdash.util.getFaviconCandidates( link.href );
 
+        var isVpnMarker = (bookmark.title || '').indexOf('[VPN]') !== -1;
         var data = {
             id      : bookmark.id,
             title   : bookmark.title,
@@ -335,8 +318,8 @@
         var $el  = ich.bookmark( data );
         var $img = $el.find( 'img' );
         
-        // Attach fallback so if subdomain 404s we retry with root
-        mdash.util.applyFaviconWithFallback( $img, link.href );
+        // Attach fallback; if [VPN] in title, skip normalization (use exact host)
+        mdash.util.applyFaviconWithFallback( $img, link.href, isVpnMarker );
         
         return $el;
     };

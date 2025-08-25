@@ -12,6 +12,10 @@
         "bookmarks",
         "contextMenus"
     ],
+    "host_permissions": [
+        "http://*/*",
+        "https://*/*"
+    ],
     "chrome_url_overrides": {
         "newtab": "html/dashboard.html"
     }
