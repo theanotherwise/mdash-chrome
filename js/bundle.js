@@ -219,7 +219,9 @@
         if( !title ) return null;
         var map = this._iconsMap;
         if( !map ) return null;
-        var t = ('' + title + ' ' + (href||'')).toLowerCase();
+        var host = '';
+        try { host = new URL( href || '' ).hostname || ''; } catch( _e ) { host = ''; }
+        var t = ('' + title + ' ' + host).toLowerCase();
         var bestKey = null;
         Object.keys( map ).forEach( function( key )
         {
