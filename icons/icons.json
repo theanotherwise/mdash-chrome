@@ -10,5 +10,6 @@
     "gitlab": "gitlab.png",
     "grafana": "grafana.png",
     "okd": "openshift.png",
+    "airflow": "airflow.png",
     "onenr": "newrelic.png"
 }
