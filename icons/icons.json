@@ -13,5 +13,6 @@
     "okd": "openshift.png",
     "airflow": "airflow.png",
     "flink": "flink.png",
+    "vue3": "vue3.png",
     "onenr": "newrelic.png"
 }
