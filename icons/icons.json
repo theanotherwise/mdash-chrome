@@ -11,5 +11,6 @@
     "grafana": "grafana.png",
     "okd": "openshift.png",
     "airflow": "airflow.png",
+    "flink": "flink.png",
     "onenr": "newrelic.png"
 }
