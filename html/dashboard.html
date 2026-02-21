@@ -5,11 +5,43 @@
         <title>—bookmarks</title>
         <link rel="shortcut icon" href="../img/icon-.png" type="image/png" />
         <link rel="stylesheet" href="../css/styles.css" type="text/css" />
-        <link rel="stylesheet" href="../css//ui.css" type="text/css" />
+        <link rel="stylesheet" href="../css/ui.css" type="text/css" />
     </head>
     <body class="large">
-        <div id="search">
+        <div id="search" style="display:none">
             <input id="search-input" type="search" placeholder="Search bookmarks…" autocomplete="off" />
+        </div>
+
+        <div id="spotlight" class="spotlight-hidden">
+            <div class="spotlight-backdrop"></div>
+            <div class="spotlight-panel">
+                <input id="spotlight-input" type="text" placeholder="Search bookmarks…" autocomplete="off" spellcheck="false" />
+                <ul id="spotlight-results"></ul>
+            </div>
+        </div>
+        <div id="controls">
+            <div id="editctrl" class="inline"><a id="edit" href="#">edit</a></div>
+            <span class="mx-1">·</span>
+            <div id="iconctrl" class="inline"><a id="refresh-icons" href="#">refresh icons</a></div>
+            <span class="mx-1">·</span>
+            <div id="fontctrl" class="dropdown inline" data-current="large">
+                <a href="#" class="dropdown-toggle">large ▾</a>
+                <div class="dropdown-menu">
+                    <a href="#" data-size="small">small</a>
+                    <a href="#" data-size="medium">medium</a>
+                    <a href="#" data-size="large" class="selected">large</a>
+                </div>
+            </div>
+            <span class="mx-1">·</span>
+            <div id="themectrl" class="dropdown inline" data-current="light">
+                <a href="#" class="dropdown-toggle">light ▾</a>
+                <div class="dropdown-menu">
+                    <a href="#" data-theme="light" class="selected">light</a>
+                    <a href="#" data-theme="dark">dark</a>
+                </div>
+            </div>
+            <span class="mx-1">·</span>
+            <a id="helpctrl" href="#">?</a>
         </div>
         <div id="getstarted">
             <h1>Get started</h1>
@@ -43,6 +75,8 @@
                 <ul>
                     <li><strong>Edit mode</strong>: click <em>edit</em> to enable editing of tiles.</li>
                     <li><strong>Add</strong>: in edit mode each section shows a <em>+</em> button to add a bookmark.</li>
+                    <li><strong>Delete section</strong>: in edit mode use the <em>×</em> button in a section header to remove the whole folder.</li>
+                    <li><strong>New section</strong>: in edit mode use the big <em>+</em> at the bottom to create a new folder/section.</li>
                     <li><strong>Drag & drop</strong>: in edit mode drag a tile to another section to move it.</li>
                     <li><strong>Delete</strong>:
                         - press <kbd>Delete</kbd> over a tile, or
@@ -50,7 +84,7 @@
                     </li>
                     <li><strong>Undo delete</strong>: after removing a tile you have up to <em>30s</em> to click <em>Undo</em> in the notification.</li>
                     <li><strong>Undo update</strong>: after saving changes to a tile you have up to <em>30s</em> to revert them via <em>Undo</em>.</li>
-                    <li><strong>Search</strong>: type in the search box to filter tiles; empty sections are hidden while searching.</li>
+                    <li><strong>Search</strong>: press <kbd>Option+F</kbd> (macOS) or <kbd>Ctrl+F</kbd> (Windows) to open Spotlight search; navigate with arrows, press Enter to open.</li>
                     <li><strong>Themes</strong>: switch <em>light/dark</em> from the menu on the top‑right.</li>
                     <li><strong>Font size</strong>: choose <em>small/medium/large</em> from the font menu.</li>
                     <li><strong>Refresh icons</strong>: click <em>refresh icons</em> to reload the page (Alt+Click refreshes only icons).</li>
@@ -64,33 +98,8 @@
             <div class="left"></div>
             <div class="right"></div>
         </div>
-        <div id="controls">
-            <div id="editctrl" class="inline"><a id="edit" href="#">edit</a></div>
-            <span class="mx-1">·</span>
-            <div id="iconctrl" class="inline"><a id="refresh-icons" href="#">refresh icons</a></div>
-            <span class="mx-1">·</span>
-            <div id="fontctrl" class="dropdown inline" data-current="large">
-                <a href="#" class="dropdown-toggle">large ▾</a>
-                <div class="dropdown-menu">
-                    <a href="#" data-size="small">small</a>
-                    <a href="#" data-size="medium">medium</a>
-                    <a href="#" data-size="large" class="selected">large</a>
-                </div>
-            </div>
-            <span class="mx-1">·</span>
-            <div id="themectrl" class="dropdown inline" data-current="light">
-                <a href="#" class="dropdown-toggle">light ▾</a>
-                <div class="dropdown-menu">
-                    <a href="#" data-theme="light" class="selected">light</a>
-                    <a href="#" data-theme="dark">dark</a>
-                </div>
-            </div>
-            <span class="mx-1">·</span>
-            <a id="helpctrl" href="#">?</a>
-        </div>
-
-        <div id="filter">
-            <p></p>
+        <div id="add-section-cta-wrap">
+            <a id="add-section-cta" href="#" aria-label="Add new section" title="Add new section">+</a>
         </div>
 
         <script id="section" type="text/html">

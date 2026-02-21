@@ -1,0 +1,172 @@
+# AGENTS.md — mdash-chrome
+
+## Project Overview
+
+**mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
+
+**Version**: 1.1.5
+**License**: Personal use only (no commercial redistribution)
+
+## Key Features
+
+- Two-column bookmark dashboard (left / right, controlled by `+` / `-` prefix in folder names)
+- Responsive CSS Grid layout for columns (auto-switches to one column on smaller screens)
+- Sticky top control bar with glass-style surface (no overlap with bookmark tiles)
+- Edit mode: inline editing, adding, deleting, and renaming sections
+- Edit mode bottom CTA (`+`) to create a new section/folder directly from dashboard UI
+- Edit mode section-header remove button (`×`) to delete an entire section/folder (including nested bookmarks) with confirmation
+- Drag & drop reordering of bookmarks between sections
+- Drag & drop sections between columns (left ↔ right); automatically updates `+`/`-` prefix
+- Undo for delete and update operations (30-second window)
+- Spotlight search modal (Option+F on macOS, Ctrl+F on Windows) with results list, keyboard navigation, highlighted matches, and background-tab open via middle-click / Cmd/Ctrl+click without navigating the current tab
+- Light and dark themes (persisted in localStorage)
+- Font size control: small, medium, large (persisted in localStorage)
+- Improved keyboard accessibility with visible focus rings on interactive controls
+- Custom favicon mapping for known services (ArgoCD, Grafana, Jenkins, etc.) via `icons/icons.json`
+- Google S2 favicon fallback for all other bookmarks
+- `ICON_OVERRIDE` suffix in bookmark titles to force icon map lookup
+- `[VPN]` marker in titles to skip hostname normalization for favicons
+- Privacy-first: zero external data collection
+
+## File Structure
+
+```
+mdash-chrome/
+├── manifest.json              # Chrome Extension manifest (v3)
+├── html/
+│   └── dashboard.html         # Main HTML — new tab override
+├── js/
+│   ├── bundle.js              # Application logic (all modules, ~2020 lines)
+│   ├── ui.js                  # UI toolkit (Dialog, Overlay, Notification, etc.)
+│   └── lib/
+│       ├── icanhaz.min.js     # ICanHaz.js — client-side templating (Mustache)
+│       └── keymaster.min.js   # Keyboard shortcut library (unused)
+├── css/
+│   ├── styles.css             # Main styles: layout, tiles, themes, search, controls
+│   └── ui.css                 # UI toolkit styles: dialogs, overlays, notifications
+├── icons/
+│   └── icons.json             # Keyword → icon filename mapping for custom favicons
+├── pack.sh                    # Build script — creates distributable .zip
+├── PRIVACY                    # Privacy policy
+├── LICENSE                    # License (personal use only)
+└── .gitignore
+```
+
+## Functional Architecture
+
+All application modules live in `js/bundle.js` as IIFE (Immediately Invoked Function Expressions) sharing the `window.mdash` namespace. The UI toolkit in `js/ui.js` exposes the global `ui` object.
+
+### Module Dependency Graph
+
+```
+Dashboard (orchestrator)
+├── Manager          — Chrome Bookmarks API wrapper
+├── Column (×2)      — Renders sections and bookmark tiles
+│   └── AddBtn       — "Add bookmark" modal per section
+├── FontCtrl         — Font size dropdown
+├── HelpCtrl         — Help/get-started toggle
+├── ThemeCtrl        — Light/dark theme dropdown
+├── EditCtrl         — Edit mode, drag & drop, delete, rename
+├── KeyboardManager  — Keyboard shortcuts (currently disabled)
+└── Spotlight        — Spotlight-style search modal
+```
+
+### Module Descriptions
+
+| Module | Namespace | Responsibility |
+|---|---|---|
+| **Manager** | `mdash.Manager` | Wraps `chrome.bookmarks` API. Locates or creates the `[Dashboard]` root folder and its `[MDASH_DO_NOT_DELETE]` placeholder. Fetches sections and their bookmarks. Determines side assignment (`+` → left, `-` → right). |
+| **Column** | `mdash.Column` | Renders one column (left or right) by iterating sections and calling `renderSection()` / `renderBookmark()`. Appends an `AddBtn` to each section. Manages column visibility. |
+| **FontCtrl** | `mdash.FontCtrl` | Dropdown control for font sizes (`small`, `medium`, `large`). Persists selection in `localStorage.fontSize`. Applies CSS class to `<body>`. |
+| **HelpCtrl** | `mdash.HelpCtrl` | Toggles visibility between the help/get-started panel and the bookmarks interface. |
+| **EditCtrl** | `mdash.EditCtrl` | Toggles edit mode (`html.edit` class). In edit mode: click tile to edit (title, URL, section), Delete key to remove, click section title to rename, use section-header `button.section-remove` to delete a whole section via `chrome.bookmarks.removeTree()`, use bottom `#add-section-cta` to create a new section (with left/right column selection), drag & drop tiles between sections, and drag & drop sections between columns. Provides undo for bookmark delete and update. Uses `enableSectionDragAndDrop()` / `disableSectionDragAndDrop()` for section-level DnD (separate from tile DnD). |
+| **ThemeCtrl** | `mdash.ThemeCtrl` | Dropdown for light/dark theme. Toggles `theme-light` / `theme-dark` on `<html>`. Persists in `localStorage['mdash:theme']`. |
+| **KeyboardManager** | `mdash.KeyboardManager` | Keyboard-driven tile filtering. Guarded by `isEnabled()` check (disabled by default in localStorage). |
+| **AddBtn** | `mdash.AddBtn` | Per-section "+" button rendered as a tile at the end of the section list in edit mode. Opens a confirmation dialog to add a new bookmark. Normalizes URLs (prepends `http://` if needed). |
+| **Spotlight** | `mdash.Spotlight` | Spotlight-style search modal (Option+F / Ctrl+F). Shows a centered overlay with input + results list. Matches by title and URL. Keyboard navigation (↑/↓/Enter/Esc). Results show favicon, title (with highlighted match), URL, and section name. Supports opening in a background tab (`chrome.tabs.create` with `active: false`) using middle-click or Cmd/Ctrl+click while keeping the current tab on Spotlight. |
+| **Dashboard** | `mdash.Dashboard` | Main orchestrator. Initializes all modules, preloads the icon map, loads bookmarks into two columns, sets up the UI toolkit, and handles the "refresh icons" action. Works with the responsive grid/sticky-controls layout defined in CSS. |
+
+### UI Toolkit (`js/ui.js`)
+
+The `ui` global provides:
+
+| Component | Description |
+|---|---|
+| `ui.Emitter` | Simple event emitter (on/off/emit/once) |
+| `ui.Dialog` | Modal/non-modal dialog with effects (fade/slide/scale) |
+| `ui.Confirmation` | Dialog with OK/Cancel buttons and callback |
+| `ui.Overlay` | Full-screen overlay backdrop |
+| `ui.Notification` | Toast notifications (auto-hide, closable, types: info/warn/error) |
+| `ui.ContextMenu` | Right-click context menu |
+| `ui.ColorPicker` | Canvas-based color picker (unused by the extension) |
+| `ui.Card` | Flip card component (unused by the extension) |
+
+### Favicon Resolution Strategy
+
+1. On init, the icons map (`icons/icons.json`) is fetched from GitHub (remote, no-cache).
+2. For each bookmark tile:
+   - If title contains `ICON_OVERRIDE` suffix → look up icons map only.
+   - Otherwise → try icons map by keyword match (title + hostname), fall back to Google S2 favicon service.
+   - If title contains `[VPN]` → skip hostname normalization (use exact subdomain).
+3. On image load error, the next candidate URL from the fallback list is tried.
+
+### Data Model (Chrome Bookmarks)
+
+```
+Bookmarks Root
+└── Other Bookmarks (or any parent)
+    └── [Dashboard]                    ← root folder (auto-created)
+        ├── [MDASH_DO_NOT_DELETE]      ← placeholder bookmark (about:blank)
+        ├── +Section Name             ← folder → left column section
+        │   ├── Bookmark 1
+        │   └── Bookmark 2
+        └── -Another Section          ← folder → right column section
+            └── Bookmark 3
+```
+
+### Persistence
+
+| Key | Storage | Value |
+|---|---|---|
+| `fontSize` | localStorage | `small` / `medium` / `large` |
+| `mdash:theme` | localStorage | `light` / `dark` |
+| `mdash:keyboard:isEnabled` | localStorage | `enabled` / `disabled` |
+
+### Build & Packaging
+
+`pack.sh` reads the version from `manifest.json` and creates a zip archive excluding `.git`, `.DS_Store`, `node_modules`, `pack.sh`, and `icons/`.
+
+```bash
+./pack.sh   # produces ../mdash-chrome-<version>.zip
+```
+
+## Development Conventions
+
+- **No build system / bundler** — vanilla JS, no transpilation, no npm dependencies.
+- **Module pattern** — each module is an IIFE adding to `window.mdash`.
+- **Prototype-based OOP** — constructors with `.prototype` methods.
+- **jQuery 3.2.1** — used for DOM manipulation (loaded from `js/lib/`, not in repo).
+- **ICanHaz.js** — Mustache templates defined as `<script type="text/html">` in HTML.
+- **CSS custom properties** — design tokens in `:root` for theming.
+- **No tests** — no test framework or test files.
+
+## DnD Architecture
+
+Two independent drag & drop systems coexist in edit mode:
+
+| System | Event namespace | Flag | Drag handle | Drop target |
+|---|---|---|---|---|
+| **Tile DnD** | `.mdash` | `_dragging` | Bookmark `<a>` tiles | `<section>` elements |
+| **Section DnD** | `.mdash-section` | `_sectionDragging` | Section `<h1>` titles | `.left` / `.right` columns |
+
+Guards prevent interference: tile handlers check `if( self._sectionDragging ) return;` and section handlers check `if( !self._sectionDragging ) return;`.
+
+When a section is moved between columns:
+1. DOM `<section>` element is repositioned at the placeholder location.
+2. Chrome bookmark folder title prefix is updated (`+` ↔ `-`) via `chrome.bookmarks.update()`.
+3. Manager's cached `folder.children` is invalidated.
+
+## Known Issues
+
+- Drag & drop handler code for tiles is duplicated in three places (enableDragAndDrop, remove undo, AddBtn).
+- `img/icon.png` and `js/lib/jquery-3.2.1.min.js` referenced but not in repository.

@@ -42,14 +42,9 @@
         
         this.api.getChildren( this.folder.id, function( children )
         {
-            children.forEach( function( b, i )
+            var filtered = children.filter( function( b )
             {
-                if( b.title === _this.PLACEHOLDER_NAME )
-                {
-                    delete children[ i ];
-                    
-                    return;
-                }
+                if( b.title === _this.PLACEHOLDER_NAME ) return false;
                 
                 var firstChar = b.title.substring( 0, 1 );
                 
@@ -63,17 +58,16 @@
                 }
                 else
                 {
-                    delete children[ i ];
-                    
-                    return;
+                    return false;
                 }
                 
                 b.title = b.title.substring( 1 );
+                return true;
             } );
             
-            _this.folder.children = children;
+            _this.folder.children = filtered;
             
-            callback( children );
+            callback( filtered );
         } );
     };
     
@@ -94,6 +88,12 @@
                     results.push( section );
                 }
             } );
+            
+            if( !results.length )
+            {
+                callback( results );
+                return;
+            }
             
             results.forEach( function( section )
             {
@@ -150,6 +150,9 @@
     {
         var _this = this;
         
+        if( _this._creatingRoot ) { callback(); return; }
+        _this._creatingRoot = true;
+        
         this.api.create(
             {
                 parentId : this.tree.children[ 1 ].id,
@@ -163,12 +166,15 @@
                 _this.createPlaceholder( callback );
             }
         );
-        
-        this.createRootFolder = function() { callback(); };
     };
     
     proto.createPlaceholder = function( callback )
     {
+        var _this = this;
+        
+        if( _this._creatingPlaceholder ) { callback(); return; }
+        _this._creatingPlaceholder = true;
+        
         this.api.create(
             {
                 parentId : this.folder.id,
@@ -177,8 +183,6 @@
             },
             callback
         );
-        
-        this.createPlaceholder = function() { callback() };
     };
     
 } )( window.mdash || ( window.mdash = {} ) );
@@ -371,7 +375,10 @@
             mdash.links[ $link.attr( 'href' ) ] = $link;
         } );
         
-        var $addBtn = $( '<a href="#add" class="add" aria-label="Add bookmark" title="Add" draggable="false">+</a>' );
+        var $removeSectionBtn = $( '<button type="button" class="section-remove" aria-label="Delete section" title="Delete section" draggable="false">&times;</button>' );
+        $section.append( $removeSectionBtn );
+        
+        var $addBtn = $( '<a href="#add" class="add" aria-label="Add bookmark" title="Add" draggable="false"><span>+</span></a>' );
         $section.append( $addBtn );
         // Prevent default link-drag behaviour so the "+" button is never treated as a draggable item
         $addBtn.on( 'dragstart', function( e ){ e.preventDefault(); } );
@@ -446,7 +453,7 @@
         localStorage.fontSize = size;
         this.select( size );
         
-        this.$sizes.bind( 'click', this.sizeSelected.bind( this ) );
+        this.$sizes.on( 'click', this.sizeSelected.bind( this ) );
         this.$toggle.on('click', this.toggleOpen.bind(this));
         $(document).on('click', this.closeOnOutsideClick.bind(this));
     };
@@ -506,33 +513,29 @@
         this.$handle    = $handle;
         this.$help      = $help;
         this.$interface = $interface;
-        this.$search    = $( '#search' );
     };
     
     HelpCtrl.prototype.init = function()
     {
-        this.$handle.bind( 'click', this.toggle.bind( this ) );
+        this.$handle.on( 'click', this.toggle.bind( this ) );
     };
     
     HelpCtrl.prototype.toggle = function()
     {
         this.$help.toggle();
         this.$interface.toggle();
-        this.$search.toggle();
     };
     
     HelpCtrl.prototype.show = function()
     {
         this.$help.show();
         this.$interface.hide();
-        this.$search.hide();
     };
     
     HelpCtrl.prototype.hide = function()
     {
         this.$help.hide();
         this.$interface.show();
-        this.$search.show();
     };
     
 } )( window.mdash || ( window.mdash = {} ) );
@@ -547,6 +550,7 @@
         this.$docEl       = $( document.documentElement );
         this.$btn       = $btn;
         this.$bookmarks = $bookmarks;
+        this.$addSectionBtn = $( '#add-section-cta' );
         this.api        = chrome.bookmarks;
         this.editMode   = false;
         this.$activeBookmark = null;
@@ -560,6 +564,7 @@
         
         this.listenForAlt();
         this.setupButton();
+        this.setupAddSectionButton();
         
         this.$docEl.on( 'click', '#bookmarks a:not(.add)', function( e )
         {
@@ -584,9 +589,18 @@
         this.$docEl.on( 'click', '#bookmarks section > h1', function( e )
         {
             if( !self.editMode ) return;
+            if( self._sectionJustDragged ) return;
             e.preventDefault();
             e.stopPropagation();
             self.renameSection( $( this ) );
+        } );
+        
+        this.$docEl.on( 'click', '#bookmarks section > .section-remove', function( e )
+        {
+            if( !self.editMode ) return;
+            e.preventDefault();
+            e.stopPropagation();
+            self.confirmRemoveSection( $( this ).closest( 'section' ) );
         } );
 
         // Track hovered/active bookmark for keyboard delete
@@ -602,15 +616,6 @@
             }
         } );
 
-        // Ensure $activeBookmark resets when search filter hides a hovered tile
-        $( '#search-input' ).on( 'input', function()
-        {
-            // If the currently tracked element is now hidden, clear it
-            if( self.$activeBookmark && !self.$activeBookmark.is(':visible') )
-            {
-                self.$activeBookmark = null;
-            }
-        } );
     };
     
     EditCtrl.prototype.enableDragAndDrop = function()
@@ -657,6 +662,7 @@
         // While dragging over a tile, show the placeholder before/after the tile
         $tiles.on( 'dragover.mdash', function( e )
         {
+            if( self._sectionDragging ) return;
             e.preventDefault();
             var rect = this.getBoundingClientRect();
             var before = (e.originalEvent.clientX < rect.left + rect.width / 2);
@@ -671,6 +677,7 @@
         $sections
             .on( 'dragover.mdash', function( e )
             {
+                if( self._sectionDragging ) return;
                 e.preventDefault();
                 var $section = $( this );
                 $section.addClass( 'drop-target' );
@@ -725,6 +732,7 @@
             } )
             .on( 'drop.mdash', function( e )
             {
+                if( self._sectionDragging ) return;
                 e.preventDefault();
                 self._handledDrop = true;
                 var $section = $( this );
@@ -899,6 +907,137 @@
         this._dragging = false;
     };
     
+    EditCtrl.prototype.enableSectionDragAndDrop = function()
+    {
+        var self = this;
+        var $sections = this.$bookmarks.find( 'section' );
+        this.$sectionPlaceholder = $( '<div class="section-drop-placeholder"></div>' );
+        
+        $sections.each( function()
+        {
+            var $section = $( this );
+            var $h1 = $section.children( 'h1' );
+            
+            $h1.attr( 'draggable', true ).addClass( 'section-drag-handle' );
+            
+            $h1.on( 'dragstart.mdash-section', function( e )
+            {
+                e.stopPropagation();
+                self._sectionDragging = true;
+                self._sectionHandledDrop = false;
+                var dt = e.originalEvent.dataTransfer;
+                try { dt.setData( 'application/x-mdash-section-id', $section.attr( 'id' ) ); } catch( _e ) {}
+                try { dt.setData( 'text/plain', '' ); } catch( _e ) {}
+                dt.effectAllowed = 'move';
+                setTimeout( function(){ $section.addClass( 'section-dragging' ); }, 0 );
+            } );
+            
+            $h1.on( 'dragend.mdash-section', function()
+            {
+                self._sectionDragging = false;
+                self._sectionJustDragged = true;
+                setTimeout( function(){ self._sectionJustDragged = false; }, 200 );
+                $section.removeClass( 'section-dragging' );
+                if( self.$sectionPlaceholder ) self.$sectionPlaceholder.detach();
+                self.$bookmarks.find( '.left, .right' ).removeClass( 'column-drop-target' );
+            } );
+        } );
+        
+        $sections.on( 'dragover.mdash-section', function( e )
+        {
+            if( !self._sectionDragging ) return;
+            e.preventDefault();
+            e.stopPropagation();
+            var rect = this.getBoundingClientRect();
+            var before = ( e.originalEvent.clientY < rect.top + rect.height / 2 );
+            var $target = $( this );
+            if( before ) $target.before( self.$sectionPlaceholder );
+            else $target.after( self.$sectionPlaceholder );
+            self.$bookmarks.find( '.left, .right' ).removeClass( 'column-drop-target' );
+            $target.closest( '.left, .right' ).addClass( 'column-drop-target' );
+        } );
+        
+        var $columns = this.$bookmarks.children( '.left, .right' );
+        
+        $columns.on( 'dragover.mdash-section', function( e )
+        {
+            if( !self._sectionDragging ) return;
+            e.preventDefault();
+            var $col = $( this );
+            if( $col.children( 'section' ).length === 0 )
+            {
+                $col.append( self.$sectionPlaceholder );
+            }
+            $col.addClass( 'column-drop-target' );
+        } );
+        
+        $columns.on( 'dragleave.mdash-section', function()
+        {
+            $( this ).removeClass( 'column-drop-target' );
+        } );
+        
+        $columns.on( 'drop.mdash-section', function( e )
+        {
+            if( !self._sectionDragging ) return;
+            e.preventDefault();
+            e.stopPropagation();
+            self._sectionHandledDrop = true;
+            
+            var dt = e.originalEvent.dataTransfer;
+            var sectionId = '';
+            try { sectionId = dt.getData( 'application/x-mdash-section-id' ); } catch( _e ) {}
+            if( !sectionId ) return;
+            
+            var $draggedSection = $( document.getElementById( sectionId ) );
+            if( !$draggedSection.length ) return;
+            
+            var $targetCol = $( this );
+            var $sourceCol = $draggedSection.parent();
+            var isTargetLeft = $targetCol.hasClass( 'left' );
+            var isSourceLeft = $sourceCol.hasClass( 'left' );
+            var newPrefix = isTargetLeft ? '+' : '-';
+            var currentTitle = $draggedSection.children( 'h1' ).text();
+            
+            if( self.$sectionPlaceholder.parent().length )
+            {
+                self.$sectionPlaceholder.replaceWith( $draggedSection );
+            }
+            else
+            {
+                $targetCol.append( $draggedSection );
+            }
+            
+            $draggedSection.removeClass( 'section-dragging' );
+            if( self.$sectionPlaceholder ) self.$sectionPlaceholder.detach();
+            $targetCol.removeClass( 'column-drop-target' );
+            $sourceCol.removeClass( 'column-drop-target' );
+            
+            self.api.update( sectionId, { title: newPrefix + currentTitle }, function()
+            {
+                if( mdash.dashboard && mdash.dashboard.manager )
+                {
+                    mdash.dashboard.manager.folder.children = null;
+                }
+                
+                var msg = ( isSourceLeft !== isTargetLeft )
+                    ? 'Moved "' + currentTitle + '" to ' + ( isTargetLeft ? 'left' : 'right' ) + ' column.'
+                    : 'Reordered "' + currentTitle + '".';
+                ui.notify( 'Section moved', msg );
+            } );
+        } );
+        
+    };
+    
+    EditCtrl.prototype.disableSectionDragAndDrop = function()
+    {
+        var $sections = this.$bookmarks.find( 'section' );
+        $sections.find( 'h1' ).removeAttr( 'draggable' ).removeClass( 'section-drag-handle' ).off( '.mdash-section' );
+        $sections.off( '.mdash-section' );
+        this.$bookmarks.children( '.left, .right' ).off( '.mdash-section' ).removeClass( 'column-drop-target' );
+        this._sectionDragging = false;
+        if( this.$sectionPlaceholder ) this.$sectionPlaceholder.detach();
+    };
+    
     EditCtrl.prototype.applyDisplayTitlesBasedOnMode = function()
     {
         var self = this;
@@ -920,6 +1059,157 @@
         } );
     };
     
+    EditCtrl.prototype.setupAddSectionButton = function()
+    {
+        var self = this;
+        if( !this.$addSectionBtn || !this.$addSectionBtn.length ) return;
+        
+        this.$addSectionBtn.off( '.mdash-add-section' ).on( 'click.mdash-add-section', function( e )
+        {
+            e.preventDefault();
+            e.stopPropagation();
+            if( !self.editMode ) return;
+            self.showAddSectionModal();
+        } );
+    };
+    
+    EditCtrl.prototype.showAddSectionModal = function()
+    {
+        var self = this;
+        var $form = $( '<form class="ui-add-form ui-add-section-form" />' );
+        var $name = $( '<input id="section-name" type="text" placeholder="Section name" autocomplete="off" />' );
+        var $side = $( '<select id="section-side"><option value="left">Left column (+)</option><option value="right">Right column (-)</option></select>' );
+        
+        $form.append( $name, $side );
+        
+        var modal = ui.confirm( 'Create new section', $form );
+        modal.overlay().ok( 'Create' );
+        
+        modal.show( function( ok )
+        {
+            if( !ok ) return;
+            
+            var title = ( $name.val() || '' ).trim();
+            var side = $side.val() === 'right' ? 'right' : 'left';
+            
+            if( !title )
+            {
+                ui.error( 'Error', 'Section name is required.' );
+                modal.show();
+                return;
+            }
+            
+            self.addSection( title, side, function( added )
+            {
+                if( !added )
+                {
+                    ui.error( 'Error', 'Could not create section.' );
+                    modal.show();
+                }
+            } );
+        } );
+        
+        setTimeout( function(){ $name.focus(); }, 20 );
+    };
+    
+    EditCtrl.prototype.addSection = function( title, side, callback )
+    {
+        var self = this;
+        var manager = mdash.dashboard && mdash.dashboard.manager;
+        
+        if( !manager || !manager.folder || !manager.folder.id )
+        {
+            callback && callback( false );
+            return;
+        }
+        
+        var safeSide = side === 'right' ? 'right' : 'left';
+        var prefix = safeSide === 'right' ? '-' : '+';
+        
+        this.api.create( {
+            parentId : manager.folder.id,
+            title    : prefix + title
+        }, function( created )
+        {
+            if( !created )
+            {
+                callback && callback( false );
+                return;
+            }
+            
+            if( manager.folder ) manager.folder.children = null;
+            
+            var $column = self.$bookmarks.children( safeSide === 'right' ? '.right' : '.left' );
+            var $section = mdash.Column.prototype.renderSection( {
+                id       : created.id,
+                title    : title,
+                side     : safeSide,
+                children : []
+            } );
+            
+            $column.append( $section ).show();
+            $section.show();
+            
+            if( self.editMode )
+            {
+                // Rebind DnD so the newly created section becomes a valid target/handle.
+                self.disableDragAndDrop();
+                self.enableDragAndDrop();
+                self.disableSectionDragAndDrop();
+                self.enableSectionDragAndDrop();
+            }
+            
+            ui.notify( 'Section created', 'Added "' + title + '" to ' + safeSide + ' column.' );
+            callback && callback( true, created );
+        } );
+    };
+    
+    EditCtrl.prototype.confirmRemoveSection = function( $section )
+    {
+        if( !$section || !$section.length ) return;
+        var self = this;
+        var sectionId = $section.attr( 'id' );
+        if( !sectionId ) return;
+        
+        var title = ( $section.children( 'h1' ).text() || '' ).trim() || 'Untitled';
+        var count = $section.children( 'a' ).not( '.add,.drop-placeholder' ).length;
+        var noun = count === 1 ? 'bookmark' : 'bookmarks';
+        var message = 'This will permanently delete section "' + title + '" and ' + count + ' ' + noun + '.';
+        
+        var modal = ui.confirm( 'Delete section?', message );
+        modal.overlay().ok( 'Delete' );
+        modal.show( function( ok )
+        {
+            if( !ok ) return;
+            self.removeSection( sectionId, title );
+        } );
+    };
+    
+    EditCtrl.prototype.removeSection = function( sectionId, sectionTitle, callback )
+    {
+        var self = this;
+        var $section = $( '#' + sectionId );
+        var $col = $section.parent();
+        
+        this.api.removeTree( sectionId, function()
+        {
+            if( mdash.dashboard && mdash.dashboard.manager )
+            {
+                mdash.dashboard.manager.folder.children = null;
+            }
+            
+            $section.remove();
+            
+            if( !$col.find( 'section' ).length && !self.editMode )
+            {
+                $col.hide();
+            }
+            
+            ui.notify( 'Section removed', '"' + ( sectionTitle || 'Section' ) + '" deleted.' );
+            callback && callback( true );
+        } );
+    };
+    
     EditCtrl.prototype.setupButton = function()
     {
         var self = this;
@@ -933,12 +1223,6 @@
                 self.editMode = false;
                 self.$docEl.removeClass( 'edit' );
                 self.$btn.text( 'edit' );
-                var $searchInput = $( '#search-input' );
-                if( $searchInput.length )
-                {
-                    $searchInput.val( '' ).trigger( 'input' );
-                }
-
                 // Leaving edit: hide empty sections and columns again
                 $( '#bookmarks section' ).each( function( _, section )
                 {
@@ -956,6 +1240,7 @@
 
                 // Disable DnD
                 self.disableDragAndDrop();
+                self.disableSectionDragAndDrop();
 
                 // Switch titles back to stripped display in normal mode
                 self.applyDisplayTitlesBasedOnMode();
@@ -972,6 +1257,7 @@
 
                 // Enable DnD
                 self.enableDragAndDrop();
+                self.enableSectionDragAndDrop();
 
                 // Show raw titles (with ICON_OVERRIDE) while editing
                 self.applyDisplayTitlesBasedOnMode();
@@ -984,7 +1270,7 @@
         var $doc = $( document ),
             self = this;
         
-        $doc.bind( 'keydown', function( e )
+        $doc.on( 'keydown', function( e )
         {
             if( e.keyCode === 18 /* alt */ )
             {
@@ -996,7 +1282,7 @@
             else if( self.editMode && (e.key === 'Escape' || e.keyCode === 27) )
             {
                 // Ignore ESC when typing in inputs (e.g. section rename)
-                if( $( e.target ).is('input, textarea, select, [contenteditable="true"], .section-rename-input') ) return;
+                if( $( e.target ).is('input, textarea, select, [contenteditable="true"]') ) return;
                 e.preventDefault();
                 e.stopPropagation();
                 // Exit edit mode (same as clicking the button)
@@ -1055,7 +1341,7 @@
             }
         } );
         
-        $doc.bind( 'keyup', function( e )
+        $doc.on( 'keyup', function( e )
         {
             if( e.keyCode === 18 /* alt */ )
             {
@@ -1069,56 +1355,90 @@
 
     EditCtrl.prototype.renameSection = function( $h1 )
     {
+        if( $h1.attr( 'contenteditable' ) === 'true' ) return;
+        
         var self = this;
         var $section = $h1.closest( 'section' );
         var id = $section.attr( 'id' );
         var original = $h1.text();
         var isLeft = $section.closest( '.left' ).length > 0;
         var prefix = isLeft ? '+' : '-';
-
-        var $input = $( '<input type="text" class="section-rename-input" />' ).val( original );
-        $h1.replaceWith( $input );
-        $input.focus().select();
-
-        function commit()
+        var done = false;
+        
+        $h1.attr( 'contenteditable', 'true' )
+           .attr( 'draggable', 'false' )
+           .addClass( 'section-renaming' );
+        
+        $h1.focus();
+        var range = document.createRange();
+        range.selectNodeContents( $h1[0] );
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange( range );
+        
+        function finish( save )
         {
-            var title = ($input.val() || '').trim();
-            if( !title )
+            if( done ) return;
+            done = true;
+            
+            $h1.removeAttr( 'contenteditable' )
+               .removeClass( 'section-renaming' );
+            
+            if( self.editMode )
             {
-                cancel();
+                $h1.attr( 'draggable', 'true' );
+            }
+            
+            $h1.off( '.mdash-rename' );
+            
+            if( !save )
+            {
+                $h1.text( original );
                 return;
             }
-            // Update Chrome bookmarks folder title including side prefix
+            
+            var title = ( $h1.text() || '' ).trim();
+            if( !title )
+            {
+                $h1.text( original );
+                return;
+            }
+            
             self.api.update( id, { title: prefix + title }, function()
             {
-                var $newH1 = $( '<h1>' ).text( title );
-                $input.replaceWith( $newH1 );
+                $h1.text( title );
+                if( mdash.dashboard && mdash.dashboard.manager )
+                {
+                    mdash.dashboard.manager.folder.children = null;
+                }
                 ui.notify( 'Section renamed', 'Updated to \'' + title + '\'.' );
             } );
         }
-
-        function cancel()
+        
+        $h1.on( 'keydown.mdash-rename', function( e )
         {
-            var $newH1 = $( '<h1>' ).text( original );
-            $input.replaceWith( $newH1 );
-        }
-
-        $input.on( 'keydown', function( e )
-        {
-            if( e.key === 'Enter' )
+            if( e.key === 'Enter' || e.keyCode === 13 )
             {
                 e.preventDefault();
                 e.stopPropagation();
-                commit();
+                finish( true );
             }
-            else if( e.key === 'Escape' )
+            else if( e.key === 'Escape' || e.keyCode === 27 )
             {
                 e.preventDefault();
                 e.stopPropagation();
-                cancel();
+                finish( false );
             }
         } );
-        $input.on( 'blur', function(){ commit(); } );
+        
+        $h1.on( 'blur.mdash-rename', function(){ finish( true ); } );
+        
+        $h1.on( 'paste.mdash-rename', function( e )
+        {
+            e.preventDefault();
+            var text = ( e.originalEvent.clipboardData || window.clipboardData ).getData( 'text/plain' );
+            document.execCommand( 'insertText', false, text );
+        } );
     };
     
     EditCtrl.prototype.edit = function( $b )
@@ -1573,8 +1893,6 @@
 
         proto.bindKeyboard = function()
         {
-            return;
-
             var _this = this;
 
             $(document).on('keydown', function(e) {
@@ -1681,7 +1999,7 @@
     
     AddBtn.prototype.init = function()
     {
-        this.$btn.bind( 'click', this.showModal.bind( this ) );
+        this.$btn.on( 'click', this.showModal.bind( this ) );
     };
     
     AddBtn.prototype.showModal = function( e )
@@ -1766,17 +2084,7 @@
                         }
                     } catch( _e ) {}
 
-                    // Re-apply active search filter so nowo dodany link respektuje aktualne filtrowanie
-                    var $input = $( '#search-input' );
-                    if( $input.length )
-                    {
-                        var q = $input.val();
-                        try {
-                            var search = new mdash.Search( $input );
-                            search.query = q;
-                            search.filter();
-                        } catch( e ) {}
-                    }
+                    // Spotlight search does not filter tiles in-place; no re-filter needed
                 }
             );
         } );
@@ -1799,87 +2107,298 @@
 } )( window.mdash || ( window.mdash = {} ) );
 
 
-/* --- search.js --- */
+/* --- spotlight.js --- */
 
 ( function( mdash, $ )
 {
     'use strict';
     
-    var Search = mdash.Search = function( $input )
+    var MAX_RESULTS = 30;
+    var _selectedIdx = -1;
+    
+    var Spotlight = mdash.Spotlight = function()
     {
-        this.$input = $input;
-        this.query  = '';
+        this.$el       = $( '#spotlight' );
+        this.$backdrop = this.$el.find( '.spotlight-backdrop' );
+        this.$panel    = this.$el.find( '.spotlight-panel' );
+        this.$input    = $( '#spotlight-input' );
+        this.$results  = $( '#spotlight-results' );
+        this.visible   = false;
     };
-
-    Search.prototype.init = function()
+    
+    Spotlight.prototype.init = function()
     {
-        var _this = this;
+        var self = this;
+        
+        $( document ).on( 'keydown', function( e )
+        {
+            var isKeyF = e.code === 'KeyF' || e.key === 'f' || e.key === 'F' || e.key === '\u0192' || e.keyCode === 70;
+            var isMac = /Mac|iPhone|iPad|iPod/.test( navigator.platform || navigator.userAgent );
+            var trigger = isMac
+                ? ( ( e.altKey || e.metaKey ) && isKeyF )
+                : ( e.ctrlKey && isKeyF );
+            
+            if( trigger )
+            {
+                e.preventDefault();
+                e.stopPropagation();
+                self.visible ? self.hide() : self.show();
+                return;
+            }
+            
+            if( !self.visible ) return;
+            
+            if( e.key === 'Escape' || e.keyCode === 27 )
+            {
+                e.preventDefault();
+                e.stopPropagation();
+                self.hide();
+            }
+            else if( e.key === 'ArrowDown' || e.keyCode === 40 )
+            {
+                e.preventDefault();
+                self.moveSelection( 1 );
+            }
+            else if( e.key === 'ArrowUp' || e.keyCode === 38 )
+            {
+                e.preventDefault();
+                self.moveSelection( -1 );
+            }
+            else if( e.key === 'Enter' || e.keyCode === 13 )
+            {
+                e.preventDefault();
+                self.openSelected();
+            }
+        } );
+        
         this.$input.on( 'input', function()
         {
-            _this.query = _this.$input.val();
-            _this.filter();
+            self.search( self.$input.val() );
+        } );
+        
+        this.$backdrop.on( 'click', function()
+        {
+            self.hide();
+        } );
+        
+        this.$results.on( 'click', 'li', function( e )
+        {
+            e.preventDefault();
+            var $li = $( this );
+            if( $li.data( 'spotlightSkipClick' ) )
+            {
+                $li.removeData( 'spotlightSkipClick' );
+                return;
+            }
+            
+            var isPrimaryButton = ( e.button === undefined || e.button === 0 ) &&
+                                  ( e.which === undefined || e.which === 1 );
+            if( !isPrimaryButton ) return;
+            
+            var href = $( this ).attr( 'data-href' );
+            if( !href ) return;
+            
+            var openInNewTab = e.metaKey || e.ctrlKey;
+            self.openHref( href, openInNewTab, openInNewTab );
+        } );
+        
+        this.$results.on( 'mousedown', 'li', function( e )
+        {
+            if( e.button !== 1 ) return;
+            e.preventDefault();
+            e.stopPropagation();
+            
+            var $li = $( this );
+            $li.data( 'spotlightSkipClick', true );
+            setTimeout( function()
+            {
+                $li.removeData( 'spotlightSkipClick' );
+            }, 250 );
+            
+            var href = $( this ).attr( 'data-href' );
+            if( !href ) return;
+            
+            self.openHref( href, true, true );
+        } );
+        
+        this.$results.on( 'mouseenter', 'li', function()
+        {
+            var $li = $( this );
+            self.$results.find( 'li.selected' ).removeClass( 'selected' );
+            $li.addClass( 'selected' );
+            _selectedIdx = $li.index();
         } );
     };
-
-    Search.prototype.filter = function()
+    
+    Spotlight.prototype.show = function()
     {
+        this.visible = true;
+        this.$el.removeClass( 'spotlight-hidden' );
+        this.$input.val( '' );
+        this.$results.empty();
+        _selectedIdx = -1;
+        
+        var self = this;
+        setTimeout( function(){ self.$input.focus(); }, 50 );
+    };
+    
+    Spotlight.prototype.hide = function()
+    {
+        this.visible = false;
+        this.$el.addClass( 'spotlight-hidden' );
+        this.$input.blur();
+    };
+    
+    Spotlight.prototype.search = function( query )
+    {
+        var $list = this.$results;
+        $list.empty();
+        _selectedIdx = -1;
+        
+        if( !query || !query.trim() )
+        {
+            return;
+        }
+        
+        var escaped = query.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
         var regex = null;
-        try { regex = new RegExp( this.query, 'i' ); } catch( e ) {}
-
+        try { regex = new RegExp( escaped, 'i' ); } catch( _e ) { return; }
+        
+        var matches = [];
+        
         $( '#bookmarks a' ).not( '.add,.drop-placeholder' ).each( function( _, el )
         {
             var $el   = $( el );
-            var title = $el.find( 'span' ).text() || $el.attr( 'data-title' ) || $el.data( 'title' );
-
-            if( !regex || !title || regex.test( title ) )
+            var title = $el.find( 'span' ).text() || $el.attr( 'data-title' ) || $el.data( 'title' ) || '';
+            var href  = $el.attr( 'href' ) || '';
+            var rawTitle = $el.attr( 'data-raw-title' ) || title;
+            var displayTitle = mdash.util ? mdash.util.stripIconOverride( rawTitle ) : title;
+            
+            if( regex.test( displayTitle ) || regex.test( href ) )
             {
-                $el.show();
-            }
-            else
-            {
-                $el.hide();
+                var $section = $el.closest( 'section' );
+                var sectionName = $section.find( 'h1' ).text() || '';
+                
+                matches.push( {
+                    title   : displayTitle,
+                    href    : href,
+                    section : sectionName,
+                    $img    : $el.find( 'img' ).first()
+                } );
             }
         } );
-
-        $( '#bookmarks section' ).each( function( _, section )
+        
+        if( matches.length === 0 )
         {
-            var $section = $( section );
-            var anyMatch = false;
-            $section.find( 'a' ).not( '.add,.drop-placeholder' ).each( function( _, a )
+            $list.append( '<li class="spotlight-empty">No results</li>' );
+            return;
+        }
+        
+        var count = Math.min( matches.length, MAX_RESULTS );
+        for( var i = 0; i < count; i++ )
+        {
+            var m = matches[ i ];
+            var imgSrc = '';
+            try { imgSrc = m.$img.attr( 'src' ) || ''; } catch( _e ) {}
+            
+            var $titleSpan = $( '<span class="spotlight-title">' );
+            var hlRegex = new RegExp( escaped, 'gi' );
+            var lastIdx = 0, hlMatch;
+            while( ( hlMatch = hlRegex.exec( m.title ) ) !== null )
             {
-                var $a    = $( a );
-                var title = $a.find( 'span' ).text() || $a.attr( 'data-title' ) || $a.data( 'title' );
-                if( !regex || !title || regex.test( title ) )
-                {
-                    anyMatch = true;
-                    return false;
-                }
-            } );
-
-            if( document.documentElement.classList.contains( 'edit' ) )
+                if( hlMatch.index > lastIdx )
+                    $titleSpan.append( document.createTextNode( m.title.substring( lastIdx, hlMatch.index ) ) );
+                $titleSpan.append( $( '<mark>' ).text( hlMatch[0] ) );
+                lastIdx = hlRegex.lastIndex;
+                if( !hlMatch[0].length ) hlRegex.lastIndex++;
+            }
+            if( lastIdx < m.title.length )
+                $titleSpan.append( document.createTextNode( m.title.substring( lastIdx ) ) );
+            
+            var $li = $( '<li>' )
+                .attr( 'data-href', m.href )
+                .append(
+                    imgSrc ? $( '<img class="spotlight-icon">' ).attr( 'src', imgSrc ) : '',
+                    $( '<div class="spotlight-item-body">' ).append(
+                        $titleSpan,
+                        $( '<span class="spotlight-url">' ).text( m.href )
+                    ),
+                    m.section ? $( '<span class="spotlight-section">' ).text( m.section ) : ''
+                );
+            
+            $list.append( $li );
+        }
+        
+        if( matches.length > MAX_RESULTS )
+        {
+            $list.append( '<li class="spotlight-empty">…and ' + ( matches.length - MAX_RESULTS ) + ' more</li>' );
+        }
+        
+        _selectedIdx = 0;
+        $list.find( 'li' ).first().addClass( 'selected' );
+    };
+    
+    Spotlight.prototype.moveSelection = function( dir )
+    {
+        var $items = this.$results.find( 'li' ).not( '.spotlight-empty' );
+        if( !$items.length ) return;
+        
+        $items.eq( _selectedIdx ).removeClass( 'selected' );
+        _selectedIdx += dir;
+        if( _selectedIdx < 0 ) _selectedIdx = $items.length - 1;
+        if( _selectedIdx >= $items.length ) _selectedIdx = 0;
+        
+        var $sel = $items.eq( _selectedIdx ).addClass( 'selected' );
+        var container = this.$results[0];
+        var el = $sel[0];
+        if( el.offsetTop < container.scrollTop )
+        {
+            container.scrollTop = el.offsetTop;
+        }
+        else if( el.offsetTop + el.offsetHeight > container.scrollTop + container.clientHeight )
+        {
+            container.scrollTop = el.offsetTop + el.offsetHeight - container.clientHeight;
+        }
+    };
+    
+    Spotlight.prototype.openSelected = function()
+    {
+        var $items = this.$results.find( 'li' ).not( '.spotlight-empty' );
+        if( !$items.length || _selectedIdx < 0 ) return;
+        var href = $items.eq( _selectedIdx ).attr( 'data-href' );
+        this.openHref( href );
+    };
+    
+    Spotlight.prototype.openHref = function( href, inNewTab, keepOpen )
+    {
+        if( !href ) return;
+        
+        if( inNewTab )
+        {
+            if( window.chrome && chrome.tabs && typeof chrome.tabs.create === 'function' )
             {
-                $section.show();
-                // In edit mode, still hide individual non-matching links so nowo dodane lub niematchujące nie widać przy aktywnym filtrze
+                chrome.tabs.create( { url: href, active: false } );
             }
             else
             {
-                $section.toggle( anyMatch );
+                var newWin = window.open( href, '_blank', 'noopener' );
+                if( newWin ) newWin.opener = null;
             }
-        } );
-
-        $( '#bookmarks > .left, #bookmarks > .right' ).show();
+            
+            if( !keepOpen ) this.hide();
+            return;
+        }
+        
+        this.hide();
+        window.location.href = href;
     };
-
+    
     $( function()
     {
-        var $input = $( '#search-input' );
-        if( $input.length )
-        {
-            var search = new mdash.Search( $input );
-            search.init();
-        }
+        var spotlight = new mdash.Spotlight();
+        spotlight.init();
     } );
-
+    
 } )( window.mdash || ( window.mdash = {} ), window.jQuery || window.Zepto );
 
 

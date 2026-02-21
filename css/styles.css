@@ -7,12 +7,15 @@
     --text-color:               #24314A;
     --muted-color:              #6B7280;
     --accent-color:             #365ABA;
+    --focus-ring:               rgba(54, 90, 186, 0.45);
     --tile-bg:                  #FFFFFF;
     --tile-hover-bg:            #EAF0FF;
     --tile-shadow:              0 8px 20px rgba(33, 37, 41, 0.08);
     --tile-radius:              18px;
     --tile-y-pad:               8px; /* top(6px) + bottom(2px) paddings -> keep text from clipping */
     --input-border:             #D1D5DB;
+    --surface-border:           rgba(15, 23, 42, 0.08);
+    --surface-strong:           rgba(255, 255, 255, 0.74);
     color-scheme:               light;
 }
 
@@ -23,10 +26,13 @@ html.theme-dark {
     --text-color:               #E7EEF9;
     --muted-color:              #A8B3C7;
     --accent-color:             #9DB6FF;
+    --focus-ring:               rgba(157, 182, 255, 0.5);
     --tile-bg:                  #131C2F;
     --tile-hover-bg:            #1B2540;
     --tile-shadow:              0 8px 20px rgba(2, 6, 23, 0.45);
     --input-border:             #2A3550;
+    --surface-border:           rgba(255, 255, 255, 0.1);
+    --surface-strong:           rgba(19, 28, 46, 0.6);
     color-scheme:               dark;
 }
 
@@ -39,14 +45,16 @@ html.theme-light {
     --tile-bg:                  #FFFFFF;
     --tile-hover-bg:            #EAF0FF;
     --tile-shadow:              0 8px 20px rgba(33, 37, 41, 0.08);
+    --surface-border:           rgba(15, 23, 42, 0.08);
+    --surface-strong:           rgba(255, 255, 255, 0.74);
     color-scheme:               light;
     
 }
 
 html.theme-dark #controls {
-    background:                  rgba(19, 28, 46, 0.4);
-    border-color:                rgba(255,255,255,0.06);
-    box-shadow:                  0 2px 10px rgba(2,6,23,0.45);
+    background:                  var(--surface-strong);
+    border-color:                var(--surface-border);
+    box-shadow:                  0 14px 34px rgba(2, 6, 23, 0.5);
 }
 
 body {
@@ -54,9 +62,9 @@ body {
     font-family:                -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, Cantarell, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
     color:                      var(--text-color);
     margin:                     0px 0px 0px 0px;
-    padding:                    0px 0px 0px 20px;
-    -ms-overflow-style:         none;           /* IE and old Edge */
-    scrollbar-width:            none;           /* Firefox */
+    padding:                    0px 20px 24px 20px;
+    -ms-overflow-style:         auto;           /* IE and old Edge */
+    scrollbar-width:            thin;           /* Firefox */
 }
 
 /* Subtle dotted background in light mode */
@@ -66,12 +74,22 @@ html.theme-light body {
     background-position: 0 0;
 }
 
-/* Hide WebKit scrollbars but keep scrolling */
+/* Subtle WebKit scrollbar styling */
 html::-webkit-scrollbar,
 body::-webkit-scrollbar {
-    width:                      0px;
-    height:                     0px;
-    display:                    none;
+    width:                      8px;
+    height:                     8px;
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+    background:                 rgba(107, 114, 128, 0.32);
+    border-radius:              999px;
+}
+
+html.theme-dark::-webkit-scrollbar-thumb,
+html.theme-dark body::-webkit-scrollbar-thumb {
+    background:                 rgba(168, 179, 199, 0.26);
 }
 
 .win body {
@@ -134,18 +152,27 @@ a:hover {
     margin-top:                 0px;
 }
 
-#bookmarks > div {
-    width:                      48%;
-    margin:                     0px 0px 30px 0px;
-    padding:                    0;
+#bookmarks {
+    padding-top:                12px;
+    display:                    grid;
+    grid-template-columns:      repeat(auto-fit, minmax(320px, 1fr));
+    gap:                        20px 26px;
+    align-items:                start;
 }
 
-#bookmarks > .left {            float: left; }
-#bookmarks > .right {           float: right; }
+#bookmarks > div {
+    width:                      auto;
+    margin:                     0;
+    padding:                    0;
+    min-width:                  0;
+}
+
+#bookmarks > .left {            float: none; }
+#bookmarks > .right {           float: none; }
 
 #bookmarks section {
-    clear:                      both;
-    padding:                    8px 0px 0px 0px;
+    clear:                      none;
+    padding:                    8px 0px 6px 0px;
     height:                     auto;
     overflow:                   visible;
 }
@@ -154,30 +181,41 @@ a:hover {
     font-size:                  0.85em;
     color:                      var(--muted-color);
     font-weight:                bold;
-    padding-left:               8px;
-    letter-spacing:             0.06em;
+    display:                    flex;
+    align-items:                center;
+    gap:                        8px;
+    padding-left:               6px;
+    letter-spacing:             0.08em;
     text-transform:             uppercase;
+    margin:                     0.5em 0 0.35em 0;
 }
 
-/* Inline input for renaming sections in edit mode */
-.edit #bookmarks .section-rename-input {
-    font: inherit;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--muted-color);
-    background: transparent;
-    border: 1px dashed rgba(54,90,186,0.45);
-    border-radius: 6px;
-    padding: 2px 6px;
-    display: block;            /* jak h1: nowa linia nad kafelkami */
-    box-sizing: border-box;
-    margin: 0 8px 0 8px;       /* zgodnie z paddingiem h1 */
-    /* Zostaw miejsce na przycisk "+" (28px) + odstępy ~22px */
-    width: calc(100% - 16px - 50px);
-    max-width: calc(100% - 16px - 50px);
-    line-height: 1.4;
-    outline: none;
+#bookmarks h1::after {
+    content:                    '';
+    flex:                       1 1 auto;
+    height:                     1px;
+    border-radius:              1px;
+    background:                 linear-gradient(to right, rgba(107, 114, 128, 0.35), rgba(107, 114, 128, 0.08));
+}
+
+html.theme-dark #bookmarks h1::after {
+    background:                 linear-gradient(to right, rgba(168, 179, 199, 0.38), rgba(168, 179, 199, 0.08));
+}
+
+/* Inline rename via contenteditable — just add dashed border, zero layout shift */
+.edit #bookmarks h1.section-renaming {
+    outline:                    1px dashed rgba(54,90,186,0.45);
+    outline-offset:             2px;
+    border:                     none;
+    cursor:                     text;
+}
+
+.edit #bookmarks h1.section-renaming::after {
+    display:                    none;
+}
+
+html.theme-dark .edit #bookmarks h1.section-renaming {
+    outline-color:              rgba(157,182,255,0.4);
 }
 
 #bookmarks a {
@@ -194,22 +232,23 @@ a:hover {
     background-color:           var(--tile-bg);
     border-radius:              var(--tile-radius);
     box-shadow:                 var(--tile-shadow);
-    border:                     1px solid transparent;
+    border:                     1px solid var(--surface-border);
     box-sizing:                 border-box;
-    width:                      10.5em;
+    width:                      11em;
     height:                     calc(3 * 1.35em + var(--tile-y-pad));
     padding:                    6px 8px 4px 6px; /* add bottom padding to avoid clipping */
     margin:                     2px 6px 6px 2px;
     overflow:                   hidden;
     text-overflow:              ellipsis;
-    transition:                 transform 120ms ease, background-color 150ms ease, box-shadow 150ms ease;
+    transition:                 transform 120ms ease, background-color 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
     color:                      var(--text-color);
 }
 
 #bookmarks a:hover {
     background-color:           var(--tile-hover-bg);
-    transform:                  translateY(-1px);
-    box-shadow:                 0 10px 24px rgba(33, 37, 41, 0.12);
+    transform:                  translateY(-2px);
+    box-shadow:                 0 12px 28px rgba(33, 37, 41, 0.14);
+    border-color:               rgba(54, 90, 186, 0.28);
 }
 
 /* Stronger hover contrast in dark mode (non-edit) */
@@ -271,6 +310,28 @@ html.theme-dark .edit #bookmarks a:hover {
 }
 
 #bookmarks a.add {
+    position:                   relative;
+    display:                    none;
+    align-items:                center;
+    justify-content:            center;
+    background:                 rgba(107, 114, 128, 0.08);
+    color:                      #6B7280;
+    border:                     1px dashed rgba(107, 114, 128, 0.62);
+    box-shadow:                 var(--tile-shadow);
+    padding:                    0;
+    line-height:                1;
+    font-size:                  0.95em;
+    font-weight:                normal;
+    visibility:                 visible;
+    pointer-events:             auto;
+    transition:                 transform 120ms ease, background-color 120ms ease, border-color 120ms ease;
+}
+
+.edit #bookmarks a.add { display: inline-flex; }
+
+#bookmarks section { position: relative; }
+
+#bookmarks section > .section-remove {
     position:                   absolute;
     right:                      6px;
     top:                        6px;
@@ -280,25 +341,56 @@ html.theme-dark .edit #bookmarks a:hover {
     align-items:                center;
     justify-content:            center;
     border-radius:              8px;
-    background:                 var(--tile-hover-bg);
-    color:                      var(--accent-color);
-    border:                     1px dashed rgba(54,90,186,0.45);
-    box-shadow:                 none;
+    border:                     1px dashed rgba(211, 47, 47, 0.45);
+    background:                 var(--tile-bg);
+    color:                      #B91C1C;
     padding:                    0;
+    font-size:                  1.1rem;
     line-height:                1;
-    visibility:                 visible;
-    pointer-events:             auto;
+    cursor:                     pointer;
+    box-sizing:                 border-box;
 }
 
-.edit #bookmarks a.add { display: inline-flex; }
+.edit #bookmarks section > .section-remove {
+    display:                    inline-flex;
+}
 
-#bookmarks section { position: relative; }
+#bookmarks section > .section-remove:hover {
+    background:                 #FEE2E2;
+    border-color:               #EF4444;
+    color:                      #991B1B;
+}
+
+html.theme-dark #bookmarks section > .section-remove {
+    border-color:               rgba(248, 113, 113, 0.55);
+    background:                 #1F2937;
+    color:                      #FCA5A5;
+}
+
+html.theme-dark #bookmarks section > .section-remove:hover {
+    background:                 #3F1D1D;
+    border-color:               #F87171;
+    color:                      #FECACA;
+}
 
 #bookmarks a.add:hover {
-    opacity:                    1;
-    background-color:           #E9EEFF;
-    color:                      #2B4FB5;
-    border-color:               #365ABA;
+    background-color:           rgba(107, 114, 128, 0.14);
+    color:                      #4B5563;
+    border-color:               rgba(75, 85, 99, 0.85);
+    transform:                  translateY(-1px);
+}
+
+html.theme-dark #bookmarks a.add {
+    border-color:               rgba(148, 163, 184, 0.55);
+    color:                      #CBD5E1;
+    background:                 rgba(148, 163, 184, 0.12);
+    box-shadow:                 var(--tile-shadow);
+}
+
+html.theme-dark #bookmarks a.add:hover {
+    background-color:           rgba(148, 163, 184, 0.22);
+    color:                      #E2E8F0;
+    border-color:               rgba(203, 213, 225, 0.8);
 }
 
 #bookmarks a.add span {
@@ -313,7 +405,7 @@ html.theme-dark .edit #bookmarks a:hover {
 
 #bookmarks a.drop-placeholder {
     display: inline-block;
-    width: 10.5em;
+    width: 11em;
     height: calc(3 * 1.35em + var(--tile-y-pad));
     margin: 2px 6px 6px 2px;
     border-radius: var(--tile-radius);
@@ -329,6 +421,48 @@ html.theme-dark .edit #bookmarks a:hover {
     border: none;
 }
 
+#add-section-cta-wrap {
+    display:                    none;
+    justify-content:            center;
+    align-items:                center;
+    padding:                    16px 0 8px;
+}
+
+.edit #add-section-cta-wrap {
+    display:                    flex;
+}
+
+#add-section-cta {
+    display:                    inline-flex;
+    align-items:                center;
+    justify-content:            center;
+    width:                      52px;
+    height:                     52px;
+    border-radius:              999px;
+    background:                 var(--tile-bg);
+    border:                     2px dashed rgba(54, 90, 186, 0.55);
+    color:                      var(--accent-color);
+    font-size:                  2.05rem;
+    line-height:                1;
+    box-shadow:                 var(--tile-shadow);
+    transition:                 transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+}
+
+#add-section-cta:hover {
+    background:                 var(--tile-hover-bg);
+    transform:                  translateY(-1px);
+    box-shadow:                 0 12px 24px rgba(15, 23, 42, 0.16);
+}
+
+html.theme-dark #add-section-cta {
+    border-color:               rgba(157, 182, 255, 0.55);
+}
+
+.ui-add-section-form > select {
+    width:                      100%;
+    margin-top:                 10px;
+}
+
 /* While dragging, hide the original tile so it doesn't look duplicated */
 .edit #bookmarks a.dragging {
     opacity: 0;
@@ -339,28 +473,40 @@ html.theme-dark .edit #bookmarks a:hover {
 }
 
 #controls {
-    position:                   fixed;
-    top:                        5px;
-    right:                      10px;
-    z-index:                    10;
-    padding:                    6px 10px;
-    border-radius:              9999px;
-    background:                 var(--tile-bg);
-    border:                     1px solid rgba(0,0,0,0.05);
-    box-shadow:                 var(--tile-shadow);
+    position:                   sticky;
+    top:                        10px;
+    right:                      auto;
+    z-index:                    20;
+    width:                      max-content;
+    max-width:                  100%;
+    display:                    flex;
+    align-items:                center;
+    gap:                        2px;
+    margin:                     10px 0 0 auto;
+    padding:                    7px 10px;
+    border-radius:              14px;
+    background:                 var(--surface-strong);
+    border:                     1px solid var(--surface-border);
+    box-shadow:                 0 14px 34px rgba(15, 23, 42, 0.14);
     -webkit-backdrop-filter:    saturate(120%) blur(6px);
     backdrop-filter:            saturate(120%) blur(6px);
 }
 
 #controls > div {
-    display: inline;
+    display:                    block;
+}
+
+#controls .mx-1 {
+    opacity:                    0.45;
+    margin:                     0 1px;
 }
 
 #controls a {
     font-size:                  14px;
-    margin:                     0 6px;
+    margin:                     0;
     padding:                    4px 8px;
     border-radius:              8px;
+    color:                      var(--text-color);
 }
 
 #controls a:hover, #controls a.selected {
@@ -377,9 +523,9 @@ html.theme-dark .edit #bookmarks a:hover {
     top: 100%;
     margin-top: 6px;
     background: var(--tile-bg);
-    border: 1px solid rgba(0,0,0,0.08);
+    border: 1px solid var(--surface-border);
     border-radius: 10px;
-    box-shadow: var(--tile-shadow);
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.14);
     display: none;
     min-width: 120px;
     padding: 6px;
@@ -403,7 +549,8 @@ html.theme-dark .edit #bookmarks a:hover {
 }
 
 :-webkit-any(.ui-edit-form,.ui-add-form) > input:focus {
-    outline: none;
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 1px;
     border-color: #b6c5ef;
 }
 
@@ -483,54 +630,186 @@ html.theme-dark #overlay {
     box-sizing: border-box;
 }
 
-#filter {
-    position: absolute;
-    bottom: 12px;
-    left: 0;
-    width: 100%;
+/* Spotlight search */
+#spotlight {
+    position:                    fixed;
+    inset:                       0;
+    z-index:                     900;
+    display:                     flex;
+    align-items:                 flex-start;
+    justify-content:             center;
+    padding-top:                 min(18vh, 160px);
+    transition:                  opacity 150ms ease;
 }
 
-#filter p {
-    text-align: center;
+#spotlight.spotlight-hidden {
+    opacity:                     0;
+    pointer-events:              none;
 }
 
-/* Search bar */
-#search {
-    position:                    sticky;
-    top:                         8px;
-    padding:                     12px 16px 0 0;
-    z-index:                     9;
+.spotlight-backdrop {
+    position:                    fixed;
+    inset:                       0;
+    background:                  rgba(0, 0, 0, 0.35);
+    -webkit-backdrop-filter:     blur(4px);
+    backdrop-filter:             blur(4px);
 }
 
-#search-input {
+html.theme-dark .spotlight-backdrop {
+    background:                  rgba(0, 0, 0, 0.55);
+}
+
+.spotlight-panel {
+    position:                    relative;
+    width:                       520px;
+    max-width:                   calc(100vw - 40px);
+    background:                  var(--tile-bg);
+    border-radius:               16px;
+    box-shadow:                  0 16px 48px rgba(0, 0, 0, 0.2),
+                                 0 0 0 1px rgba(0, 0, 0, 0.06);
+    overflow:                    hidden;
+    display:                     flex;
+    flex-direction:              column;
+}
+
+html.theme-dark .spotlight-panel {
+    box-shadow:                  0 16px 48px rgba(0, 0, 0, 0.5),
+                                 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+#spotlight-input {
     appearance:                  none;
     -webkit-appearance:          none;
-    width:                       22rem;
-    max-width:                   calc(100% - 140px);
-    padding:                     10px 12px;
-    border-radius:               10px;
-    border:                      1px solid var(--input-border);
-    box-shadow:                  0 1px 2px rgba(0,0,0,0.04);
-    background-color:            var(--tile-bg);
+    width:                       100%;
+    padding:                     16px 20px;
+    border:                      none;
+    border-bottom:               1px solid rgba(0, 0, 0, 0.06);
+    background:                  transparent;
     color:                       var(--text-color);
-    transition:                  border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease, color 150ms ease;
-}
-
-#search-input:focus {
+    font-size:                   1.15em;
+    font-family:                 inherit;
     outline:                     none;
-    border-color:                #A7B7EF;
-    box-shadow:                  0 0 0 3px rgba(54,90,186,0.15);
+    box-sizing:                  border-box;
 }
 
-/* Dark mode specific border/ring tuning for search */
-html.theme-dark #search-input {
-    border-color:                var(--input-border);
-    box-shadow:                  0 1px 2px rgba(2,6,23,0.35);
+html.theme-dark #spotlight-input {
+    border-bottom-color:         rgba(255, 255, 255, 0.06);
 }
 
-html.theme-dark #search-input:focus {
-    border-color:                #9DB6FF;
-    box-shadow:                  0 0 0 3px rgba(157,182,255,0.25);
+#spotlight-input:focus-visible {
+    box-shadow:                  inset 0 -2px 0 var(--accent-color);
+}
+
+#spotlight-results {
+    list-style:                  none;
+    margin:                      0;
+    padding:                     6px;
+    max-height:                  380px;
+    overflow-y:                  auto;
+    overscroll-behavior:         contain;
+}
+
+#spotlight-results:empty {
+    display:                     none;
+}
+
+#spotlight-results li {
+    display:                     flex;
+    align-items:                 center;
+    gap:                         10px;
+    padding:                     10px 14px;
+    border-radius:               10px;
+    cursor:                      pointer;
+    transition:                  background 80ms ease;
+    color:                       var(--text-color);
+}
+
+#spotlight-results li:hover,
+#spotlight-results li.selected {
+    background:                  var(--tile-hover-bg);
+}
+
+html.theme-dark #spotlight-results li.selected {
+    background:                  #1E2D4A;
+}
+
+#spotlight-results li .spotlight-icon {
+    width:                       22px;
+    height:                      22px;
+    flex:                        0 0 22px;
+    border-radius:               4px;
+}
+
+#spotlight-results li .spotlight-item-body {
+    flex:                        1 1 auto;
+    min-width:                   0;
+    display:                     flex;
+    flex-direction:              column;
+    gap:                         2px;
+}
+
+#spotlight-results li .spotlight-title {
+    font-size:                   0.95em;
+    white-space:                 nowrap;
+    overflow:                    hidden;
+    text-overflow:               ellipsis;
+}
+
+#spotlight-results li .spotlight-title mark {
+    background:                  rgba(54, 90, 186, 0.18);
+    color:                       inherit;
+    border-radius:               2px;
+    padding:                     0 1px;
+}
+
+html.theme-dark #spotlight-results li .spotlight-title mark {
+    background:                  rgba(157, 182, 255, 0.22);
+}
+
+#spotlight-results li .spotlight-url {
+    font-size:                   0.78em;
+    color:                       var(--muted-color);
+    white-space:                 nowrap;
+    overflow:                    hidden;
+    text-overflow:               ellipsis;
+}
+
+#spotlight-results li .spotlight-section {
+    flex:                        0 0 auto;
+    font-size:                   0.72em;
+    text-transform:              uppercase;
+    letter-spacing:              0.04em;
+    color:                       var(--muted-color);
+    background:                  rgba(0, 0, 0, 0.04);
+    padding:                     3px 8px;
+    border-radius:               6px;
+    white-space:                 nowrap;
+}
+
+html.theme-dark #spotlight-results li .spotlight-section {
+    background:                  rgba(255, 255, 255, 0.06);
+}
+
+#spotlight-results li.spotlight-empty {
+    justify-content:             center;
+    color:                       var(--muted-color);
+    font-size:                   0.88em;
+    cursor:                      default;
+    padding:                     14px;
+}
+
+#spotlight-results li.spotlight-empty:hover {
+    background:                  transparent;
+}
+
+/* Scrollbar inside results */
+#spotlight-results::-webkit-scrollbar { width: 6px; }
+#spotlight-results::-webkit-scrollbar-thumb {
+    background:                  rgba(0, 0, 0, 0.12);
+    border-radius:               3px;
+}
+html.theme-dark #spotlight-results::-webkit-scrollbar-thumb {
+    background:                  rgba(255, 255, 255, 0.12);
 }
 
 /* Tooltip with full title on hover - width fits the tile */
@@ -560,4 +839,123 @@ html.theme-dark #search-input:focus {
     transform:                  translateY(0);
 }
 
+/* Global focus visibility */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[contenteditable="true"]:focus-visible {
+    outline:                    2px solid var(--focus-ring);
+    outline-offset:             2px;
+}
+
+#bookmarks a:focus-visible {
+    transform:                  translateY(-1px);
+    box-shadow:                 0 0 0 3px var(--focus-ring), var(--tile-shadow);
+}
+
+/* Modernized dialog / notification look */
+#dialog,
+.notification {
+    border-radius:              14px !important;
+    border:                     1px solid var(--surface-border) !important;
+    box-shadow:                 0 20px 45px rgba(15, 23, 42, 0.2) !important;
+}
+
+#dialog .content,
+.notification .content {
+    padding:                    18px 20px;
+}
+
+#dialog .actions,
+.confirmation .actions {
+    border-top:                 1px solid var(--surface-border) !important;
+    background:                 rgba(0, 0, 0, 0.015);
+}
+
+html.theme-dark #dialog .actions,
+html.theme-dark .confirmation .actions {
+    background:                 rgba(255, 255, 255, 0.03);
+}
+
+#dialog .actions button {
+    border-radius:              9px;
+    padding:                    7px 12px;
+}
+
+#dialog .actions button.main {
+    background:                 var(--accent-color);
+    color:                      #FFFFFF;
+    border:                     1px solid transparent;
+}
+
+#dialog .actions button.main:hover {
+    text-decoration:            none;
+    filter:                     brightness(1.06);
+}
+
+/* Responsive layout */
+@media (max-width: 760px) {
+    body {
+        padding:                0px 12px 18px 12px;
+    }
+
+    #controls {
+        width:                  100%;
+        justify-content:        center;
+        flex-wrap:              wrap;
+        row-gap:                6px;
+    }
+
+    #controls .mx-1 {
+        display:                none;
+    }
+
+    #bookmarks a {
+        width:                  calc(50% - 10px);
+    }
+}
+
+@media (max-width: 560px) {
+    #bookmarks a {
+        width:                  100%;
+    }
+}
+
 /* Removed OS-level dark fallback to prevent light flash on load; explicit theme classes control palette */
+
+/* Section drag & drop */
+.edit #bookmarks section > h1.section-drag-handle {
+    cursor:                     grab;
+    user-select:                none;
+    -webkit-user-select:        none;
+}
+
+.edit #bookmarks section > h1.section-drag-handle:active {
+    cursor:                     grabbing;
+}
+
+.edit #bookmarks section.section-dragging {
+    opacity:                    0.25;
+    transition:                 opacity 150ms ease;
+}
+
+.section-drop-placeholder {
+    height:                     4px;
+    margin:                     6px 0;
+    background:                 var(--accent-color);
+    border-radius:              2px;
+    opacity:                    0.7;
+}
+
+.edit #bookmarks > .left.column-drop-target,
+.edit #bookmarks > .right.column-drop-target {
+    background:                 rgba(54, 90, 186, 0.06);
+    border-radius:              10px;
+    transition:                 background 150ms ease;
+}
+
+html.theme-dark .edit #bookmarks > .left.column-drop-target,
+html.theme-dark .edit #bookmarks > .right.column-drop-target {
+    background:                 rgba(157, 182, 255, 0.06);
+}
