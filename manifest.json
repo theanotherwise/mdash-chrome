@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "mdash mod by taw",
-    "version": "1.2.3",
+    "version": "1.2.4",
     "description": "Clean, tile-based New Tab bookmark dashboard. Spotlight search, drag & drop, undo, themes — offline & private.",
     "icons": {
         "16": "img/icon.png",
