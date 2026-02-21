@@ -40,7 +40,7 @@ mdash-chrome/
 │   ├── bundle.js              # Application logic (all modules, ~2020 lines)
 │   ├── ui.js                  # UI toolkit (Dialog, Overlay, Notification, etc.)
 │   └── lib/
-│       ├── icanhaz.min.js     # ICanHaz.js — client-side templating (Mustache)
+│       └── (icanhaz.min.js removed — replaced with direct DOM construction)
 │       └── (keymaster.min.js removed — was unused)
 ├── css/
 │   ├── styles.css             # Main styles: layout, tiles, themes, search, controls
@@ -208,7 +208,7 @@ Version follows **semver** (`MAJOR.MINOR.PATCH`). The version must be updated in
 - **Module pattern** — each module is an IIFE adding to `window.mdash`.
 - **Prototype-based OOP** — constructors with `.prototype` methods.
 - **jQuery 3.7.1** — used for DOM manipulation (loaded from `js/lib/`, not in repo).
-- **ICanHaz.js** — Mustache templates defined as `<script type="text/html">` in HTML.
+- **No template engine** — sections and bookmarks are built with direct jQuery DOM construction (safe by default).
 - **CSS custom properties** — design tokens in `:root` for theming (v2 minimal elegant palette).
 - **No tests** — no test framework or test files.
 
@@ -232,7 +232,7 @@ When a section is moved between columns:
 
 - **URL validation**: `mdash.util.isSafeUrl()` rejects `javascript:`, `data:`, `vbscript:` URIs. Applied in `renderBookmark`, `normalizeUrl`, `Spotlight.openHref`.
 - **DOM injection prevention**: All undo notifications (`_undoNotify`, remove, update) build content via `document.createTextNode()` / `$().text()` instead of HTML string concatenation. Section `<select>` uses `$('<option>').val().text()`.
-- **ICanHaz escape fix**: Mustache `{{ }}` now properly encodes `"` → `&quot;` and `'` → `&#39;` (was incomplete in v0.3.0).
+- **ICanHaz.js / Mustache.js removed**: Replaced `ich.section()` / `ich.bookmark()` with direct DOM construction via `$('<element>').attr().text()`. Eliminates all template-based injection vectors.
 - **Explicit CSP**: `manifest.json` defines `content_security_policy` restricting `img-src`, `style-src`, `connect-src` to known origins.
 - **Local icons map**: `icons/icons.json` loaded via `chrome.runtime.getURL()` first, remote GitHub fallback only if local is unavailable.
 - **jQuery 3.7.1**: Upgraded from 3.2.1 (addresses CVE-2020-11022, CVE-2020-11023, CVE-2019-11358).

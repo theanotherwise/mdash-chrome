@@ -507,7 +507,8 @@
     proto.renderSection = function( section )
     {
         var _this    = this,
-            $section = ich.section( section );
+            $section = $( '<section>' ).attr( 'id', section.id )
+                .append( $( '<h1>' ).text( section.title ) );
         
         section.children.forEach( function( bookmark )
         {
@@ -546,16 +547,17 @@
         var isVpnMarker = (bookmark.title || '').indexOf('[VPN]') !== -1;
         var displayTitle = mdash.util.stripIconOverride( bookmark.title );
         var hasOverride = mdash.util.hasIconOverride( bookmark.title );
-        var data = {
-            id      : bookmark.id,
-            title   : displayTitle,
-            url     : link.href,
-            favicon : bookmark.favicon ? bookmark.favicon : (hasOverride ? '' : faviconCandidates[ 0 ])
-        };
-        
-        var $el  = ich.bookmark( data );
-        var $img = $el.find( 'img' );
-        $el.attr( 'data-raw-title', bookmark.title );
+        var faviconSrc = bookmark.favicon ? bookmark.favicon : (hasOverride ? '' : faviconCandidates[ 0 ]);
+
+        var $img = $( '<img>' ).attr( { src: faviconSrc, alt: displayTitle } );
+        var $el = $( '<a>' ).attr( {
+            id: bookmark.id,
+            href: link.href,
+            title: displayTitle,
+            'aria-label': displayTitle,
+            'data-title': displayTitle,
+            'data-raw-title': bookmark.title
+        } ).append( $img, $( '<span>' ).text( displayTitle ) );
         
         // Attach fallback; if [VPN] in title, skip normalization (use exact host)
         mdash.util.applyFaviconWithFallback( $img, link.href, isVpnMarker, displayTitle, hasOverride );
