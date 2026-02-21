@@ -312,19 +312,16 @@
         if( _faviconMemCache[ key ] ) return;
         try
         {
-            fetch( imgSrc ).then( function( r ){ return r.blob(); } ).then( function( blob )
-            {
-                var reader = new FileReader();
-                reader.onloadend = function()
+            chrome.runtime.sendMessage(
+                { type: 'cacheFavicon', url: imgSrc, key: key },
+                function( resp )
                 {
-                    var data = reader.result;
-                    if( !data || data.length < 30 ) return;
-                    _faviconMemCache[ key ] = data;
-                    var store = {}; store[ key ] = data;
-                    try { chrome.storage.local.set( store ); } catch(_e){}
-                };
-                reader.readAsDataURL( blob );
-            } ).catch( function(){} );
+                    if( resp && resp.data )
+                    {
+                        _faviconMemCache[ key ] = resp.data;
+                    }
+                }
+            );
         }
         catch(_e){}
     }
