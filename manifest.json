@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "mdash mod by taw",
     "version": "1.2.0",
-    "description": "A minimal dashboard replacing the \"New Tab\" page which syncs with your bookmarks.",
+    "description": "Replace your New Tab with a clean, tile-based bookmark dashboard. Two-column layout, Spotlight search, drag & drop, undo, light/dark themes — all offline, all private.",
     "icons": {
         "16": "img/icon.png",
         "48": "img/icon.png",
