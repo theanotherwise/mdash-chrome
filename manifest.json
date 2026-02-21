@@ -13,8 +13,12 @@
         "contextMenus",
         "storage"
     ],
+    "background": {
+        "service_worker": "js/sw.js"
+    },
     "host_permissions": [
-        "https://www.google.com/*"
+        "https://www.google.com/*",
+        "https://*.gstatic.com/*"
     ],
     "chrome_url_overrides": {
         "newtab": "html/dashboard.html"
