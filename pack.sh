@@ -16,7 +16,7 @@ zip -r "$OUT" * \
     -x "pack.sh" \
     -x "icons/*" \
     -x "AGENTS.md" \
-    -x "STORE_DESCRIPTION.txt" \
+    -x "README.md" \
     -x ".gitignore"
 
 echo "Packed: $SCRIPT_DIR/$OUT"
