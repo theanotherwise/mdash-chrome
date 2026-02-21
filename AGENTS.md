@@ -4,15 +4,16 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.3.8
+**Version**: 1.4.6
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
 
 - Two-column bookmark dashboard (left / right, controlled by `+` / `-` prefix in folder names)
 - Responsive CSS Grid layout for columns (auto-switches to one column on smaller screens)
-- Sticky top control bar with glass-style surface (no overlap with bookmark tiles)
+- Collapsible top-right controls pill with glass-style surface; expands downward on click
 - Edit mode: inline editing, adding, deleting, and renaming sections
+- Edit bookmark dialog uses a custom-styled section dropdown (non-native popup)
 - Edit mode bottom CTA (`+`) to create a new section/folder directly from dashboard UI
 - Edit mode section-header remove button (`×`) to delete an entire section/folder (including nested bookmarks) with confirmation
 - Drag & drop reordering of bookmarks between sections
@@ -22,8 +23,9 @@
 - Light and dark themes (persisted in localStorage)
 - Font size control: small, medium, large (persisted in localStorage)
 - Improved keyboard accessibility with visible focus rings on interactive controls
+- In edit mode, `Escape` closes an open add/edit dialog before leaving edit mode
 - Custom favicon mapping for known services (ArgoCD, Grafana, Jenkins, etc.) via `icons/icons.json`
-- Favicon caching via Chrome `_favicon` API + `localStorage` — icons are converted to base64 via canvas and served from cache on subsequent visits (including offline); `refresh icons` always purges `fav:*` cache first, then rebuilds
+- Favicon caching via Chrome `_favicon` API + `localStorage` — icons are converted to base64 via canvas and served from cache on subsequent visits (including offline); writes are quota-aware, and `refresh icons` always purges `fav:*` cache first, then rebuilds
 - Google S2 favicon fallback for all other bookmarks
 - `ICON_OVERRIDE` suffix in bookmark titles to force icon map lookup
 - `[VPN]` marker in titles to skip hostname normalization for favicons
@@ -78,12 +80,12 @@ Dashboard (orchestrator)
 | **Column** | `mdash.Column` | Renders one column (left or right) by iterating sections and calling `renderSection()` / `renderBookmark()`. Appends an `AddBtn` to each section. Manages column visibility. |
 | **FontCtrl** | `mdash.FontCtrl` | Dropdown control for font sizes (`small`, `medium`, `large`). Persists selection in `localStorage.fontSize`. Applies CSS class to `<body>`. |
 | **HelpCtrl** | `mdash.HelpCtrl` | Toggles visibility between the help/get-started panel and the bookmarks interface. |
-| **EditCtrl** | `mdash.EditCtrl` | Toggles edit mode (`html.edit` class). In edit mode: click tile to edit (title, URL, section), Delete key to remove, click section title to rename, use section-header `button.section-remove` to delete a whole section via `chrome.bookmarks.removeTree()`, use bottom `#add-section-cta` to create a new section (with left/right column selection), drag & drop tiles between sections, and drag & drop sections between columns. Provides undo for bookmark delete and update. Uses `enableSectionDragAndDrop()` / `disableSectionDragAndDrop()` for section-level DnD (separate from tile DnD). |
+| **EditCtrl** | `mdash.EditCtrl` | Toggles edit mode (`html.edit` class). In edit mode: click tile to edit (title, URL, section), Delete key to remove, click section title to rename, use section-header `button.section-remove` to delete a whole section via `chrome.bookmarks.removeTree()`, use bottom `#add-section-cta` to create a new section (with left/right column selection), drag & drop tiles between sections, and drag & drop sections between columns. The bookmark edit dialog uses a custom in-dialog section picker instead of the browser-native `<select>` popup for consistent styling. Provides undo for bookmark delete and update. Uses `enableSectionDragAndDrop()` / `disableSectionDragAndDrop()` for section-level DnD (separate from tile DnD). |
 | **ThemeCtrl** | `mdash.ThemeCtrl` | Dropdown for light/dark theme. Toggles `theme-light` / `theme-dark` on `<html>`. Persists in `localStorage['mdash:theme']`. |
 | **KeyboardManager** | `mdash.KeyboardManager` | Keyboard-driven tile filtering. Guarded by `isEnabled()` check (disabled by default in localStorage). |
 | **AddBtn** | `mdash.AddBtn` | Per-section "+" button rendered as a tile at the end of the section list in edit mode. Opens a confirmation dialog to add a new bookmark. Normalizes URLs (prepends `http://` if needed). |
 | **Spotlight** | `mdash.Spotlight` | Spotlight-style search modal (Option+F / Ctrl+F). Shows a centered overlay with input + results list. Matches by title and URL. Keyboard navigation (↑/↓/Enter/Esc). Results show favicon, title (with highlighted match), URL, and section name. Supports opening in a background tab (`chrome.tabs.create` with `active: false`) using middle-click or Cmd/Ctrl+click while keeping the current tab on Spotlight. |
-| **Dashboard** | `mdash.Dashboard` | Main orchestrator. Initializes all modules, preloads the icon map, loads bookmarks into two columns, sets up the UI toolkit, and handles the "refresh icons" action. Works with the responsive grid/sticky-controls layout defined in CSS. |
+| **Dashboard** | `mdash.Dashboard` | Main orchestrator. Initializes all modules, preloads the icon map, loads bookmarks into two columns, sets up the UI toolkit, handles the collapsible controls panel, and handles the "refresh icons" action. Works with the responsive grid/controls layout defined in CSS. |
 
 ### UI Toolkit (`js/mdash-ui.js`)
 
@@ -150,7 +152,7 @@ Visual direction: clean, airy, Linear/Vercel-inspired. Near-white backgrounds, c
 | `--bg-color` | `#F5F5F7` | `#1C1C1E` | Page background |
 | `--text-color` | `#1C1C1E` | `#F5F5F7` | Primary text |
 | `--muted-color` | `#8E8E93` | `#8E8E93` | Secondary/muted text |
-| `--accent-color` | `#5856D6` | `#7D7AFF` | Links, accents, active states |
+| `--accent-color` | `#2E7D32` | `#3E9443` | Links, accents, active states |
 | `--tile-bg` | `#FFFFFF` | `#2C2C2E` | Tile background |
 | `--tile-hover-bg` | `#F2F2F7` | `#3A3A3C` | Tile hover background |
 | `--tile-shadow` | ultra-subtle `0 1px 3px` | `0 1px 3px` darker | Tile resting shadow |
@@ -159,14 +161,14 @@ Visual direction: clean, airy, Linear/Vercel-inspired. Near-white backgrounds, c
 | `--surface-strong` | `rgba(255,255,255,0.82)` | `rgba(44,44,46,0.72)` | Glass surfaces |
 | `--hover-shadow` | `0 4px 12px` | `0 4px 12px` darker | Hover elevation |
 | `--section-color` | `#3C3C43` | `#AEAEB2` | Section header text |
-| `--focus-ring` | indigo 40% | indigo 45% | Focus indicators |
+| `--focus-ring` | green 42% | green 48% | Focus indicators |
 
 ### Key Visual Rules
 
 - No background pattern — flat solid `--bg-color`
 - Section headers: sentence case (no uppercase), font-weight 600, letter-spacing 0.03em
 - Tiles: 12px radius, 10.5em width, ultra-subtle shadows, gentle hover lift (-1px)
-- Controls bar: frosted glass with 12px blur, no dot separators, 12px radius
+- Controls pill: frosted glass with 12px blur, compact collapsed state, expands downward in a single rounded box
 - Spotlight modal: 14px radius, consistent shadow language
 - Edit-mode hover: soft warm tint (`#FFF3E0` light / `#FFF8E1` dark)
 - Grid gap: 24px row / 32px column
@@ -227,7 +229,7 @@ When a section is moved between columns:
 2. Chrome bookmark folder title prefix is updated (`+` ↔ `-`) via `chrome.bookmarks.update()`.
 3. Manager's cached `folder.children` is invalidated.
 
-## Security Hardening (v1.3.8)
+## Security Hardening (v1.4.2)
 
 - **URL validation**: `mdash.util.isSafeUrl()` rejects `javascript:`, `data:`, `vbscript:` URIs. Applied in `renderBookmark`, `normalizeUrl`, `Spotlight.openHref`.
 - **DOM injection prevention**: All undo notifications (`_undoNotify`, remove, update) build content via `document.createTextNode()` / `$().text()` instead of HTML string concatenation. Section `<select>` uses `$('<option>').val().text()`.
@@ -240,6 +242,8 @@ When a section is moved between columns:
 - **Favicon stability fix**: `_favicon` background load validates icon quality (opaque + dark pixel thresholds), caches valid results, and upgrades the visible icon immediately when valid to avoid requiring a second page refresh after cache purge.
 - **Refresh behavior fix**: `refresh icons` now always purges favicon cache (`localStorage` `fav:*` + memory). Normal click purges then reloads page (full rebuild); `Alt+click` purges then rebuilds favicons in place with full title/override/VPN-aware resolution logic.
 - **Local dev favicon correctness fix**: cache key now uses full page origin (protocol + host + port), preventing collisions across `127.0.0.1:*` / `localhost:*`; host normalization for S2 fallback is skipped for IP/localhost hosts so `127.0.0.1` is never collapsed to invalid roots (e.g. `0.1`).
+- **Cache resilience/performance fix**: `_saveFaviconToLocalStorage()` handles `QuotaExceededError` by evicting a controlled fraction of `fav:*` entries (~20%) and retrying once; in-place refresh uses a concurrency guard and batched processing; background favicon loaders clean up handlers on `load`/`error`.
+- **Top-gap layout fix**: controls are now a compact, fixed top-right pill that expands downward on demand; right-column-only offset was removed so left/right columns start aligned.
 
 ## Known Issues
 

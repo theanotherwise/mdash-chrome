@@ -7,7 +7,8 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 ### Dashboard Layout
 - Two-column layout that mirrors your bookmark folder structure
 - Responsive grid — auto-switches to single column on smaller screens
-- Sticky top control bar with frosted glass effect
+- Collapsible top-right controls pill with frosted glass effect
+- Dark-green accent color for focus, action buttons, and highlights
 - Light and dark themes
 - Three font sizes: small, medium, large
 
@@ -20,6 +21,7 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 
 ### Edit Mode
 - Click any bookmark tile to edit its title, URL, or move it to another section
+- Edit dialog section picker uses a custom styled dropdown for consistent UI
 - Drag & drop bookmarks between sections to reorder
 - Drag & drop entire sections between left and right columns
 - Rename sections by clicking the section title
@@ -36,8 +38,9 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 - Custom icon mapping for known services (ArgoCD, Grafana, Jenkins, etc.)
 - Google S2 favicon service as fallback
 - Local favicon caching via Chrome's `_favicon` API + localStorage for offline access
+- Quota-aware cache writes (automatic partial favicon-cache eviction + retry)
 - Click refresh button to always purge favicon cache and reload for a full rebuild
-- Alt+click refresh button to purge cache and rebuild favicons in place
+- Alt+click refresh button to purge cache and rebuild favicons in place (batched for large bookmark sets)
 
 ### Privacy
 - Zero external data collection
@@ -51,7 +54,7 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 | Option+F / Ctrl+F | Open Spotlight search |
 | Arrow keys | Navigate Spotlight results |
 | Enter | Open selected result |
-| Escape | Close Spotlight / close dialog |
+| Escape | Close Spotlight / close open dialog (before leaving edit mode) |
 | Middle-click | Open in background tab (Spotlight) |
 
 ## Installation

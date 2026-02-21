@@ -15,25 +15,29 @@
                 <ul id="spotlight-results"></ul>
             </div>
         </div>
-        <div id="controls">
-            <div id="editctrl" class="inline"><a id="edit" href="#">edit</a></div>
-            <div id="iconctrl" class="inline"><a id="refresh-icons" href="#">refresh icons</a></div>
-            <div id="fontctrl" class="dropdown inline" data-current="large">
-                <a href="#" class="dropdown-toggle">large ▾</a>
-                <div class="dropdown-menu">
-                    <a href="#" data-size="small">small</a>
-                    <a href="#" data-size="medium">medium</a>
-                    <a href="#" data-size="large" class="selected">large</a>
+        <div id="controls" class="collapsed">
+            <a id="controls-toggle" href="#" aria-expanded="false" aria-label="Open controls" title="Controls">menu</a>
+            <div id="controls-panel">
+                <div class="controls-title">controls</div>
+                <div id="editctrl" class="inline"><a id="edit" href="#">edit</a></div>
+                <div id="iconctrl" class="inline"><a id="refresh-icons" href="#">refresh icons</a></div>
+                <div id="fontctrl" class="dropdown inline" data-current="large">
+                    <a href="#" class="dropdown-toggle">large ▾</a>
+                    <div class="dropdown-menu">
+                        <a href="#" data-size="small">small</a>
+                        <a href="#" data-size="medium">medium</a>
+                        <a href="#" data-size="large" class="selected">large</a>
+                    </div>
                 </div>
-            </div>
-            <div id="themectrl" class="dropdown inline" data-current="light">
-                <a href="#" class="dropdown-toggle">light ▾</a>
-                <div class="dropdown-menu">
-                    <a href="#" data-theme="light" class="selected">light</a>
-                    <a href="#" data-theme="dark">dark</a>
+                <div id="themectrl" class="dropdown inline" data-current="light">
+                    <a href="#" class="dropdown-toggle">light ▾</a>
+                    <div class="dropdown-menu">
+                        <a href="#" data-theme="light" class="selected">light</a>
+                        <a href="#" data-theme="dark">dark</a>
+                    </div>
                 </div>
+                <a id="helpctrl" href="#">?</a>
             </div>
-            <a id="helpctrl" href="#">?</a>
         </div>
         <div id="getstarted-overlay">
             <div class="getstarted-backdrop"></div>
@@ -77,8 +81,8 @@
                     <li><strong>Drag &amp; drop sections</strong>: in edit mode drag a section header to move the entire section between left and right columns.</li>
                     <li><strong>Undo everything</strong>: every action (add, delete, edit, move, rename, create/remove section) shows an <em>Undo</em> notification — click it within <em>30s</em> to revert.</li>
                     <li><strong>Search</strong>: press <kbd>Option+F</kbd> (macOS) or <kbd>Ctrl+F</kbd> (Windows) to open Spotlight search. Navigate with <kbd>↑</kbd>/<kbd>↓</kbd>, press <kbd>Enter</kbd> to open. Middle-click or <kbd>Cmd/Ctrl+Click</kbd> opens in a background tab.</li>
-                    <li><strong>Themes</strong>: switch <em>light / dark</em> from the top-right menu.</li>
-                    <li><strong>Font size</strong>: choose <em>small / medium / large</em> from the font menu.</li>
+                    <li><strong>Themes</strong>: open the top-right controls pill, then switch <em>light / dark</em>.</li>
+                    <li><strong>Font size</strong>: open the controls pill and choose <em>small / medium / large</em>.</li>
                     <li><strong>Refresh icons</strong>: click <em>refresh icons</em> to purge favicon cache and reload the page (full rebuild). <kbd>Alt+Click</kbd> also purges cache, then rebuilds favicons in place.</li>
                     <li><strong>Help</strong>: click <em>?</em> to toggle this panel. Click outside to close.</li>
                 </ul>

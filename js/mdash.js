@@ -372,11 +372,56 @@
         catch(_e){ return null; }
     }
 
+    function _evictFaviconCacheFraction( fraction )
+    {
+        var keys = [];
+        var part = (typeof fraction === 'number' && fraction > 0 && fraction <= 1) ? fraction : 0.2;
+        try
+        {
+            for( var i = 0; i < localStorage.length; i++ )
+            {
+                var k = localStorage.key( i );
+                if( k && k.indexOf( 'fav:' ) === 0 ) keys.push( k );
+            }
+        }
+        catch( _e ){ return 0; }
+
+        if( !keys.length ) return 0;
+
+        var toRemove = Math.max( 1, Math.floor( keys.length * part ) );
+        for( var j = 0; j < toRemove; j++ )
+        {
+            localStorage.removeItem( keys[ j ] );
+            delete _faviconMemCache[ keys[ j ] ];
+        }
+        return toRemove;
+    }
+
     function _saveFaviconToLocalStorage( key, data )
     {
         if( !data || data.length < 30 ) return;
         _faviconMemCache[ key ] = data;
-        try { localStorage.setItem( key, data ); } catch(_e){}
+        try
+        {
+            localStorage.setItem( key, data );
+        }
+        catch( e )
+        {
+            var isQuota = !!(e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22 || e.code === 1014));
+            if( !isQuota ) return;
+
+            var removed = _evictFaviconCacheFraction( 0.2 );
+            try { if( window.console && console.debug ) console.debug( '[mdash] favicon cache quota reached; evicted %d entries and retrying.', removed ); } catch( _e ){}
+
+            try
+            {
+                localStorage.setItem( key, data );
+            }
+            catch( _e2 )
+            {
+                try { if( window.console && console.debug ) console.debug( '[mdash] favicon cache write failed after eviction.' ); } catch( _e3 ){}
+            }
+        }
     }
 
     function _isValidCachedFavicon( dataUrl )
@@ -485,9 +530,18 @@
         {
             var bgImg = new Image();
             var $visibleImg = $img;
+            var cleanupBgImg = function()
+            {
+                bgImg.onload = null;
+                bgImg.onerror = null;
+            };
             bgImg.onload = function()
             {
-                if( bgImg.naturalWidth < 2 ) return;
+                if( bgImg.naturalWidth < 2 )
+                {
+                    cleanupBgImg();
+                    return;
+                }
                 try
                 {
                     var c = document.createElement( 'canvas' );
@@ -505,11 +559,23 @@
                         var lum = (0.2126 * pd[ pi ]) + (0.7152 * pd[ pi + 1 ]) + (0.0722 * pd[ pi + 2 ]);
                         if( lum < 220 ) dark++;
                     }
-                    if( opaque < area * 0.1 ) return;
-                    if( dark < Math.max( 4, area * 0.01 ) ) return;
+                    if( opaque < area * 0.1 )
+                    {
+                        cleanupBgImg();
+                        return;
+                    }
+                    if( dark < Math.max( 4, area * 0.01 ) )
+                    {
+                        cleanupBgImg();
+                        return;
+                    }
                     var b64 = c.toDataURL( 'image/png' );
                 }
-                catch( _e ){ return; }
+                catch( _e )
+                {
+                    cleanupBgImg();
+                    return;
+                }
                 if( b64 )
                 {
                     _saveFaviconToLocalStorage( cacheKey, b64 );
@@ -519,7 +585,9 @@
                         $visibleImg.attr( 'src', b64 );
                     }
                 }
+                cleanupBgImg();
             };
+            bgImg.onerror = cleanupBgImg;
             bgImg.src = _faviconUrl( href );
         }
     };
@@ -1380,6 +1448,7 @@
         $form.append( $name, $side );
         
         var modal = ui.confirm( 'Create new section', $form );
+        modal.el.addClass( 'dialog-form-wide' );
         modal.overlay().ok( 'Create' );
         
         modal.show( function( ok )
@@ -1674,6 +1743,8 @@
             }
             else if( self.editMode && (e.key === 'Escape' || e.keyCode === 27) )
             {
+                // When a modal is open, let dialog-level ESC handler close it first.
+                if( $( '#dialog' ).is( ':visible' ) ) return;
                 // Ignore ESC when typing in inputs (e.g. section rename)
                 if( $( e.target ).is('input, textarea, select, [contenteditable="true"]') ) return;
                 e.preventDefault();
@@ -1831,12 +1902,91 @@
         $title = $( '<input autofocus id="title" type="text"/>' ).val( rawTitle ).focus();
         $url   = $( '<input id="url" type="text"/>' ).val( $b.attr( 'href' ) );
 
-        $section = $( '<select id="section">' );
+        $section = $( '<select id="section" class="ui-hidden-select" aria-hidden="true" tabindex="-1">' );
         sections.forEach( function( section )
         {
             $( '<option>' ).val( section.id ).text( section.title ).appendTo( $section );
         } );
         $section.val( sectionId );
+
+        var $sectionField = $( '<div class="ui-custom-select">' );
+        var $sectionTrigger = $( '<button type="button" class="ui-custom-select-trigger" aria-haspopup="listbox" aria-expanded="false"></button>' );
+        var $sectionLabel = $( '<span class="ui-custom-select-label"></span>' );
+        var $sectionCaret = $( '<span class="ui-custom-select-caret" aria-hidden="true">v</span>' );
+        var $sectionMenu = $( '<div class="ui-custom-select-menu" role="listbox"></div>' );
+
+        var closeSectionMenu = function()
+        {
+            $sectionField.removeClass( 'open' );
+            $sectionTrigger.attr( 'aria-expanded', 'false' );
+        };
+
+        var openSectionMenu = function()
+        {
+            $sectionField.addClass( 'open' );
+            $sectionTrigger.attr( 'aria-expanded', 'true' );
+        };
+
+        var setSectionSelection = function( value, label )
+        {
+            $section.val( value );
+            $sectionLabel.text( label || '' );
+            $sectionMenu.find( '.ui-custom-select-option' ).removeClass( 'selected' ).attr( 'aria-selected', 'false' );
+            $sectionMenu.find( '.ui-custom-select-option[data-value="' + value + '"]' ).addClass( 'selected' ).attr( 'aria-selected', 'true' );
+        };
+
+        $sectionTrigger.append( $sectionLabel, $sectionCaret );
+        $sectionField.append( $sectionTrigger, $sectionMenu );
+
+        sections.forEach( function( section )
+        {
+            var selected = ('' + section.id) === ('' + sectionId);
+            var $option = $( '<button type="button" class="ui-custom-select-option" role="option"></button>' )
+                .attr( 'data-value', section.id )
+                .attr( 'aria-selected', selected ? 'true' : 'false' )
+                .text( section.title );
+            if( selected ) $option.addClass( 'selected' );
+            $sectionMenu.append( $option );
+        } );
+
+        if( sections.length )
+        {
+            var current = sections.filter( function( s ){ return ('' + s.id) === ('' + sectionId); } )[ 0 ] || sections[ 0 ];
+            setSectionSelection( current.id, current.title );
+        }
+
+        $sectionTrigger.on( 'click', function( e )
+        {
+            e.preventDefault();
+            e.stopPropagation();
+            if( $sectionField.hasClass( 'open' ) ) closeSectionMenu();
+            else openSectionMenu();
+        } );
+
+        $sectionMenu.on( 'click', '.ui-custom-select-option', function( e )
+        {
+            e.preventDefault();
+            e.stopPropagation();
+            var $opt = $( e.currentTarget );
+            setSectionSelection( $opt.attr( 'data-value' ), $opt.text() );
+            closeSectionMenu();
+        } );
+
+        $form.on( 'click', function( e )
+        {
+            if( !$( e.target ).closest( '.ui-custom-select' ).length ) closeSectionMenu();
+        } );
+
+        $form.on( 'keydown', function( e )
+        {
+            var code = e.which || e.keyCode;
+            if( (e.key === 'Escape' || code === 27) && $sectionField.hasClass( 'open' ) )
+            {
+                e.preventDefault();
+                e.stopPropagation();
+                closeSectionMenu();
+            }
+        } );
 
         // Track current edited bookmark id for keyboard Delete
         this.currentEditId = id;
@@ -1852,9 +2002,10 @@
             } );
         } );
         
-        $form.append( $title, $url, $section, $rmBtn );
+        $form.append( $title, $url, $section, $sectionField, $rmBtn );
         
         dialog = ui.confirm( 'Edit \'' + title + '\'', $form );
+        dialog.el.addClass( 'dialog-form-wide' );
         dialog.overlay().ok( 'Save' );
         dialog.show( function( ok )
         {
@@ -2393,6 +2544,7 @@
             'Add a bookmark in \'' + this.$section.find( 'h1' ).text() + '\'',
             $form
         );
+        modal.el.addClass( 'dialog-form-wide' );
         
         modal.overlay().ok( 'Add' );
         
@@ -2797,10 +2949,13 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.3.8';
+    Dashboard.VERSION = '1.4.6';
 
     proto.init = function()
     {
+        this.$controls   = $( '#controls' );
+        this.$controlsToggle = $( '#controls-toggle' );
+        this.$controlsPanel = $( '#controls-panel' );
         this.$fontSizes  = $( '#fontctrl .dropdown-menu a' );
         this.$helpCtrl   = $( '#helpctrl' );
         this.$themeCtrl  = $( '#themectrl .dropdown-menu a' );
@@ -2809,6 +2964,7 @@
         this.$getStarted = $( '#getstarted' );
         this.$bookmarks  = $( '#bookmarks' );
         this.$version    = $( '#version' );
+        this._refreshingFavicons = false;
 
         this.manager         = new mdash.Manager();
         this.fontCtrl        = new mdash.FontCtrl( this.$fontSizes );
@@ -2833,6 +2989,7 @@
         }
 
         this.setupUIKit();
+        this.setupControlsPanel();
 
         this.keyboardManager.init();
 
@@ -2845,6 +3002,7 @@
             e.preventDefault();
             if( e.altKey )
             {
+                if( _this._refreshingFavicons ) return;
                 ui.notify( 'Refreshing', 'Purging favicon cache and rebuilding in place…' );
                 _this.refreshFavicons();
                 return;
@@ -2852,6 +3010,58 @@
             ui.notify( 'Refreshing', 'Purging favicon cache and reloading…' );
             _this.purgeFaviconCache();
             window.location.reload();
+        } );
+    };
+
+    proto.setupControlsPanel = function()
+    {
+        var _this = this;
+        if( !this.$controls.length || !this.$controlsToggle.length || !this.$controlsPanel.length ) return;
+
+        var closePanel = function()
+        {
+            _this.$controls.removeClass( 'expanded' ).addClass( 'collapsed' );
+            _this.$controlsToggle.attr( 'aria-expanded', 'false' );
+            _this.$controls.find( '.dropdown' ).removeClass( 'open' );
+        };
+
+        var openPanel = function()
+        {
+            _this.$controls.removeClass( 'collapsed' ).addClass( 'expanded' );
+            _this.$controlsToggle.attr( 'aria-expanded', 'true' );
+        };
+
+        this.$controlsToggle.on( 'click', function( e )
+        {
+            e.preventDefault();
+            if( _this.$controls.hasClass( 'expanded' ) ) closePanel();
+            else openPanel();
+        } );
+
+        this.$controlsPanel.on( 'click', 'a', function( e )
+        {
+            var $a = $( e.currentTarget );
+            if( $a.hasClass( 'dropdown-toggle' ) ) return;
+            if( $a.closest( '.dropdown-menu' ).length )
+            {
+                closePanel();
+                return;
+            }
+            if( $a.is( '#edit' ) || $a.is( '#refresh-icons' ) || $a.is( '#helpctrl' ) )
+            {
+                closePanel();
+            }
+        } );
+
+        $( document ).on( 'click', function( e )
+        {
+            if( !$( e.target ).closest( '#controls' ).length ) closePanel();
+        } );
+
+        $( document ).on( 'keydown', function( e )
+        {
+            var code = e.which || e.keyCode;
+            if( code === 27 ) closePanel();
         } );
     };
 
@@ -2912,24 +3122,46 @@
 
     proto.refreshFavicons = function()
     {
+        if( this._refreshingFavicons ) return;
+        this._refreshingFavicons = true;
         this.purgeFaviconCache();
 
-        $( '#bookmarks a:not(.add) img' ).each( function( _, img )
+        var _this = this;
+        var $imgs = $( '#bookmarks a:not(.add) img' );
+        var idx = 0;
+        var batchSize = 12;
+        var batchDelay = 30;
+
+        var runBatch = function()
         {
-            var $img = $( img );
-            var $a   = $img.closest( 'a' );
-            var href = $a.attr( 'href' );
-            if( !href ) return;
-            try
+            var end = Math.min( idx + batchSize, $imgs.length );
+            for( ; idx < end; idx++ )
             {
-                var rawTitle = $a.attr( 'data-raw-title' ) || $a.attr( 'data-title' ) || '';
-                var overrideOnly = mdash.util.hasIconOverride( rawTitle );
-                var effectiveTitle = mdash.util.stripIconOverride( rawTitle );
-                var vpn = rawTitle.indexOf( '[VPN]' ) !== -1;
-                mdash.util.applyFaviconWithFallback( $img, href, vpn, effectiveTitle, overrideOnly );
+                var img = $imgs.get( idx );
+                var $img = $( img );
+                var $a   = $img.closest( 'a' );
+                var href = $a.attr( 'href' );
+                if( !href ) continue;
+                try
+                {
+                    var rawTitle = $a.attr( 'data-raw-title' ) || $a.attr( 'data-title' ) || '';
+                    var overrideOnly = mdash.util.hasIconOverride( rawTitle );
+                    var effectiveTitle = mdash.util.stripIconOverride( rawTitle );
+                    var vpn = rawTitle.indexOf( '[VPN]' ) !== -1;
+                    mdash.util.applyFaviconWithFallback( $img, href, vpn, effectiveTitle, overrideOnly );
+                }
+                catch( e ){}
             }
-            catch( e ){}
-        } );
+
+            if( idx < $imgs.length )
+            {
+                setTimeout( runBatch, batchDelay );
+                return;
+            }
+            _this._refreshingFavicons = false;
+        };
+
+        runBatch();
     };
 
 } )( window.mdash || ( window.mdash = {} ), window.jQuery || window.Zepto );
