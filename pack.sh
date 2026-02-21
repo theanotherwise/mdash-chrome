@@ -14,7 +14,8 @@ zip -r "$OUT" * \
     -x "**/.DS_Store" \
     -x "**/node_modules/**" \
     -x "pack.sh" \
-    -x "icons/*" \
+    -x "icons/*.png" \
+    -x "icons/*.svg" \
     -x "AGENTS.md" \
     -x "README.md" \
     -x ".gitignore"

@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.2.5
+**Version**: 1.3.0
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -41,7 +41,7 @@ mdash-chrome/
 │   ├── ui.js                  # UI toolkit (Dialog, Overlay, Notification, etc.)
 │   └── lib/
 │       ├── icanhaz.min.js     # ICanHaz.js — client-side templating (Mustache)
-│       └── keymaster.min.js   # Keyboard shortcut library (unused)
+│       └── (keymaster.min.js removed — was unused)
 ├── css/
 │   ├── styles.css             # Main styles: layout, tiles, themes, search, controls
 │   └── ui.css                 # UI toolkit styles: dialogs, overlays, notifications
@@ -104,7 +104,7 @@ The `ui` global provides:
 
 ### Favicon Resolution Strategy
 
-1. On init, the icons map (`icons/icons.json`) is fetched from GitHub (remote, no-cache).
+1. On init, the icons map (`icons/icons.json`) is loaded locally first (via `chrome.runtime.getURL`), with remote GitHub fallback.
 2. For each bookmark tile:
    - If title contains `ICON_OVERRIDE` suffix → look up icons map only.
    - Otherwise → try icons map by keyword match (title + hostname), fall back to Google S2 favicon service.
@@ -207,7 +207,7 @@ Version follows **semver** (`MAJOR.MINOR.PATCH`). The version must be updated in
 - **No build system / bundler** — vanilla JS, no transpilation, no npm dependencies.
 - **Module pattern** — each module is an IIFE adding to `window.mdash`.
 - **Prototype-based OOP** — constructors with `.prototype` methods.
-- **jQuery 3.2.1** — used for DOM manipulation (loaded from `js/lib/`, not in repo).
+- **jQuery 3.7.1** — used for DOM manipulation (loaded from `js/lib/`, not in repo).
 - **ICanHaz.js** — Mustache templates defined as `<script type="text/html">` in HTML.
 - **CSS custom properties** — design tokens in `:root` for theming (v2 minimal elegant palette).
 - **No tests** — no test framework or test files.
@@ -228,7 +228,18 @@ When a section is moved between columns:
 2. Chrome bookmark folder title prefix is updated (`+` ↔ `-`) via `chrome.bookmarks.update()`.
 3. Manager's cached `folder.children` is invalidated.
 
+## Security Hardening (v1.3.0)
+
+- **URL validation**: `mdash.util.isSafeUrl()` rejects `javascript:`, `data:`, `vbscript:` URIs. Applied in `renderBookmark`, `normalizeUrl`, `Spotlight.openHref`.
+- **DOM injection prevention**: All undo notifications (`_undoNotify`, remove, update) build content via `document.createTextNode()` / `$().text()` instead of HTML string concatenation. Section `<select>` uses `$('<option>').val().text()`.
+- **ICanHaz escape fix**: Mustache `{{ }}` now properly encodes `"` → `&quot;` and `'` → `&#39;` (was incomplete in v0.3.0).
+- **Explicit CSP**: `manifest.json` defines `content_security_policy` restricting `img-src`, `style-src`, `connect-src` to known origins.
+- **Local icons map**: `icons/icons.json` loaded via `chrome.runtime.getURL()` first, remote GitHub fallback only if local is unavailable.
+- **jQuery 3.7.1**: Upgraded from 3.2.1 (addresses CVE-2020-11022, CVE-2020-11023, CVE-2019-11358).
+- **ui.js**: ContextMenu `.add()` and Card `.render()` use safe DOM construction instead of HTML string concatenation.
+- **Removed**: `contextMenus` permission (unused), `keymaster.min.js` (unused dead code).
+
 ## Known Issues
 
 - Drag & drop handler code for tiles is duplicated in three places (enableDragAndDrop, remove undo, AddBtn).
-- `img/icon.png` and `js/lib/jquery-3.2.1.min.js` referenced but not in repository.
+- `img/icon.png` and `js/lib/jquery-3.7.1.min.js` referenced but not in repository.

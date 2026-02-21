@@ -547,7 +547,7 @@ var ui = {};
     ContextMenu.prototype.add = function (text, fn) {
         if (1 == arguments.length) return this.items[text];
         var self = this
-            , el = $('<li><a href="#">' + text + '</a></li>')
+            , el = $('<li>').append($('<a>', { href: '#', text: text }))
             .addClass(slug(text))
             .appendTo(this.el)
             .click(function (e) {
@@ -630,8 +630,8 @@ var ui = {};
     Card.prototype.render = function (options) {
         var self = this
             , el = this.el = $(this.template);
-        el.find('.front').empty().append(this._front.el || $(this._front));
-        el.find('.back').empty().append(this._back.el || $(this._back));
+        el.find('.front').empty().append(this._front.el || $('<span>').text(this._front));
+        el.find('.back').empty().append(this._back.el || $('<span>').text(this._back));
         el.click(function () {
             self.flip();
         });

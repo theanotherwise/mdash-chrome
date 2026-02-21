@@ -196,19 +196,34 @@
     
     mdash.links = {};
 
-    // Shared favicon helpers
+    // Shared utilities
     mdash.util = mdash.util || {};
-    mdash.util.ICONS_MAP_URL = 'https://raw.githubusercontent.com/theanotherwise/mdash-chrome/refs/heads/master/icons/icons.json';
+
+    mdash.util.isSafeUrl = function( url )
+    {
+        if( !url ) return false;
+        try { var u = new URL( url ); return /^https?:$|^ftp:$|^file:$|^chrome:$|^chrome-extension:$/.test( u.protocol ); }
+        catch( _e ){ return false; }
+    };
+
+    // Shared favicon helpers
+    mdash.util.ICONS_MAP_LOCAL = (typeof chrome !== 'undefined' && chrome.runtime) ? chrome.runtime.getURL( 'icons/icons.json' ) : '';
+    mdash.util.ICONS_MAP_REMOTE = 'https://raw.githubusercontent.com/theanotherwise/mdash-chrome/refs/heads/master/icons/icons.json';
     mdash.util.ICONS_BASE_URL = 'https://raw.githubusercontent.com/theanotherwise/mdash-chrome/refs/heads/master/icons/';
     mdash.util._iconsMap = null;
     mdash.util._iconsPromise = null;
     mdash.util.preloadIconsMap = function()
     {
         if( this._iconsPromise ) return this._iconsPromise;
+        var localUrl = this.ICONS_MAP_LOCAL;
+        var remoteUrl = this.ICONS_MAP_REMOTE;
         try
         {
-            this._iconsPromise = fetch( this.ICONS_MAP_URL, { method: 'GET', cache: 'no-store' } )
-                .then( function( r ){ return r.ok ? r.json() : {}; } )
+            var tryFetch = localUrl
+                ? fetch( localUrl ).then( function( r ){ return r.ok ? r.json() : Promise.reject(); } )
+                    .catch( function(){ return fetch( remoteUrl, { cache: 'no-store' } ).then( function( r ){ return r.ok ? r.json() : {}; } ); } )
+                : fetch( remoteUrl, { cache: 'no-store' } ).then( function( r ){ return r.ok ? r.json() : {}; } );
+            this._iconsPromise = tryFetch
                 .then( function( json ){ mdash.util._iconsMap = json || {}; return mdash.util._iconsMap; } )
                 .catch( function(){ mdash.util._iconsMap = {}; } );
         }
@@ -331,6 +346,43 @@
         try { localStorage.setItem( key, data ); } catch(_e){}
     }
 
+    function _isValidCachedFavicon( dataUrl )
+    {
+        try
+        {
+            if( !dataUrl || dataUrl.length < 80 ) return false;
+            var header = dataUrl.slice( 0, 30 );
+            if( header.indexOf( 'data:image' ) !== 0 ) return false;
+            var commaIdx = dataUrl.indexOf( ',' );
+            if( commaIdx < 0 ) return false;
+            var raw = atob( dataUrl.slice( commaIdx + 1 ) );
+            if( raw.length < 100 ) return false;
+            return true;
+        }
+        catch(_e){ return false; }
+    }
+
+    ( function _purgeBadFaviconCache()
+    {
+        var PURGE_KEY = 'fav:_purged_v1';
+        try
+        {
+            if( localStorage.getItem( PURGE_KEY ) ) return;
+            var keys = [];
+            for( var i = 0; i < localStorage.length; i++ )
+            {
+                var k = localStorage.key( i );
+                if( k && k.indexOf( 'fav:' ) === 0 && k !== PURGE_KEY ) keys.push( k );
+            }
+            keys.forEach( function( k )
+            {
+                if( !_isValidCachedFavicon( localStorage.getItem( k ) ) ) localStorage.removeItem( k );
+            } );
+            localStorage.setItem( PURGE_KEY, '1' );
+        }
+        catch(_e){}
+    } )();
+
     mdash.util.applyFaviconWithFallback = function( $img, href, noNormalize, title, overrideOnly )
     {
         var candidates = overrideOnly ? [] : mdash.util.getFaviconCandidates( href, !!noNormalize );
@@ -403,7 +455,20 @@
             bgImg.onload = function()
             {
                 if( bgImg.naturalWidth < 2 ) return;
-                var b64 = _imgToBase64( bgImg );
+                try
+                {
+                    var c = document.createElement( 'canvas' );
+                    c.width = bgImg.naturalWidth || 32;
+                    c.height = bgImg.naturalHeight || 32;
+                    var ctx = c.getContext( '2d' );
+                    ctx.drawImage( bgImg, 0, 0, c.width, c.height );
+                    var pd = ctx.getImageData( 0, 0, c.width, c.height ).data;
+                    var opaque = 0;
+                    for( var pi = 3; pi < pd.length; pi += 4 ){ if( pd[ pi ] > 10 ) opaque++; }
+                    if( opaque < c.width * c.height * 0.1 ) return;
+                    var b64 = c.toDataURL( 'image/png' );
+                }
+                catch( _e ){ return; }
                 if( b64 )
                 {
                     _saveFaviconToLocalStorage( cacheKey, b64 );
@@ -474,7 +539,8 @@
     {
         var link = document.createElement( 'a' );
         
-        link.href = bookmark.url;
+        var safeUrl = mdash.util.isSafeUrl( bookmark.url ) ? bookmark.url : 'about:blank';
+        link.href = safeUrl;
         var faviconCandidates = mdash.util.getFaviconCandidates( link.href );
 
         var isVpnMarker = (bookmark.title || '').indexOf('[VPN]') !== -1;
@@ -626,7 +692,10 @@
     mdash._undoNotify = function( noteTitle, msg, undoFn )
     {
         var seconds = 30, undone = false;
-        var $content = $( '<div>' + msg + ' <a href="#" class="undo">Undo (<span class="count">' + seconds + '</span>)</a></div>' );
+        var $content = $( '<div>' ).append(
+            document.createTextNode( msg + ' ' ),
+            $( '<a href="#" class="undo">' ).append( 'Undo (', $( '<span class="count">' ).text( seconds ), ')' )
+        );
         var note = ui.notify( noteTitle, $content ).hide( 31000 );
         var tick = setInterval( function()
         {
@@ -1715,13 +1784,12 @@
         $title = $( '<input autofocus id="title" type="text"/>' ).val( rawTitle ).focus();
         $url   = $( '<input id="url" type="text"/>' ).val( $b.attr( 'href' ) );
 
-        var sectionsSelectHtml = '<select id="section">';
+        $section = $( '<select id="section">' );
         sections.forEach( function( section )
         {
-            sectionsSelectHtml += '<option value="' + section.id + '">' + section.title + '</option>';
+            $( '<option>' ).val( section.id ).text( section.title ).appendTo( $section );
         } );
-        sectionsSelectHtml += '</select>';
-        $section = $( sectionsSelectHtml ).val( sectionId );
+        $section.val( sectionId );
 
         // Track current edited bookmark id for keyboard Delete
         this.currentEditId = id;
@@ -1797,7 +1865,10 @@
                 setTimeout( function() { $el.remove(); }, 500 );
 
                 var seconds = 30, undone = false;
-                var $content = $( '<div>Bookmark \'' + undoInfo.title + '\' removed. <a href="#" class="undo">Undo (<span class="count">' + seconds + '</span>)</a></div>' );
+                var $content = $( '<div>' ).append(
+                    document.createTextNode( 'Bookmark \'' + undoInfo.title + '\' removed. ' ),
+                    $( '<a href="#" class="undo">' ).append( 'Undo (', $( '<span class="count">' ).text( seconds ), ')' )
+                );
                 var note = ui.notify( 'Removed', $content ).hide( 31000 );
                 var tick = setInterval( function()
                 {
@@ -1913,7 +1984,10 @@
         function showUndoNotification()
         {
             var seconds = 30, undone = false;
-            var $content = $( '<div>Bookmark \'' + ($title.text()) + '\' updated. <a href="#" class="undo">Undo (<span class="count">' + seconds + '</span>)</a></div>' );
+            var $content = $( '<div>' ).append(
+                document.createTextNode( 'Bookmark \'' + $title.text() + '\' updated. ' ),
+                $( '<a href="#" class="undo">' ).append( 'Undo (', $( '<span class="count">' ).text( seconds ), ')' )
+            );
             var note = ui.notify( 'Updated', $content ).hide( 31000 );
             var tick = setInterval( function(){ seconds -= 1; if( seconds <= 0 ) clearInterval( tick ); $content.find('.count').text(Math.max(seconds,0)); }, 1000 );
 
@@ -2243,11 +2317,11 @@
         value = value.trim();
         if( !value ) return value;
 
-        try { new URL( value ); return value; } catch( e ) {}
+        if( value.indexOf( '//' ) === 0 ) value = 'https:' + value;
 
-        if( value.indexOf( '//' ) === 0 ) return 'https:' + value;
+        try { new URL( value ); } catch( _e ) { value = 'http://' + value; }
 
-        return 'http://' + value;
+        return mdash.util.isSafeUrl( value ) ? value : null;
     };
     
     var AddBtn = mdash.AddBtn = function( $btn )
@@ -2638,7 +2712,7 @@
     
     Spotlight.prototype.openHref = function( href, inNewTab, keepOpen )
     {
-        if( !href ) return;
+        if( !href || !mdash.util.isSafeUrl( href ) ) return;
         
         if( inNewTab )
         {
@@ -2676,7 +2750,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.2.5';
+    Dashboard.VERSION = '1.3.0';
 
     proto.init = function()
     {
