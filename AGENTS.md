@@ -179,6 +179,28 @@ Visual direction: clean, airy, Linear/Vercel-inspired. Near-white backgrounds, c
 - **`README.md`** contains the user-facing feature list of the extension. Whenever a feature is added, removed, or significantly changed, `README.md` must be updated to reflect the current state.
 - **`AGENTS.md`** contains the technical architecture and internal conventions. Keep both files in sync.
 
+## Version Bumping Policy
+
+Version follows **semver** (`MAJOR.MINOR.PATCH`). The version must be updated in **three places** simultaneously:
+
+1. `manifest.json` → `"version"`
+2. `js/bundle.js` → `Dashboard.VERSION`
+3. `AGENTS.md` → `**Version**` field at the top
+
+### When to bump automatically
+
+| Change type | Bump | Examples |
+|---|---|---|
+| Bug fix, style tweak, refactor, internal cleanup | **PATCH** (+0.0.1) | CSS fix, CORS fix, cache logic fix |
+| New user-facing feature, new UI element, new permission | **MINOR** (+0.1.0, reset patch to 0) | Spotlight search, undo, favicon caching, drag & drop sections |
+| Breaking change, major architecture rewrite, data migration | **MAJOR** (+1.0.0, reset minor+patch to 0) | Manifest version change, storage format migration |
+
+### Rules
+
+- Bump automatically after completing a set of related changes — do not wait for the user to ask.
+- If multiple changes are made in one session, bump once at the end covering all changes.
+- Never skip a bump when the extension zip would need to be re-uploaded to Chrome Web Store.
+
 ## Development Conventions
 
 - **No build system / bundler** — vanilla JS, no transpilation, no npm dependencies.
