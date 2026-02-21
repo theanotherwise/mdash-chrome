@@ -305,20 +305,26 @@
         catch(_e){ return 'fav:' + href; }
     }
 
-    function _saveFaviconToCache( img, href )
+    function _saveFaviconToCache( imgSrc, href )
     {
+        if( !imgSrc || imgSrc.indexOf( 'data:' ) === 0 ) return;
+        var key = _faviconCacheKey( href );
+        if( _faviconMemCache[ key ] ) return;
         try
         {
-            var c = document.createElement( 'canvas' );
-            c.width = img.naturalWidth || 32;
-            c.height = img.naturalHeight || 32;
-            c.getContext( '2d' ).drawImage( img, 0, 0, c.width, c.height );
-            var data = c.toDataURL( 'image/png' );
-            if( !data || data.length < 30 ) return;
-            var key = _faviconCacheKey( href );
-            _faviconMemCache[ key ] = data;
-            var store = {}; store[ key ] = data;
-            try { chrome.storage.local.set( store ); } catch(_e){}
+            fetch( imgSrc ).then( function( r ){ return r.blob(); } ).then( function( blob )
+            {
+                var reader = new FileReader();
+                reader.onloadend = function()
+                {
+                    var data = reader.result;
+                    if( !data || data.length < 30 ) return;
+                    _faviconMemCache[ key ] = data;
+                    var store = {}; store[ key ] = data;
+                    try { chrome.storage.local.set( store ); } catch(_e){}
+                };
+                reader.readAsDataURL( blob );
+            } ).catch( function(){} );
         }
         catch(_e){}
     }
@@ -381,22 +387,12 @@
         {
             var src = this.src || '';
             if( src.indexOf( 'data:' ) === 0 ) return;
-            _saveFaviconToCache( this, $img.data( 'favicon:href' ) || href );
+            _saveFaviconToCache( src, $img.data( 'favicon:href' ) || href );
         } );
 
         $img.on( 'error.mdash', function()
         {
             var $i = $( this );
-
-            // CORS retry: if crossorigin is set and this is the first failure, retry without it
-            if( this.getAttribute( 'crossorigin' ) && !$i.data( 'favicon:cors-retry' ) )
-            {
-                $i.data( 'favicon:cors-retry', true );
-                this.removeAttribute( 'crossorigin' );
-                this.src = this.src;
-                return;
-            }
-
             var list = $i.data( 'favicon:candidates' ) || [];
             var idx  = ($i.data( 'favicon:index' ) || 0) + 1;
             if( idx < list.length )
