@@ -3,6 +3,8 @@
 EXT_VERSION=$(cat manifest.json | jq -r ".version")
 OUT="build/mdash-chrome-${EXT_VERSION}.zip"
 
+rm -f build/mdash-chrome-*.zip
+
 zip -r "$OUT" * \
     -x "build/*" \
     -x "**/.git/**" \
