@@ -364,7 +364,7 @@
 
     ( function _purgeBadFaviconCache()
     {
-        var PURGE_KEY = 'fav:_purged_v1';
+        var PURGE_KEY = 'fav:_purged_v2';
         try
         {
             if( localStorage.getItem( PURGE_KEY ) ) return;
@@ -372,11 +372,11 @@
             for( var i = 0; i < localStorage.length; i++ )
             {
                 var k = localStorage.key( i );
-                if( k && k.indexOf( 'fav:' ) === 0 && k !== PURGE_KEY ) keys.push( k );
+                if( k && k.indexOf( 'fav:' ) === 0 ) keys.push( k );
             }
             keys.forEach( function( k )
             {
-                if( !_isValidCachedFavicon( localStorage.getItem( k ) ) ) localStorage.removeItem( k );
+                localStorage.removeItem( k );
             } );
             localStorage.setItem( PURGE_KEY, '1' );
         }
@@ -447,11 +447,11 @@
             $img.attr( 'src', candidates[0] );
         }
 
-        // 4. Background: load same-origin _favicon, convert to base64 via canvas, save to localStorage + update visible img
+        // 4. Background: load same-origin _favicon and cache only if it looks usable.
+        // Do not replace the currently visible icon here to avoid flicker/regressions.
         if( _faviconExtId )
         {
             var bgImg = new Image();
-            var $visibleImg = $img;
             bgImg.onload = function()
             {
                 if( bgImg.naturalWidth < 2 ) return;
@@ -463,16 +463,23 @@
                     var ctx = c.getContext( '2d' );
                     ctx.drawImage( bgImg, 0, 0, c.width, c.height );
                     var pd = ctx.getImageData( 0, 0, c.width, c.height ).data;
-                    var opaque = 0;
-                    for( var pi = 3; pi < pd.length; pi += 4 ){ if( pd[ pi ] > 10 ) opaque++; }
-                    if( opaque < c.width * c.height * 0.1 ) return;
+                    var opaque = 0, dark = 0, area = c.width * c.height;
+                    for( var pi = 0; pi < pd.length; pi += 4 )
+                    {
+                        var a = pd[ pi + 3 ];
+                        if( a <= 10 ) continue;
+                        opaque++;
+                        var lum = (0.2126 * pd[ pi ]) + (0.7152 * pd[ pi + 1 ]) + (0.0722 * pd[ pi + 2 ]);
+                        if( lum < 220 ) dark++;
+                    }
+                    if( opaque < area * 0.1 ) return;
+                    if( dark < Math.max( 4, area * 0.01 ) ) return;
                     var b64 = c.toDataURL( 'image/png' );
                 }
                 catch( _e ){ return; }
                 if( b64 )
                 {
                     _saveFaviconToLocalStorage( cacheKey, b64 );
-                    $visibleImg.attr( 'src', b64 );
                 }
             };
             bgImg.src = _faviconUrl( href );
@@ -2752,7 +2759,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.3.1';
+    Dashboard.VERSION = '1.3.4';
 
     proto.init = function()
     {
@@ -2791,13 +2798,21 @@
 
         this.keyboardManager.init();
 
-        // Refresh icons action — always clears cache and re-fetches
+        // Refresh icons action:
+        // - click: full page reload (stable/default behavior)
+        // - Alt+click: clear favicon cache and re-fetch in place
         var _this = this;
         this.$refresh.on( 'click', function( e )
         {
             e.preventDefault();
-            ui.notify( 'Refreshing', 'Clearing favicon cache and re-fetching…' );
-            _this.refreshFavicons();
+            if( e.altKey )
+            {
+                ui.notify( 'Refreshing', 'Clearing favicon cache and re-fetching…' );
+                _this.refreshFavicons();
+                return;
+            }
+            ui.notify( 'Refreshing', 'Reloading page…' );
+            window.location.reload();
         } );
     };
 
@@ -2861,7 +2876,16 @@
             var $img = $( img );
             var $a   = $img.closest( 'a' );
             var href = $a.attr( 'href' );
-            try { mdash.util.applyFaviconWithFallback( $img, href ); } catch( e ) {}
+            if( !href ) return;
+            try
+            {
+                var rawTitle = $a.attr( 'data-raw-title' ) || $a.attr( 'data-title' ) || '';
+                var overrideOnly = mdash.util.hasIconOverride( rawTitle );
+                var effectiveTitle = mdash.util.stripIconOverride( rawTitle );
+                var vpn = rawTitle.indexOf( '[VPN]' ) !== -1;
+                mdash.util.applyFaviconWithFallback( $img, href, vpn, effectiveTitle, overrideOnly );
+            }
+            catch( e ){}
         } );
     };
 
