@@ -2710,21 +2710,13 @@
 
         this.keyboardManager.init();
 
-        // Refresh icons action
+        // Refresh icons action — always clears cache and re-fetches
         var _this = this;
         this.$refresh.on( 'click', function( e )
         {
             e.preventDefault();
-            if( e.altKey )
-            {
-                ui.notify( 'Refreshing', 'Refreshing favicons…' );
-                _this.refreshFavicons();
-            }
-            else
-            {
-                // Full page reload to mirror browser refresh and guarantee requests
-                window.location.reload();
-            }
+            ui.notify( 'Refreshing', 'Clearing favicon cache and re-fetching…' );
+            _this.refreshFavicons();
         } );
     };
 
