@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.3.0
+**Version**: 1.3.1
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -53,7 +53,7 @@ mdash-chrome/
 
 ## Functional Architecture
 
-All application modules live in `js/bundle.js` as IIFE (Immediately Invoked Function Expressions) sharing the `window.mdash` namespace. The UI toolkit in `js/ui.js` exposes the global `ui` object.
+All application modules live in `js/mdash.js` as IIFE (Immediately Invoked Function Expressions) sharing the `window.mdash` namespace. The UI toolkit in `js/mdash-ui.js` exposes the global `ui` object.
 
 ### Module Dependency Graph
 
@@ -85,7 +85,7 @@ Dashboard (orchestrator)
 | **Spotlight** | `mdash.Spotlight` | Spotlight-style search modal (Option+F / Ctrl+F). Shows a centered overlay with input + results list. Matches by title and URL. Keyboard navigation (↑/↓/Enter/Esc). Results show favicon, title (with highlighted match), URL, and section name. Supports opening in a background tab (`chrome.tabs.create` with `active: false`) using middle-click or Cmd/Ctrl+click while keeping the current tab on Spotlight. |
 | **Dashboard** | `mdash.Dashboard` | Main orchestrator. Initializes all modules, preloads the icon map, loads bookmarks into two columns, sets up the UI toolkit, and handles the "refresh icons" action. Works with the responsive grid/sticky-controls layout defined in CSS. |
 
-### UI Toolkit (`js/ui.js`)
+### UI Toolkit (`js/mdash-ui.js`)
 
 The `ui` global provides:
 
@@ -182,7 +182,7 @@ Visual direction: clean, airy, Linear/Vercel-inspired. Near-white backgrounds, c
 Version follows **semver** (`MAJOR.MINOR.PATCH`). The version must be updated in **three places** simultaneously:
 
 1. `manifest.json` → `"version"`
-2. `js/bundle.js` → `Dashboard.VERSION`
+2. `js/mdash.js` → `Dashboard.VERSION`
 3. `AGENTS.md` → `**Version**` field at the top
 
 ### When to bump automatically
@@ -234,7 +234,7 @@ When a section is moved between columns:
 - **Explicit CSP**: `manifest.json` defines `content_security_policy` restricting `img-src`, `style-src`, `connect-src` to known origins.
 - **Local icons map**: `icons/icons.json` loaded via `chrome.runtime.getURL()` first, remote GitHub fallback only if local is unavailable.
 - **jQuery 3.7.1**: Upgraded from 3.2.1 (addresses CVE-2020-11022, CVE-2020-11023, CVE-2019-11358).
-- **ui.js**: ContextMenu `.add()` and Card `.render()` use safe DOM construction instead of HTML string concatenation.
+- **mdash-ui.js**: ContextMenu `.add()` and Card `.render()` use safe DOM construction instead of HTML string concatenation.
 - **Removed**: `contextMenus` permission (unused), `keymaster.min.js` (unused dead code).
 
 ## Known Issues
