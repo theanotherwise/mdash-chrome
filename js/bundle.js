@@ -298,6 +298,7 @@
         }
     };
     var _faviconMemCache = {};
+    var _faviconExtId = (typeof chrome !== 'undefined' && chrome.runtime) ? chrome.runtime.id : '';
 
     function _faviconCacheKey( href )
     {
@@ -305,25 +306,29 @@
         catch(_e){ return 'fav:' + href; }
     }
 
-    function _saveFaviconToCache( imgSrc, href )
+    function _faviconUrl( pageUrl )
     {
-        if( !imgSrc || imgSrc.indexOf( 'data:' ) === 0 ) return;
-        var key = _faviconCacheKey( href );
-        if( _faviconMemCache[ key ] ) return;
+        return 'chrome-extension://' + _faviconExtId + '/_favicon/?pageUrl=' + encodeURIComponent( pageUrl ) + '&size=64';
+    }
+
+    function _imgToBase64( img )
+    {
         try
         {
-            chrome.runtime.sendMessage(
-                { type: 'cacheFavicon', url: imgSrc, key: key },
-                function( resp )
-                {
-                    if( resp && resp.data )
-                    {
-                        _faviconMemCache[ key ] = resp.data;
-                    }
-                }
-            );
+            var c = document.createElement( 'canvas' );
+            c.width = img.naturalWidth || 32;
+            c.height = img.naturalHeight || 32;
+            c.getContext( '2d' ).drawImage( img, 0, 0, c.width, c.height );
+            return c.toDataURL( 'image/png' );
         }
-        catch(_e){}
+        catch(_e){ return null; }
+    }
+
+    function _saveFaviconToLocalStorage( key, data )
+    {
+        if( !data || data.length < 30 ) return;
+        _faviconMemCache[ key ] = data;
+        try { localStorage.setItem( key, data ); } catch(_e){}
     }
 
     mdash.util.applyFaviconWithFallback = function( $img, href, noNormalize, title, overrideOnly )
@@ -349,43 +354,30 @@
 
         var cacheKey = _faviconCacheKey( href );
 
-        // Try in-memory cache first (instant, no async)
+        // 1. In-memory cache (instant)
         if( _faviconMemCache[ cacheKey ] )
         {
             $img.attr( 'src', _faviconMemCache[ cacheKey ] );
-            $img.off( 'error.mdash' );
             return;
         }
 
-        // Try chrome.storage.local cache
+        // 2. localStorage cache (synchronous)
         try
         {
-            chrome.storage.local.get( cacheKey, function( result )
+            var cached = localStorage.getItem( cacheKey );
+            if( cached )
             {
-                if( result && result[ cacheKey ] )
-                {
-                    _faviconMemCache[ cacheKey ] = result[ cacheKey ];
-                    // Only apply if still showing a broken/loading state
-                    if( !$img[0].naturalWidth || $img[0].naturalWidth < 2 )
-                    {
-                        $img.attr( 'src', result[ cacheKey ] );
-                    }
-                }
-            } );
+                _faviconMemCache[ cacheKey ] = cached;
+                $img.attr( 'src', cached );
+                return;
+            }
         }
         catch(_e){}
 
+        // 3. Show Google S2 immediately for display, then cache via _favicon API in background
         $img.off( 'error.mdash load.mdash' );
         $img.data( 'favicon:candidates', candidates );
         $img.data( 'favicon:index', 0 );
-        $img.data( 'favicon:href', href );
-
-        $img.on( 'load.mdash', function()
-        {
-            var src = this.src || '';
-            if( src.indexOf( 'data:' ) === 0 ) return;
-            _saveFaviconToCache( src, $img.data( 'favicon:href' ) || href );
-        } );
 
         $img.on( 'error.mdash', function()
         {
@@ -395,38 +387,25 @@
             if( idx < list.length )
             {
                 $i.data( 'favicon:index', idx );
-                $i.data( 'favicon:cors-retry', false );
                 this.src = list[ idx ];
-            }
-            else
-            {
-                var ck = _faviconCacheKey( $i.data( 'favicon:href' ) || href );
-                if( _faviconMemCache[ ck ] )
-                {
-                    $i.off( 'error.mdash' );
-                    this.src = _faviconMemCache[ ck ];
-                }
-                else
-                {
-                    try
-                    {
-                        chrome.storage.local.get( ck, function( r )
-                        {
-                            if( r && r[ ck ] )
-                            {
-                                _faviconMemCache[ ck ] = r[ ck ];
-                                $i.off( 'error.mdash' );
-                                $i[0].src = r[ ck ];
-                            }
-                        } );
-                    }
-                    catch(_e2){}
-                }
             }
         } );
 
         if( candidates.length ) {
             $img.attr( 'src', candidates[0] );
+        }
+
+        // 4. Background: load same-origin _favicon, convert to base64 via canvas, save to localStorage
+        if( _faviconExtId )
+        {
+            var bgImg = new Image();
+            bgImg.onload = function()
+            {
+                if( bgImg.naturalWidth < 2 ) return;
+                var b64 = _imgToBase64( bgImg );
+                _saveFaviconToLocalStorage( cacheKey, b64 );
+            };
+            bgImg.src = _faviconUrl( href );
         }
     };
     
