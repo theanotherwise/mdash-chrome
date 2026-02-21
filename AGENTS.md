@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.1.5
+**Version**: 1.2.0
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -17,7 +17,7 @@
 - Edit mode section-header remove button (`×`) to delete an entire section/folder (including nested bookmarks) with confirmation
 - Drag & drop reordering of bookmarks between sections
 - Drag & drop sections between columns (left ↔ right); automatically updates `+`/`-` prefix
-- Undo for delete and update operations (30-second window)
+- Undo for all destructive/mutating operations (30-second window): bookmark delete, update, create, drag & drop move; section create, delete, rename, column move
 - Spotlight search modal (Option+F on macOS, Ctrl+F on Windows) with results list, keyboard navigation, highlighted matches, and background-tab open via middle-click / Cmd/Ctrl+click without navigating the current tab
 - Light and dark themes (persisted in localStorage)
 - Font size control: small, medium, large (persisted in localStorage)
@@ -140,6 +140,39 @@ Bookmarks Root
 ./pack.sh   # produces ../mdash-chrome-<version>.zip
 ```
 
+## Design System (v2 — Minimal Elegant)
+
+Visual direction: clean, airy, Linear/Vercel-inspired. Near-white backgrounds, crisp typography, ultra-subtle shadows, generous whitespace. Dark theme uses true grey (not navy).
+
+### Design Tokens (CSS Custom Properties)
+
+| Token | Light | Dark | Purpose |
+|---|---|---|---|
+| `--bg-color` | `#F5F5F7` | `#1C1C1E` | Page background |
+| `--text-color` | `#1C1C1E` | `#F5F5F7` | Primary text |
+| `--muted-color` | `#8E8E93` | `#8E8E93` | Secondary/muted text |
+| `--accent-color` | `#5856D6` | `#7D7AFF` | Links, accents, active states |
+| `--tile-bg` | `#FFFFFF` | `#2C2C2E` | Tile background |
+| `--tile-hover-bg` | `#F2F2F7` | `#3A3A3C` | Tile hover background |
+| `--tile-shadow` | ultra-subtle `0 1px 3px` | `0 1px 3px` darker | Tile resting shadow |
+| `--tile-radius` | `12px` | `12px` | Tile border-radius |
+| `--surface-border` | `rgba(0,0,0,0.06)` | `rgba(255,255,255,0.08)` | Subtle borders |
+| `--surface-strong` | `rgba(255,255,255,0.82)` | `rgba(44,44,46,0.72)` | Glass surfaces |
+| `--hover-shadow` | `0 4px 12px` | `0 4px 12px` darker | Hover elevation |
+| `--section-color` | `#3C3C43` | `#AEAEB2` | Section header text |
+| `--focus-ring` | indigo 40% | indigo 45% | Focus indicators |
+
+### Key Visual Rules
+
+- No background pattern — flat solid `--bg-color`
+- Section headers: sentence case (no uppercase), font-weight 600, letter-spacing 0.03em
+- Tiles: 12px radius, 10.5em width, ultra-subtle shadows, gentle hover lift (-1px)
+- Controls bar: frosted glass with 12px blur, no dot separators, 12px radius
+- Spotlight modal: 14px radius, consistent shadow language
+- Edit-mode hover: soft warm tint (`#FFF3E0` light / `#FFF8E1` dark)
+- Grid gap: 24px row / 32px column
+- Scrollbars: 6px wide, very low opacity
+
 ## Development Conventions
 
 - **No build system / bundler** — vanilla JS, no transpilation, no npm dependencies.
@@ -147,7 +180,7 @@ Bookmarks Root
 - **Prototype-based OOP** — constructors with `.prototype` methods.
 - **jQuery 3.2.1** — used for DOM manipulation (loaded from `js/lib/`, not in repo).
 - **ICanHaz.js** — Mustache templates defined as `<script type="text/html">` in HTML.
-- **CSS custom properties** — design tokens in `:root` for theming.
+- **CSS custom properties** — design tokens in `:root` for theming (v2 minimal elegant palette).
 - **No tests** — no test framework or test files.
 
 ## DnD Architecture

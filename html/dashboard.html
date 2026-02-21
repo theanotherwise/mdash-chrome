@@ -4,14 +4,10 @@
         <meta charset="utf-8" />
         <title>—bookmarks</title>
         <link rel="shortcut icon" href="../img/icon-.png" type="image/png" />
-        <link rel="stylesheet" href="../css/styles.css" type="text/css" />
         <link rel="stylesheet" href="../css/ui.css" type="text/css" />
+        <link rel="stylesheet" href="../css/styles.css" type="text/css" />
     </head>
     <body class="large">
-        <div id="search" style="display:none">
-            <input id="search-input" type="search" placeholder="Search bookmarks…" autocomplete="off" />
-        </div>
-
         <div id="spotlight" class="spotlight-hidden">
             <div class="spotlight-backdrop"></div>
             <div class="spotlight-panel">
@@ -21,9 +17,7 @@
         </div>
         <div id="controls">
             <div id="editctrl" class="inline"><a id="edit" href="#">edit</a></div>
-            <span class="mx-1">·</span>
             <div id="iconctrl" class="inline"><a id="refresh-icons" href="#">refresh icons</a></div>
-            <span class="mx-1">·</span>
             <div id="fontctrl" class="dropdown inline" data-current="large">
                 <a href="#" class="dropdown-toggle">large ▾</a>
                 <div class="dropdown-menu">
@@ -32,7 +26,6 @@
                     <a href="#" data-size="large" class="selected">large</a>
                 </div>
             </div>
-            <span class="mx-1">·</span>
             <div id="themectrl" class="dropdown inline" data-current="light">
                 <a href="#" class="dropdown-toggle">light ▾</a>
                 <div class="dropdown-menu">
@@ -40,12 +33,13 @@
                     <a href="#" data-theme="dark">dark</a>
                 </div>
             </div>
-            <span class="mx-1">·</span>
             <a id="helpctrl" href="#">?</a>
         </div>
-        <div id="getstarted">
-            <h1>Get started</h1>
-            <section>
+        <div id="getstarted-overlay">
+            <div class="getstarted-backdrop"></div>
+            <div id="getstarted">
+                <h1>Get started</h1>
+                <section>
                 <p>
                     Looks like this is the first time you're using <strong>mdash</strong>,
                     here are a few steps to get you started:
@@ -73,26 +67,26 @@
                 </p>
                 <h2>Features</h2>
                 <ul>
-                    <li><strong>Edit mode</strong>: click <em>edit</em> to enable editing of tiles.</li>
-                    <li><strong>Add</strong>: in edit mode each section shows a <em>+</em> button to add a bookmark.</li>
-                    <li><strong>Delete section</strong>: in edit mode use the <em>×</em> button in a section header to remove the whole folder.</li>
-                    <li><strong>New section</strong>: in edit mode use the big <em>+</em> at the bottom to create a new folder/section.</li>
-                    <li><strong>Drag & drop</strong>: in edit mode drag a tile to another section to move it.</li>
-                    <li><strong>Delete</strong>:
-                        - press <kbd>Delete</kbd> over a tile, or
-                        - inside the edit dialog use <em>DELETE (shortcut key: DELETE)</em>.
-                    </li>
-                    <li><strong>Undo delete</strong>: after removing a tile you have up to <em>30s</em> to click <em>Undo</em> in the notification.</li>
-                    <li><strong>Undo update</strong>: after saving changes to a tile you have up to <em>30s</em> to revert them via <em>Undo</em>.</li>
-                    <li><strong>Search</strong>: press <kbd>Option+F</kbd> (macOS) or <kbd>Ctrl+F</kbd> (Windows) to open Spotlight search; navigate with arrows, press Enter to open.</li>
-                    <li><strong>Themes</strong>: switch <em>light/dark</em> from the menu on the top‑right.</li>
-                    <li><strong>Font size</strong>: choose <em>small/medium/large</em> from the font menu.</li>
-                    <li><strong>Refresh icons</strong>: click <em>refresh icons</em> to reload the page (Alt+Click refreshes only icons).</li>
+                    <li><strong>Edit mode</strong>: click <em>edit</em> to enable editing. Click a tile to edit its title, URL, or move it to another section.</li>
+                    <li><strong>Add bookmark</strong>: in edit mode each section shows a <em>+</em> tile — click it to add a new bookmark.</li>
+                    <li><strong>Delete bookmark</strong>: click a tile in edit mode, then use the <em>Delete</em> link or press <kbd>Delete</kbd> inside the edit dialog.</li>
+                    <li><strong>Rename section</strong>: in edit mode click a section title to rename it inline. Press <kbd>Enter</kbd> to save, <kbd>Esc</kbd> to cancel.</li>
+                    <li><strong>Delete section</strong>: in edit mode use the <em>×</em> button in the section header to remove the folder and all its bookmarks.</li>
+                    <li><strong>New section</strong>: in edit mode click the big <em>+</em> at the bottom to create a new folder in the left or right column.</li>
+                    <li><strong>Drag &amp; drop tiles</strong>: in edit mode drag a bookmark tile to another section to move it.</li>
+                    <li><strong>Drag &amp; drop sections</strong>: in edit mode drag a section header to move the entire section between left and right columns.</li>
+                    <li><strong>Undo everything</strong>: every action (add, delete, edit, move, rename, create/remove section) shows an <em>Undo</em> notification — click it within <em>30s</em> to revert.</li>
+                    <li><strong>Search</strong>: press <kbd>Option+F</kbd> (macOS) or <kbd>Ctrl+F</kbd> (Windows) to open Spotlight search. Navigate with <kbd>↑</kbd>/<kbd>↓</kbd>, press <kbd>Enter</kbd> to open. Middle-click or <kbd>Cmd/Ctrl+Click</kbd> opens in a background tab.</li>
+                    <li><strong>Themes</strong>: switch <em>light / dark</em> from the top-right menu.</li>
+                    <li><strong>Font size</strong>: choose <em>small / medium / large</em> from the font menu.</li>
+                    <li><strong>Refresh icons</strong>: click <em>refresh icons</em> to reload the page. <kbd>Alt+Click</kbd> refreshes only favicons.</li>
+                    <li><strong>Help</strong>: click <em>?</em> to toggle this panel. Click outside to close.</li>
                 </ul>
                 <p>
                     Make sure to also take a look at the <a href="https://github.com/theanotherwise/mdash-chrome" target="_blank" rel="noopener noreferrer">online documentation</a>, which features more detailed explanations (with images), and describe every features of the extensions.
                 </p>
             </section>
+            </div>
         </div>
         <div id="bookmarks">
             <div class="left"></div>

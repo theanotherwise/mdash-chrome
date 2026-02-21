@@ -512,32 +512,65 @@
     {
         this.$handle    = $handle;
         this.$help      = $help;
+        this.$overlay   = $( '#getstarted-overlay' );
         this.$interface = $interface;
     };
-    
+
     HelpCtrl.prototype.init = function()
     {
-        this.$handle.on( 'click', this.toggle.bind( this ) );
+        var self = this;
+        this.$handle.on( 'click', function( e ) { e.preventDefault(); self.toggle(); } );
+        this.$overlay.find( '.getstarted-backdrop' ).on( 'click', function() { self.hide(); } );
     };
-    
+
     HelpCtrl.prototype.toggle = function()
     {
-        this.$help.toggle();
-        this.$interface.toggle();
+        this.$overlay.toggleClass( 'visible' );
     };
-    
+
     HelpCtrl.prototype.show = function()
     {
-        this.$help.show();
-        this.$interface.hide();
+        this.$overlay.addClass( 'visible' );
     };
-    
+
     HelpCtrl.prototype.hide = function()
     {
-        this.$help.hide();
-        this.$interface.show();
+        this.$overlay.removeClass( 'visible' );
     };
     
+} )( window.mdash || ( window.mdash = {} ) );
+
+
+/* --- Shared undo notification helper --- */
+
+( function( mdash )
+{
+    'use strict';
+
+    mdash._undoNotify = function( noteTitle, msg, undoFn )
+    {
+        var seconds = 30, undone = false;
+        var $content = $( '<div>' + msg + ' <a href="#" class="undo">Undo (<span class="count">' + seconds + '</span>)</a></div>' );
+        var note = ui.notify( noteTitle, $content ).hide( 31000 );
+        var tick = setInterval( function()
+        {
+            seconds -= 1;
+            if( seconds <= 0 ) clearInterval( tick );
+            $content.find( '.count' ).text( Math.max( seconds, 0 ) );
+        }, 1000 );
+
+        $content.on( 'click', '.undo', function( e )
+        {
+            e.preventDefault();
+            if( undone ) return; undone = true;
+            clearInterval( tick );
+            note.hide( 1 );
+            undoFn();
+        } );
+
+        return note;
+    };
+
 } )( window.mdash || ( window.mdash = {} ) );
 
 
@@ -754,32 +787,32 @@
                 }
 
                 var targetSectionId = $section.attr( 'id' );
-                // Guard: if dropping right next to itself in the same section, do nothing
                 var $tileBeforeMove = $( document.getElementById( id ) );
+                var undoParentId = '', undoIndex = 0;
+
                 if( $tileBeforeMove.length )
                 {
                     var $srcSection = $tileBeforeMove.closest( 'section' );
+                    undoParentId = $srcSection.attr( 'id' ) || '';
+                    var srcChildren = $srcSection.children( 'a' );
+                    for( var si = 0; si < srcChildren.length; si++ )
+                    {
+                        var srcEl = srcChildren[ si ];
+                        if( srcEl === $tileBeforeMove[0] ) break;
+                        if( srcEl.classList.contains( 'add' ) ) continue;
+                        undoIndex++;
+                    }
+
                     if( $srcSection.length && $srcSection.attr( 'id' ) === $section.attr( 'id' ) )
                     {
-                        // Compute source index within its section (excluding add button)
-                        var srcIndex = 0;
-                        var srcChildren = $srcSection.children( 'a' );
-                        for( var si = 0; si < srcChildren.length; si++ )
-                        {
-                            var srcEl = srcChildren[ si ];
-                            if( srcEl === $tileBeforeMove[0] ) break;
-                            if( srcEl.classList.contains( 'add' ) ) continue;
-                            srcIndex++;
-                        }
-                        // If target index equals current index (before) or current index + 1 (after), ignore
-                        if( index === srcIndex || index === srcIndex + 1 )
+                        if( index === undoIndex || index === undoIndex + 1 )
                         {
                             if( self.$placeholder ) self.$placeholder.detach();
                             return;
                         }
                     }
                 }
-                // Move visually immediately for better feedback
+
                 var $tileImmediate = $( document.getElementById( id ) );
                 if( $tileImmediate.length )
                 {
@@ -798,7 +831,20 @@
                 self.api.move( id, { parentId: targetSectionId, index: index }, function()
                 {
                     cleanupDrag();
-                    ui.notify( 'Moved', 'Bookmark moved.' );
+                    mdash._undoNotify( 'Moved', 'Bookmark moved.', function()
+                    {
+                        self.api.move( id, { parentId: undoParentId, index: undoIndex }, function()
+                        {
+                            var $tile = $( document.getElementById( id ) );
+                            var $origSection = $( '#' + undoParentId );
+                            if( !$tile.length || !$origSection.length ) return;
+                            var $tiles = $origSection.children( 'a' ).not( '.add' );
+                            var $add   = $origSection.find( 'a.add' );
+                            if( undoIndex < $tiles.length ) $tiles.eq( undoIndex ).before( $tile );
+                            else $add.before( $tile );
+                            $origSection.show(); $origSection.parent().show();
+                        } );
+                    } );
                 } );
             } );
 
@@ -870,7 +916,21 @@
             var $section = self.$placeholder.closest( 'section' );
             if( !$section.length ) return;
 
-            // Compute insertion index from placeholder position
+            var $tileSrc = $( document.getElementById( id ) );
+            var undoParentId2 = '', undoIndex2 = 0;
+            if( $tileSrc.length )
+            {
+                var $srcSec = $tileSrc.closest( 'section' );
+                undoParentId2 = $srcSec.attr( 'id' ) || '';
+                var srcCh = $srcSec.children( 'a' );
+                for( var si2 = 0; si2 < srcCh.length; si2++ )
+                {
+                    if( srcCh[ si2 ] === $tileSrc[0] ) break;
+                    if( srcCh[ si2 ].classList.contains( 'add' ) ) continue;
+                    undoIndex2++;
+                }
+            }
+
             var index = 0;
             var children = $section.children( 'a' );
             for( var i = 0; i < children.length; i++ )
@@ -882,7 +942,6 @@
             }
 
             var targetSectionId = $section.attr( 'id' );
-            // Immediate visual move
             var $tileImmediate2 = $( document.getElementById( id ) );
             if( $tileImmediate2.length )
             {
@@ -892,9 +951,21 @@
 
             self.api.move( id, { parentId: targetSectionId, index: index }, function()
             {
-                var $tile = $( document.getElementById( id ) );
-                if( !$tile.length ) return;
                 cleanupDrag();
+                mdash._undoNotify( 'Moved', 'Bookmark moved.', function()
+                {
+                    self.api.move( id, { parentId: undoParentId2, index: undoIndex2 }, function()
+                    {
+                        var $tile = $( document.getElementById( id ) );
+                        var $origSec = $( '#' + undoParentId2 );
+                        if( !$tile.length || !$origSec.length ) return;
+                        var $ts = $origSec.children( 'a' ).not( '.add' );
+                        var $ad = $origSec.find( 'a.add' );
+                        if( undoIndex2 < $ts.length ) $ts.eq( undoIndex2 ).before( $tile );
+                        else $ad.before( $tile );
+                        $origSec.show(); $origSec.parent().show();
+                    } );
+                } );
             } );
         } );
     };
@@ -995,9 +1066,15 @@
             var $sourceCol = $draggedSection.parent();
             var isTargetLeft = $targetCol.hasClass( 'left' );
             var isSourceLeft = $sourceCol.hasClass( 'left' );
+            var oldPrefix = isSourceLeft ? '+' : '-';
             var newPrefix = isTargetLeft ? '+' : '-';
             var currentTitle = $draggedSection.children( 'h1' ).text();
-            
+            var sourceColClass = isSourceLeft ? '.left' : '.right';
+
+            var $prevSibling = $draggedSection.prev( 'section' );
+            var hadPrevSibling = $prevSibling.length > 0;
+            var prevSiblingId = hadPrevSibling ? $prevSibling.attr( 'id' ) : null;
+
             if( self.$sectionPlaceholder.parent().length )
             {
                 self.$sectionPlaceholder.replaceWith( $draggedSection );
@@ -1022,7 +1099,30 @@
                 var msg = ( isSourceLeft !== isTargetLeft )
                     ? 'Moved "' + currentTitle + '" to ' + ( isTargetLeft ? 'left' : 'right' ) + ' column.'
                     : 'Reordered "' + currentTitle + '".';
-                ui.notify( 'Section moved', msg );
+
+                mdash._undoNotify( 'Section moved', msg, function()
+                {
+                    self.api.update( sectionId, { title: oldPrefix + currentTitle }, function()
+                    {
+                        if( mdash.dashboard && mdash.dashboard.manager )
+                        {
+                            mdash.dashboard.manager.folder.children = null;
+                        }
+                        var $sec = $( document.getElementById( sectionId ) );
+                        var $origCol = self.$bookmarks.children( sourceColClass );
+                        if( hadPrevSibling && prevSiblingId )
+                        {
+                            var $prev = $( '#' + prevSiblingId );
+                            if( $prev.length ) { $prev.after( $sec ); }
+                            else { $origCol.prepend( $sec ); }
+                        }
+                        else
+                        {
+                            $origCol.prepend( $sec );
+                        }
+                        $origCol.show();
+                    } );
+                } );
             } );
         } );
         
@@ -1159,7 +1259,16 @@
                 self.enableSectionDragAndDrop();
             }
             
-            ui.notify( 'Section created', 'Added "' + title + '" to ' + safeSide + ' column.' );
+            mdash._undoNotify( 'Section created', 'Added "' + title + '" to ' + safeSide + ' column.', function()
+            {
+                self.api.removeTree( created.id, function()
+                {
+                    var $rem = $( '#' + created.id );
+                    if( $rem.length ) $rem.remove();
+                    if( manager.folder ) manager.folder.children = null;
+                    if( !$column.find( 'section' ).length && !self.editMode ) $column.hide();
+                } );
+            } );
             callback && callback( true, created );
         } );
     };
@@ -1190,23 +1299,110 @@
         var self = this;
         var $section = $( '#' + sectionId );
         var $col = $section.parent();
-        
-        this.api.removeTree( sectionId, function()
+        var colClass = $col.hasClass( 'left' ) ? '.left' : '.right';
+
+        this.api.getSubTree( sectionId, function( tree )
         {
-            if( mdash.dashboard && mdash.dashboard.manager )
+            var savedTree = ( tree && tree[0] ) ? tree[0] : null;
+
+            self.api.removeTree( sectionId, function()
             {
-                mdash.dashboard.manager.folder.children = null;
-            }
-            
-            $section.remove();
-            
-            if( !$col.find( 'section' ).length && !self.editMode )
-            {
-                $col.hide();
-            }
-            
-            ui.notify( 'Section removed', '"' + ( sectionTitle || 'Section' ) + '" deleted.' );
-            callback && callback( true );
+                if( mdash.dashboard && mdash.dashboard.manager )
+                {
+                    mdash.dashboard.manager.folder.children = null;
+                }
+
+                $section.remove();
+
+                if( !$col.find( 'section' ).length && !self.editMode )
+                {
+                    $col.hide();
+                }
+
+                if( !savedTree )
+                {
+                    ui.notify( 'Section removed', '"' + ( sectionTitle || 'Section' ) + '" deleted.' );
+                    callback && callback( true );
+                    return;
+                }
+
+                mdash._undoNotify( 'Section removed', '"' + ( sectionTitle || 'Section' ) + '" deleted.', function()
+                {
+                    var manager = mdash.dashboard && mdash.dashboard.manager;
+                    var parentId = ( manager && manager.folder ) ? manager.folder.id : savedTree.parentId;
+
+                    self.api.create( { parentId: parentId, title: savedTree.title }, function( folder )
+                    {
+                        if( !folder ) return;
+                        if( manager && manager.folder ) manager.folder.children = null;
+
+                        function restoreChildren( children, newParentId, done )
+                        {
+                            if( !children || !children.length ) { done(); return; }
+                            var i = 0;
+                            ( function next()
+                            {
+                                if( i >= children.length ) { done(); return; }
+                                var child = children[ i++ ];
+                                if( child.url )
+                                {
+                                    self.api.create( { parentId: newParentId, title: child.title, url: child.url }, function() { next(); } );
+                                }
+                                else
+                                {
+                                    self.api.create( { parentId: newParentId, title: child.title }, function( sub )
+                                    {
+                                        if( sub && child.children ) restoreChildren( child.children, sub.id, next );
+                                        else next();
+                                    } );
+                                }
+                            } )();
+                        }
+
+                        restoreChildren( savedTree.children, folder.id, function()
+                        {
+                            var displayTitle = savedTree.title.replace( /^[+\-]/, '' );
+                            var side = savedTree.title.charAt(0) === '-' ? 'right' : 'left';
+                            var $targetCol = self.$bookmarks.children( side === 'right' ? '.right' : '.left' );
+
+                            var $newSection = mdash.Column.prototype.renderSection( {
+                                id       : folder.id,
+                                title    : displayTitle,
+                                side     : side,
+                                children : []
+                            } );
+
+                            $targetCol.append( $newSection ).show();
+                            $newSection.show();
+
+                            mdash.dashboard.manager.getSections( side, function( sections )
+                            {
+                                var sec = null;
+                                for( var s = 0; s < sections.length; s++ )
+                                {
+                                    if( sections[s].id === folder.id ) { sec = sections[s]; break; }
+                                }
+                                if( sec && sec.children && sec.children.length )
+                                {
+                                    $newSection.find( 'a' ).not( '.add' ).remove();
+                                    $newSection.find( '.section-remove' ).remove();
+                                    var $fresh = mdash.Column.prototype.renderSection( sec );
+                                    $newSection.replaceWith( $fresh );
+                                    $fresh.show();
+                                }
+                                if( self.editMode )
+                                {
+                                    self.disableDragAndDrop();
+                                    self.enableDragAndDrop();
+                                    self.disableSectionDragAndDrop();
+                                    self.enableSectionDragAndDrop();
+                                }
+                            } );
+                        } );
+                    } );
+                } );
+                callback && callback( true );
+            } );
         } );
     };
     
@@ -1291,12 +1487,10 @@
             }
             else if( self.editMode && (e.key === 'Delete' || e.keyCode === 46 || e.keyCode === 8) )
             {
-                // Allow Delete even when focus is in search input IF a tile is hovered
                 var isFormField = $( e.target ).is('input, textarea, select');
-                var hasHoverTarget = !!self.$activeBookmark;
-                if( isFormField && !hasHoverTarget ) return;
+                if( isFormField ) return;
 
-                // If dialog is open, delete the currently edited bookmark
+                // Delete only when the edit dialog is open
                 if( $('#dialog').is(':visible') && self.currentEditId )
                 {
                     e.preventDefault();
@@ -1311,33 +1505,7 @@
                         }
                         self.currentEditId = null;
                     } );
-                    return;
                 }
-
-                // Otherwise delete hovered/focused tile
-                var $target = self.$activeBookmark || $( e.target ).closest( '#bookmarks a:not(.add)' );
-                if( !$target.length ) return;
-                e.preventDefault();
-                e.stopPropagation();
-                var id = $target.attr( 'id' );
-                self.remove( id, function()
-                {
-                    var $section = $target.closest( 'section' );
-                    setTimeout( function()
-                    {
-                        if( !document.documentElement.classList.contains( 'edit' ) )
-                        {
-                            var remaining = $section.find( 'a' ).not( '.add' ).length;
-                            if( remaining === 0 )
-                            {
-                                $section.hide();
-                                var $col = $section.parent();
-                                var visibleSections = $col.find( 'section' ).filter( function(){ return $(this).is(':visible'); } ).length;
-                                if( visibleSections === 0 ) $col.hide();
-                            }
-                        }
-                    }, 0 );
-                } );
             }
         } );
         
@@ -1404,6 +1572,7 @@
                 return;
             }
             
+            var oldFullTitle = prefix + original;
             self.api.update( id, { title: prefix + title }, function()
             {
                 $h1.text( title );
@@ -1411,7 +1580,17 @@
                 {
                     mdash.dashboard.manager.folder.children = null;
                 }
-                ui.notify( 'Section renamed', 'Updated to \'' + title + '\'.' );
+                mdash._undoNotify( 'Section renamed', 'Updated to \'' + title + '\'.', function()
+                {
+                    self.api.update( id, { title: oldFullTitle }, function()
+                    {
+                        $h1.text( original );
+                        if( mdash.dashboard && mdash.dashboard.manager )
+                        {
+                            mdash.dashboard.manager.folder.children = null;
+                        }
+                    } );
+                } );
             } );
         }
         
@@ -1538,7 +1717,7 @@
 
                 var seconds = 30, undone = false;
                 var $content = $( '<div>Bookmark \'' + undoInfo.title + '\' removed. <a href="#" class="undo">Undo (<span class="count">' + seconds + '</span>)</a></div>' );
-                var note = ui.notify( 'Removed', $content ).hide( 6000 );
+                var note = ui.notify( 'Removed', $content ).hide( 31000 );
                 var tick = setInterval( function()
                 {
                     seconds -= 1;
@@ -2032,10 +2211,17 @@
                         return;
                     }
                     
-                    ui.notify( 'Added \'' + bookmark.title + '\'.' );
-                    
                     var $new = mdash.Column.prototype.renderBookmark( bookmark );
                     self.$btn.before( $new );
+
+                    mdash._undoNotify( 'Added', '\'' + bookmark.title + '\' added.', function()
+                    {
+                        chrome.bookmarks.remove( bookmark.id, function()
+                        {
+                            var $tile = $( document.getElementById( bookmark.id ) );
+                            if( $tile.length ) { $tile.addClass( 'removed' ); setTimeout( function(){ $tile.remove(); }, 500 ); }
+                        } );
+                    } );
 
                     // If user is in edit mode, immediately enable DnD on the new tile
                     try {
@@ -2096,7 +2282,7 @@
             parentId: this.$section.attr( 'id' ),
             title: title,
             url: url,
-            index: this.$section.children().length - 2
+            index: this.$section.children().length - 3
         },
         function( result )
         {
@@ -2409,7 +2595,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '0.9.2';
+    Dashboard.VERSION = '1.2.0';
 
     proto.init = function()
     {
