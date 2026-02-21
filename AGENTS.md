@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.3.5
+**Version**: 1.3.6
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -23,7 +23,7 @@
 - Font size control: small, medium, large (persisted in localStorage)
 - Improved keyboard accessibility with visible focus rings on interactive controls
 - Custom favicon mapping for known services (ArgoCD, Grafana, Jenkins, etc.) via `icons/icons.json`
-- Favicon caching via Chrome `_favicon` API + `localStorage` — icons are converted to base64 via canvas and served from cache on subsequent visits (including offline); Alt+click refresh clears and rebuilds the cache
+- Favicon caching via Chrome `_favicon` API + `localStorage` — icons are converted to base64 via canvas and served from cache on subsequent visits (including offline); `refresh icons` always purges `fav:*` cache first, then rebuilds
 - Google S2 favicon fallback for all other bookmarks
 - `ICON_OVERRIDE` suffix in bookmark titles to force icon map lookup
 - `[VPN]` marker in titles to skip hostname normalization for favicons
@@ -227,7 +227,7 @@ When a section is moved between columns:
 2. Chrome bookmark folder title prefix is updated (`+` ↔ `-`) via `chrome.bookmarks.update()`.
 3. Manager's cached `folder.children` is invalidated.
 
-## Security Hardening (v1.3.5)
+## Security Hardening (v1.3.6)
 
 - **URL validation**: `mdash.util.isSafeUrl()` rejects `javascript:`, `data:`, `vbscript:` URIs. Applied in `renderBookmark`, `normalizeUrl`, `Spotlight.openHref`.
 - **DOM injection prevention**: All undo notifications (`_undoNotify`, remove, update) build content via `document.createTextNode()` / `$().text()` instead of HTML string concatenation. Section `<select>` uses `$('<option>').val().text()`.
@@ -238,7 +238,7 @@ When a section is moved between columns:
 - **mdash-ui.js**: ContextMenu `.add()` and Card `.render()` use safe DOM construction instead of HTML string concatenation.
 - **Removed**: `contextMenus` permission (unused), `keymaster.min.js` (unused dead code).
 - **Favicon stability fix**: `_favicon` background load no longer replaces a currently visible icon immediately; cache accepts only icons with enough opaque and dark pixels, and legacy `fav:*` cache is purged once (`fav:_purged_v2`) to prevent blink-and-disappear behavior (notably on `github.com`).
-- **Refresh behavior fix**: `refresh icons` click now performs a full page reload (stable default), while `Alt+click` performs in-place favicon-only refresh with full title/override/VPN-aware resolution logic.
+- **Refresh behavior fix**: `refresh icons` now always purges favicon cache (`localStorage` `fav:*` + memory). Normal click purges then reloads page (full rebuild); `Alt+click` purges then rebuilds favicons in place with full title/override/VPN-aware resolution logic.
 
 ## Known Issues
 

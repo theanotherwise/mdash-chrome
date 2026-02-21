@@ -36,7 +36,8 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 - Custom icon mapping for known services (ArgoCD, Grafana, Jenkins, etc.)
 - Google S2 favicon service as fallback
 - Local favicon caching via Chrome's `_favicon` API + localStorage for offline access
-- Alt+click refresh button to clear and rebuild the favicon cache
+- Click refresh button to always purge favicon cache and reload for a full rebuild
+- Alt+click refresh button to purge cache and rebuild favicons in place
 
 ### Privacy
 - Zero external data collection

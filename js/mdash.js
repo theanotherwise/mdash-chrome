@@ -447,11 +447,11 @@
             $img.attr( 'src', candidates[0] );
         }
 
-        // 4. Background: load same-origin _favicon and cache only if it looks usable.
-        // Do not replace the currently visible icon here to avoid flicker/regressions.
+        // 4. Background: load same-origin _favicon, cache if usable, and upgrade visible icon.
         if( _faviconExtId )
         {
             var bgImg = new Image();
+            var $visibleImg = $img;
             bgImg.onload = function()
             {
                 if( bgImg.naturalWidth < 2 ) return;
@@ -480,6 +480,11 @@
                 if( b64 )
                 {
                     _saveFaviconToLocalStorage( cacheKey, b64 );
+                    var currentSrc = $visibleImg.attr( 'src' ) || '';
+                    if( currentSrc !== b64 )
+                    {
+                        $visibleImg.attr( 'src', b64 );
+                    }
                 }
             };
             bgImg.src = _faviconUrl( href );
@@ -2759,7 +2764,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.3.5';
+    Dashboard.VERSION = '1.3.7';
 
     proto.init = function()
     {
@@ -2799,19 +2804,20 @@
         this.keyboardManager.init();
 
         // Refresh icons action:
-        // - click: full page reload (stable/default behavior)
-        // - Alt+click: clear favicon cache and re-fetch in place
+        // - click: always purge favicon cache + reload (full rebuild)
+        // - Alt+click: always purge favicon cache + rebuild in place
         var _this = this;
         this.$refresh.on( 'click', function( e )
         {
             e.preventDefault();
             if( e.altKey )
             {
-                ui.notify( 'Refreshing', 'Clearing favicon cache and re-fetching…' );
+                ui.notify( 'Refreshing', 'Purging favicon cache and rebuilding in place…' );
                 _this.refreshFavicons();
                 return;
             }
-            ui.notify( 'Refreshing', 'Reloading page…' );
+            ui.notify( 'Refreshing', 'Purging favicon cache and reloading…' );
+            _this.purgeFaviconCache();
             window.location.reload();
         } );
     };
@@ -2859,9 +2865,8 @@
         } );
     };
 
-    proto.refreshFavicons = function()
+    proto.purgeFaviconCache = function()
     {
-        // Clear favicon cache from localStorage and memory
         var keysToRemove = [];
         for( var i = 0; i < localStorage.length; i++ )
         {
@@ -2870,6 +2875,11 @@
         }
         keysToRemove.forEach( function( k ){ localStorage.removeItem( k ); } );
         for( var key in mdash.util._faviconMemCache ) delete mdash.util._faviconMemCache[ key ];
+    };
+
+    proto.refreshFavicons = function()
+    {
+        this.purgeFaviconCache();
 
         $( '#bookmarks a:not(.add) img' ).each( function( _, img )
         {
