@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.4.6
+**Version**: 1.5.0
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -13,7 +13,7 @@
 - Responsive CSS Grid layout for columns (auto-switches to one column on smaller screens)
 - Collapsible top-right controls pill with glass-style surface; expands downward on click
 - Edit mode: inline editing, adding, deleting, and renaming sections
-- Edit bookmark dialog uses a custom-styled section dropdown (non-native popup)
+- Edit bookmark dialog uses a custom-styled section dropdown with full keyboard navigation (arrows + Enter/Space)
 - Edit mode bottom CTA (`+`) to create a new section/folder directly from dashboard UI
 - Edit mode section-header remove button (`×`) to delete an entire section/folder (including nested bookmarks) with confirmation
 - Drag & drop reordering of bookmarks between sections
@@ -24,6 +24,8 @@
 - Font size control: small, medium, large (persisted in localStorage)
 - Improved keyboard accessibility with visible focus rings on interactive controls
 - In edit mode, `Escape` closes an open add/edit dialog before leaving edit mode
+- Smooth animated transitions: controls panel expand/collapse, bookmark remove, custom select dropdown, drag placeholders with pulse animation
+- Full ARIA support: spotlight search, edit toggle, controls panel, help button, column regions, get-started dialog
 - Custom favicon mapping for known services (ArgoCD, Grafana, Jenkins, etc.) via `icons/icons.json`
 - Favicon caching via Chrome `_favicon` API + `localStorage` — icons are converted to base64 via canvas and served from cache on subsequent visits (including offline); writes are quota-aware, and `refresh icons` always purges `fav:*` cache first, then rebuilds
 - Google S2 favicon fallback for all other bookmarks
@@ -151,7 +153,7 @@ Visual direction: clean, airy, Linear/Vercel-inspired. Near-white backgrounds, c
 |---|---|---|---|
 | `--bg-color` | `#F5F5F7` | `#1C1C1E` | Page background |
 | `--text-color` | `#1C1C1E` | `#F5F5F7` | Primary text |
-| `--muted-color` | `#8E8E93` | `#8E8E93` | Secondary/muted text |
+| `--muted-color` | `#8E8E93` | `#A1A1A6` | Secondary/muted text (WCAG AA in dark) |
 | `--accent-color` | `#2E7D32` | `#3E9443` | Links, accents, active states |
 | `--tile-bg` | `#FFFFFF` | `#2C2C2E` | Tile background |
 | `--tile-hover-bg` | `#F2F2F7` | `#3A3A3C` | Tile hover background |
@@ -173,6 +175,9 @@ Visual direction: clean, airy, Linear/Vercel-inspired. Near-white backgrounds, c
 - Edit-mode hover: soft warm tint (`#FFF3E0` light / `#FFF8E1` dark)
 - Grid gap: 24px row / 32px column
 - Scrollbars: 6px wide, very low opacity
+- DnD placeholders: pulsing animation for clear visual feedback
+- Controls panel: animated expand/collapse (opacity + scale + transform, 120ms)
+- All interactive elements: smooth transition on hover/focus (80-120ms)
 
 ## Documentation Policy
 
@@ -244,6 +249,17 @@ When a section is moved between columns:
 - **Local dev favicon correctness fix**: cache key now uses full page origin (protocol + host + port), preventing collisions across `127.0.0.1:*` / `localhost:*`; host normalization for S2 fallback is skipped for IP/localhost hosts so `127.0.0.1` is never collapsed to invalid roots (e.g. `0.1`).
 - **Cache resilience/performance fix**: `_saveFaviconToLocalStorage()` handles `QuotaExceededError` by evicting a controlled fraction of `fav:*` entries (~20%) and retrying once; in-place refresh uses a concurrency guard and batched processing; background favicon loaders clean up handlers on `load`/`error`.
 - **Top-gap layout fix**: controls are now a compact, fixed top-right pill that expands downward on demand; right-column-only offset was removed so left/right columns start aligned.
+
+## UI Polish (v1.5.0)
+
+- **Animated transitions**: controls panel expand/collapse (opacity + scale + transform, 120ms), bookmark remove (opacity + scale + max-height collapse), custom select dropdown (opacity + translateY, 100ms).
+- **Dark mode completeness**: `ui.css` rewritten to use CSS custom properties with fallbacks — dialogs, notifications, context menu, overlay, close buttons, and card component all inherit theme tokens automatically.
+- **Custom select keyboard**: full arrow-key navigation (↑/↓), Enter/Space to select, Escape to close, focused-option highlighting with scroll-into-view.
+- **ARIA accessibility**: spotlight input (`aria-label`, `aria-controls`), results list (`role="listbox"`), edit toggle (`aria-pressed`), controls toggle (`aria-controls`, `role="button"`), help button (`aria-label`), column regions (`role="region"`), get-started overlay (`role="dialog"`, `aria-labelledby`), refresh icons (`aria-label`).
+- **Visual polish**: link hover feedback (opacity fade), controls/dropdown items hover transition (100ms), drop placeholder pulse animation, stronger section header underline, higher muted-color contrast in dark mode (`#A1A1A6` vs `#8E8E93`).
+- **Consistency**: unified `outline-offset: 2px` on all focus rings, input `border-radius: 10px` matching custom select, `width: 100%` + `box-sizing: border-box` on all form inputs.
+- **Performance**: `requestAnimationFrame` for drag-start class and spotlight focus instead of `setTimeout`, smooth `scrollIntoView` for spotlight keyboard navigation.
+- **Removed**: legacy `-webkit-` only prefixes in `ui.css` replaced with standard properties (with `-webkit-` kept where needed for older Chromium).
 
 ## Known Issues
 

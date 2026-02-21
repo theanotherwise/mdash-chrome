@@ -25,7 +25,7 @@
 html.theme-dark {
     --bg-color:                 #1C1C1E;
     --text-color:               #F5F5F7;
-    --muted-color:              #8E8E93;
+    --muted-color:              #A1A1A6;
     --accent-color:             #3E9443;
     --focus-ring:               rgba(62, 148, 67, 0.48);
     --tile-bg:                  #2C2C2E;
@@ -62,14 +62,18 @@ html.theme-dark #controls {
     box-shadow:                  0 2px 8px rgba(0,0,0,0.24);
 }
 
+html {
+    overflow-y:                 scroll;
+}
+
 body {
     background-color:           var(--bg-color);
     font-family:                -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, Cantarell, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
     color:                      var(--text-color);
     margin:                     0px 0px 0px 0px;
     padding:                    0px 24px 28px 24px;
-    -ms-overflow-style:         auto;           /* IE and old Edge */
-    scrollbar-width:            thin;           /* Firefox */
+    -ms-overflow-style:         auto;
+    scrollbar-width:            thin;
 }
 
 /* Clean flat background — no pattern */
@@ -103,10 +107,11 @@ body.small  { font-size:         12px; }
 a {
     color:                      var(--accent-color);
     text-decoration:            none;
+    transition:                 opacity 100ms ease;
 }
 
 a:hover {
-    color:                      var(--accent-color);
+    opacity:                    0.82;
 }
 
 #getstarted-overlay {
@@ -247,11 +252,11 @@ html.theme-dark #getstarted {
     flex:                       1 1 auto;
     height:                     1px;
     border-radius:              1px;
-    background:                 linear-gradient(to right, rgba(0, 0, 0, 0.08), transparent);
+    background:                 linear-gradient(to right, rgba(0, 0, 0, 0.12), transparent);
 }
 
 html.theme-dark #bookmarks h1::after {
-    background:                 linear-gradient(to right, rgba(255, 255, 255, 0.1), transparent);
+    background:                 linear-gradient(to right, rgba(255, 255, 255, 0.14), transparent);
 }
 
 /* Inline rename via contenteditable — just add dashed border, zero layout shift */
@@ -350,8 +355,14 @@ html.theme-dark .edit #bookmarks a:hover {
 
 #bookmarks a.removed {
     opacity: 0;
-    -webkit-transition: opacity 0.5s;
-    transition: opacity 0.5s;
+    transform: scale(0.92);
+    max-height: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+    transition: opacity 300ms ease, transform 300ms ease, max-height 300ms 100ms ease, margin 300ms 100ms ease, padding 300ms 100ms ease;
 }
 
 #bookmarks a.add {
@@ -459,9 +470,15 @@ html.theme-dark #bookmarks a.add:hover {
     margin: 3px 5px 5px 3px;
     border-radius: var(--tile-radius);
     border: 2px dashed var(--accent-color);
-    opacity: 0.4;
+    opacity: 0.65;
     background: transparent;
     box-shadow: none;
+    animation: placeholderPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes placeholderPulse {
+    0%, 100% { opacity: 0.65; }
+    50%      { opacity: 0.35; }
 }
 
 /* Collapsed placeholder used at the source position so items shift left */
@@ -559,7 +576,6 @@ html.theme-dark #add-section-cta {
 }
 
 #controls-panel {
-    display:                    none;
     position:                   absolute;
     top:                        40px;
     right:                      0;
@@ -571,12 +587,22 @@ html.theme-dark #add-section-cta {
     box-shadow:                 0 8px 24px rgba(0,0,0,0.12);
     -webkit-backdrop-filter:    saturate(120%) blur(12px);
     backdrop-filter:            saturate(120%) blur(12px);
-}
-
-#controls.expanded #controls-panel {
     display:                    flex;
     flex-direction:             column;
     gap:                        3px;
+    opacity:                    0;
+    visibility:                 hidden;
+    transform:                  translateY(-6px) scale(0.97);
+    transform-origin:           top right;
+    transition:                 opacity 120ms ease, visibility 120ms ease, transform 120ms ease;
+    pointer-events:             none;
+}
+
+#controls.expanded #controls-panel {
+    opacity:                    1;
+    visibility:                 visible;
+    transform:                  translateY(0) scale(1);
+    pointer-events:             auto;
 }
 
 #controls-panel .controls-title {
@@ -607,15 +633,21 @@ html.theme-dark #add-section-cta {
     cursor:                     pointer;
 }
 
+#controls-panel a {
+    transition:                 background-color 100ms ease;
+    opacity:                    1;
+}
+
 #controls-panel a:hover, #controls-panel a.selected {
     text-decoration:            none;
     background-color:           var(--tile-hover-bg);
+    opacity:                    1;
 }
 
 #controls-toggle:focus-visible,
 #controls-panel a:focus-visible {
     outline:                    2px solid var(--focus-ring);
-    outline-offset:             1px;
+    outline-offset:             2px;
 }
 
 /* Dropdown controls */
@@ -646,17 +678,19 @@ html.theme-dark #add-section-cta {
 
 :-webkit-any(.ui-edit-form,.ui-add-form) > input {
     clear: both;
-    width: 95%;
+    width: 100%;
     padding: 8px 10px;
     border: 1px solid var(--input-border);
     box-shadow: none;
     margin-top: 10px;
-    border-radius: 8px;
+    border-radius: 10px;
+    box-sizing: border-box;
+    transition: border-color 120ms ease;
 }
 
 :-webkit-any(.ui-edit-form,.ui-add-form) > input:focus {
     outline: 2px solid var(--focus-ring);
-    outline-offset: 1px;
+    outline-offset: 2px;
     border-color: var(--accent-color);
 }
 
@@ -687,6 +721,7 @@ html.theme-dark #add-section-cta {
     cursor: pointer;
     font-size: 14px;
     text-align: left;
+    transition: border-color 120ms ease;
 }
 
 .ui-custom-select-label {
@@ -709,12 +744,11 @@ html.theme-dark #add-section-cta {
 
 .ui-custom-select-trigger:focus-visible {
     outline: 2px solid var(--focus-ring);
-    outline-offset: 1px;
+    outline-offset: 2px;
     border-color: var(--accent-color);
 }
 
 .ui-custom-select-menu {
-    display: none;
     position: absolute;
     top: calc(100% + 6px);
     left: 0;
@@ -727,10 +761,18 @@ html.theme-dark #add-section-cta {
     border: 1px solid var(--surface-border);
     background: var(--tile-bg);
     box-shadow: 0 10px 26px rgba(0,0,0,0.16);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transition: opacity 100ms ease, visibility 100ms ease, transform 100ms ease;
+    pointer-events: none;
 }
 
 .ui-custom-select.open .ui-custom-select-menu {
-    display: block;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
 }
 
 .ui-custom-select-option {
@@ -747,10 +789,18 @@ html.theme-dark #add-section-cta {
     font-size: 14px;
     line-height: 1.3;
     cursor: pointer;
+    transition: background-color 80ms ease;
 }
 
-.ui-custom-select-option:hover {
+.ui-custom-select-option:hover,
+.ui-custom-select-option.focused {
     background: var(--tile-hover-bg);
+}
+
+.ui-custom-select-option:focus-visible {
+    background: var(--tile-hover-bg);
+    outline: 2px solid var(--focus-ring);
+    outline-offset: -2px;
 }
 
 .ui-custom-select-option.selected {
@@ -770,31 +820,12 @@ html.theme-dark #add-section-cta {
     text-decoration: underline;
 }
 
-/* Override UKit styles */
-
-#dialog h1 {
-    font: -webkit-small-control;
-}
-
-/* Dark-mode overrides for dialogs and notifications */
-html.theme-dark #dialog,
-html.theme-dark .notification,
-html.theme-dark #context-menu {
-    background: var(--tile-bg) !important;
-    border-color: var(--surface-border) !important;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.4) !important;
-}
-
-html.theme-dark #dialog .content,
-html.theme-dark .notification .content {
-    color: var(--text-color) !important;
-}
-
+/* Dialog input dark-mode refinement */
 html.theme-dark #dialog input,
 html.theme-dark #dialog select {
     width: 100%;
     padding: 8px 10px;
-    border-radius: 8px;
+    border-radius: 10px;
     border: 1px solid var(--input-border);
     background: var(--tile-bg);
     color: var(--text-color);
@@ -803,17 +834,10 @@ html.theme-dark #dialog select {
 
 html.theme-dark #dialog .actions {
     background: var(--tile-hover-bg) !important;
-    border-top: 1px solid var(--surface-border) !important;
 }
 
-html.theme-dark #dialog .actions button.main {
-    background: var(--accent-color);
-    border: 1px solid transparent;
-    color: #FFFFFF;
-}
-
-html.theme-dark #overlay {
-    background: rgba(0,0,0,.5) !important;
+html.theme-dark #dialog {
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4) !important;
 }
 
 #notifications {
@@ -1173,6 +1197,7 @@ html.theme-dark .confirmation .actions {
     background:                 var(--accent-color);
     border-radius:              2px;
     opacity:                    0.7;
+    animation:                  placeholderPulse 1.2s ease-in-out infinite;
 }
 
 .edit #bookmarks > .left.column-drop-target,

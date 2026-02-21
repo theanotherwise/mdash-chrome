@@ -11,16 +11,16 @@
         <div id="spotlight" class="spotlight-hidden">
             <div class="spotlight-backdrop"></div>
             <div class="spotlight-panel">
-                <input id="spotlight-input" type="text" placeholder="Search bookmarks…" autocomplete="off" spellcheck="false" />
-                <ul id="spotlight-results"></ul>
+                <input id="spotlight-input" type="text" placeholder="Search bookmarks…" autocomplete="off" spellcheck="false" aria-label="Search bookmarks" aria-controls="spotlight-results" />
+                <ul id="spotlight-results" role="listbox" aria-label="Search results"></ul>
             </div>
         </div>
         <div id="controls" class="collapsed">
-            <a id="controls-toggle" href="#" aria-expanded="false" aria-label="Open controls" title="Controls">menu</a>
-            <div id="controls-panel">
+            <a id="controls-toggle" href="#" role="button" aria-expanded="false" aria-controls="controls-panel" aria-label="Open controls" title="Controls">menu</a>
+            <div id="controls-panel" role="menu">
                 <div class="controls-title">controls</div>
-                <div id="editctrl" class="inline"><a id="edit" href="#">edit</a></div>
-                <div id="iconctrl" class="inline"><a id="refresh-icons" href="#">refresh icons</a></div>
+                <div id="editctrl" class="inline"><a id="edit" href="#" role="button" aria-pressed="false">edit</a></div>
+                <div id="iconctrl" class="inline"><a id="refresh-icons" href="#" role="button" aria-label="Refresh bookmark icons">refresh icons</a></div>
                 <div id="fontctrl" class="dropdown inline" data-current="large">
                     <a href="#" class="dropdown-toggle">large ▾</a>
                     <div class="dropdown-menu">
@@ -36,13 +36,13 @@
                         <a href="#" data-theme="dark">dark</a>
                     </div>
                 </div>
-                <a id="helpctrl" href="#">?</a>
+                <a id="helpctrl" href="#" role="button" aria-label="Show help">?</a>
             </div>
         </div>
-        <div id="getstarted-overlay">
+        <div id="getstarted-overlay" role="dialog" aria-labelledby="getstarted-title">
             <div class="getstarted-backdrop"></div>
             <div id="getstarted">
-                <h1>Get started</h1>
+                <h1 id="getstarted-title">Get started</h1>
                 <section>
                 <p>
                     Looks like this is the first time you're using <strong>mdash</strong>,
@@ -93,8 +93,8 @@
             </div>
         </div>
         <div id="bookmarks">
-            <div class="left"></div>
-            <div class="right"></div>
+            <div class="left" role="region" aria-label="Left column"></div>
+            <div class="right" role="region" aria-label="Right column"></div>
         </div>
         <div id="add-section-cta-wrap">
             <a id="add-section-cta" href="#" aria-label="Add new section" title="Add new section">+</a>

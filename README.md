@@ -7,10 +7,12 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 ### Dashboard Layout
 - Two-column layout that mirrors your bookmark folder structure
 - Responsive grid — auto-switches to single column on smaller screens
-- Collapsible top-right controls pill with frosted glass effect
+- Collapsible top-right controls pill with animated expand/collapse and frosted glass effect
 - Dark-green accent color for focus, action buttons, and highlights
-- Light and dark themes
+- Smooth transitions on all interactive elements (hover, focus, drag & drop)
+- Light and dark themes (fully themed dialogs, notifications, and context menus)
 - Three font sizes: small, medium, large
+- Full ARIA accessibility for screen readers
 
 ### Spotlight Search
 - Quick-launch search modal (Option+F on macOS, Ctrl+F on Windows/Linux)
@@ -21,7 +23,7 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 
 ### Edit Mode
 - Click any bookmark tile to edit its title, URL, or move it to another section
-- Edit dialog section picker uses a custom styled dropdown for consistent UI
+- Edit dialog section picker uses a custom styled dropdown with full keyboard navigation (arrows, Enter, Escape)
 - Drag & drop bookmarks between sections to reorder
 - Drag & drop entire sections between left and right columns
 - Rename sections by clicking the section title

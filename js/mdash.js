@@ -940,7 +940,7 @@
                 dt.effectAllowed = 'move';
                 // Defer hiding the source element so the browser captures a proper drag image
                 var el = this;
-                setTimeout( function(){ $( el ).addClass( 'dragging' ); }, 0 );
+                requestAnimationFrame( function(){ $( el ).addClass( 'dragging' ); } );
 
                 // Insert a collapsed placeholder at the original position to collapse the gap
                 var $cur = $( this );
@@ -1684,7 +1684,7 @@
             {
                 self.editMode = false;
                 self.$docEl.removeClass( 'edit' );
-                self.$btn.text( 'edit' );
+                self.$btn.text( 'edit' ).attr( 'aria-pressed', 'false' );
                 // Leaving edit: hide empty sections and columns again
                 $( '#bookmarks section' ).each( function( _, section )
                 {
@@ -1711,7 +1711,7 @@
             {
                 self.editMode = true;
                 self.$docEl.addClass( 'edit' );
-                self.$btn.text( 'done' );
+                self.$btn.text( 'done' ).attr( 'aria-pressed', 'true' );
 
                 // Entering edit: show all sections and columns so add buttons are visible
                 $( '#bookmarks > .left, #bookmarks > .right' ).show();
@@ -1955,12 +1955,34 @@
             setSectionSelection( current.id, current.title );
         }
 
+        var focusedOptionIdx = -1;
+
+        var highlightOption = function( idx )
+        {
+            var $opts = $sectionMenu.find( '.ui-custom-select-option' );
+            if( idx < 0 ) idx = $opts.length - 1;
+            if( idx >= $opts.length ) idx = 0;
+            focusedOptionIdx = idx;
+            $opts.removeClass( 'focused' );
+            var $target = $opts.eq( idx );
+            $target.addClass( 'focused' );
+            if( $target.length && $target[0].scrollIntoView )
+            {
+                $target[0].scrollIntoView( { block: 'nearest' } );
+            }
+        };
+
         $sectionTrigger.on( 'click', function( e )
         {
             e.preventDefault();
             e.stopPropagation();
             if( $sectionField.hasClass( 'open' ) ) closeSectionMenu();
-            else openSectionMenu();
+            else
+            {
+                openSectionMenu();
+                var $sel = $sectionMenu.find( '.ui-custom-select-option.selected' );
+                focusedOptionIdx = $sel.length ? $sel.index() : -1;
+            }
         } );
 
         $sectionMenu.on( 'click', '.ui-custom-select-option', function( e )
@@ -1970,11 +1992,49 @@
             var $opt = $( e.currentTarget );
             setSectionSelection( $opt.attr( 'data-value' ), $opt.text() );
             closeSectionMenu();
+            $sectionTrigger.focus();
         } );
 
         $form.on( 'click', function( e )
         {
             if( !$( e.target ).closest( '.ui-custom-select' ).length ) closeSectionMenu();
+        } );
+
+        $sectionTrigger.on( 'keydown', function( e )
+        {
+            var code = e.which || e.keyCode;
+            if( code === 40 || code === 38 )
+            {
+                e.preventDefault();
+                e.stopPropagation();
+                if( !$sectionField.hasClass( 'open' ) )
+                {
+                    openSectionMenu();
+                    var $sel = $sectionMenu.find( '.ui-custom-select-option.selected' );
+                    focusedOptionIdx = $sel.length ? $sel.index() : -1;
+                }
+                highlightOption( focusedOptionIdx + (code === 40 ? 1 : -1) );
+            }
+            else if( code === 13 || code === 32 )
+            {
+                e.preventDefault();
+                e.stopPropagation();
+                if( $sectionField.hasClass( 'open' ) && focusedOptionIdx >= 0 )
+                {
+                    var $opt = $sectionMenu.find( '.ui-custom-select-option' ).eq( focusedOptionIdx );
+                    if( $opt.length )
+                    {
+                        setSectionSelection( $opt.attr( 'data-value' ), $opt.text() );
+                    }
+                    closeSectionMenu();
+                }
+                else if( !$sectionField.hasClass( 'open' ) )
+                {
+                    openSectionMenu();
+                    var $selE = $sectionMenu.find( '.ui-custom-select-option.selected' );
+                    focusedOptionIdx = $selE.length ? $selE.index() : -1;
+                }
+            }
         } );
 
         $form.on( 'keydown', function( e )
@@ -1985,6 +2045,7 @@
                 e.preventDefault();
                 e.stopPropagation();
                 closeSectionMenu();
+                $sectionTrigger.focus();
             }
         } );
 
@@ -2779,7 +2840,7 @@
         _selectedIdx = -1;
         
         var self = this;
-        setTimeout( function(){ self.$input.focus(); }, 50 );
+        requestAnimationFrame( function(){ self.$input.focus(); } );
     };
     
     Spotlight.prototype.hide = function()
@@ -2889,15 +2950,9 @@
         if( _selectedIdx >= $items.length ) _selectedIdx = 0;
         
         var $sel = $items.eq( _selectedIdx ).addClass( 'selected' );
-        var container = this.$results[0];
-        var el = $sel[0];
-        if( el.offsetTop < container.scrollTop )
+        if( $sel[0] && $sel[0].scrollIntoView )
         {
-            container.scrollTop = el.offsetTop;
-        }
-        else if( el.offsetTop + el.offsetHeight > container.scrollTop + container.clientHeight )
-        {
-            container.scrollTop = el.offsetTop + el.offsetHeight - container.clientHeight;
+            $sel[0].scrollIntoView( { block: 'nearest', behavior: 'smooth' } );
         }
     };
     
@@ -2949,7 +3004,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.4.6';
+    Dashboard.VERSION = '1.5.1';
 
     proto.init = function()
     {
