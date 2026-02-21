@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.3.7
+**Version**: 1.3.8
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -227,7 +227,7 @@ When a section is moved between columns:
 2. Chrome bookmark folder title prefix is updated (`+` ↔ `-`) via `chrome.bookmarks.update()`.
 3. Manager's cached `folder.children` is invalidated.
 
-## Security Hardening (v1.3.7)
+## Security Hardening (v1.3.8)
 
 - **URL validation**: `mdash.util.isSafeUrl()` rejects `javascript:`, `data:`, `vbscript:` URIs. Applied in `renderBookmark`, `normalizeUrl`, `Spotlight.openHref`.
 - **DOM injection prevention**: All undo notifications (`_undoNotify`, remove, update) build content via `document.createTextNode()` / `$().text()` instead of HTML string concatenation. Section `<select>` uses `$('<option>').val().text()`.
@@ -239,6 +239,7 @@ When a section is moved between columns:
 - **Removed**: `contextMenus` permission (unused), `keymaster.min.js` (unused dead code).
 - **Favicon stability fix**: `_favicon` background load validates icon quality (opaque + dark pixel thresholds), caches valid results, and upgrades the visible icon immediately when valid to avoid requiring a second page refresh after cache purge.
 - **Refresh behavior fix**: `refresh icons` now always purges favicon cache (`localStorage` `fav:*` + memory). Normal click purges then reloads page (full rebuild); `Alt+click` purges then rebuilds favicons in place with full title/override/VPN-aware resolution logic.
+- **Local dev favicon correctness fix**: cache key now uses full page origin (protocol + host + port), preventing collisions across `127.0.0.1:*` / `localhost:*`; host normalization for S2 fallback is skipped for IP/localhost hosts so `127.0.0.1` is never collapsed to invalid roots (e.g. `0.1`).
 
 ## Known Issues
 
