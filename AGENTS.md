@@ -23,7 +23,7 @@
 - Font size control: small, medium, large (persisted in localStorage)
 - Improved keyboard accessibility with visible focus rings on interactive controls
 - Custom favicon mapping for known services (ArgoCD, Grafana, Jenkins, etc.) via `icons/icons.json`
-- Favicon caching in `chrome.storage.local` — icons are converted to base64 after first load and served from cache on subsequent visits (including offline)
+- Favicon caching via Chrome `_favicon` API + `localStorage` — icons are converted to base64 via canvas and served from cache on subsequent visits (including offline); Alt+click refresh clears and rebuilds the cache
 - Google S2 favicon fallback for all other bookmarks
 - `ICON_OVERRIDE` suffix in bookmark titles to force icon map lookup
 - `[VPN]` marker in titles to skip hostname normalization for favicons
@@ -173,6 +173,11 @@ Visual direction: clean, airy, Linear/Vercel-inspired. Near-white backgrounds, c
 - Edit-mode hover: soft warm tint (`#FFF3E0` light / `#FFF8E1` dark)
 - Grid gap: 24px row / 32px column
 - Scrollbars: 6px wide, very low opacity
+
+## Documentation Policy
+
+- **`README.md`** contains the user-facing feature list of the extension. Whenever a feature is added, removed, or significantly changed, `README.md` must be updated to reflect the current state.
+- **`AGENTS.md`** contains the technical architecture and internal conventions. Keep both files in sync.
 
 ## Development Conventions
 
