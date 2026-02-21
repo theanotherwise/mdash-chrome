@@ -395,15 +395,20 @@
             $img.attr( 'src', candidates[0] );
         }
 
-        // 4. Background: load same-origin _favicon, convert to base64 via canvas, save to localStorage
+        // 4. Background: load same-origin _favicon, convert to base64 via canvas, save to localStorage + update visible img
         if( _faviconExtId )
         {
             var bgImg = new Image();
+            var $visibleImg = $img;
             bgImg.onload = function()
             {
                 if( bgImg.naturalWidth < 2 ) return;
                 var b64 = _imgToBase64( bgImg );
-                _saveFaviconToLocalStorage( cacheKey, b64 );
+                if( b64 )
+                {
+                    _saveFaviconToLocalStorage( cacheKey, b64 );
+                    $visibleImg.attr( 'src', b64 );
+                }
             };
             bgImg.src = _faviconUrl( href );
         }
