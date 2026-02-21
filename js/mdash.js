@@ -262,6 +262,30 @@
         if( !title ) return false;
         return /\s*ICON_OVERRIDE\s*$/.test( title );
     };
+
+    function _isIPv4Host( host )
+    {
+        return /^\d{1,3}(?:\.\d{1,3}){3}$/.test( host || '' );
+    }
+
+    function _isLocalLikeHost( host )
+    {
+        var h = (host || '').toLowerCase();
+        if( !h ) return false;
+        if( h === 'localhost' || h.slice( -10 ) === '.localhost' ) return true;
+        if( _isIPv4Host( h ) ) return true;
+        if( h.indexOf( ':' ) !== -1 || h.charAt( 0 ) === '[' ) return true; // IPv6
+        return false;
+    }
+
+    function _canNormalizeHost( host, noNormalize )
+    {
+        if( noNormalize ) return false;
+        if( _isLocalLikeHost( host ) ) return false;
+        var labels = (host || '').split( '.' );
+        return labels.length > 2 && labels[0] !== 'www';
+    }
+
     mdash.util.buildIconPathCandidates = function( href, relPath, noNormalize )
     {
         try
@@ -270,16 +294,18 @@
             var u = new URL( href );
             var host = u.hostname || '';
             var out = [];
-            var base = u.protocol + '//' + host + (relPath.startsWith('/')?relPath:'/' + relPath);
+            var hostWithPort = host + (u.port ? (':' + u.port) : '');
+            var base = u.protocol + '//' + hostWithPort + (relPath.startsWith('/')?relPath:'/' + relPath);
             out.push( base );
-            if( !noNormalize )
+            if( _canNormalizeHost( host, noNormalize ) )
             {
                 var labels = host.split('.');
                 if( labels.length > 2 && labels[0] !== 'www' )
                 {
                     var root = labels.slice(-2).join('.');
-                    out.push( u.protocol + '//' + root + (relPath.startsWith('/')?relPath:'/' + relPath) );
-                    out.push( u.protocol + '//www.' + root + (relPath.startsWith('/')?relPath:'/' + relPath) );
+                    var rootWithPort = root + (u.port ? (':' + u.port) : '');
+                    out.push( u.protocol + '//' + rootWithPort + (relPath.startsWith('/')?relPath:'/' + relPath) );
+                    out.push( u.protocol + '//www.' + rootWithPort + (relPath.startsWith('/')?relPath:'/' + relPath) );
                 }
             }
             // dedupe
@@ -296,12 +322,14 @@
             var u = new URL( href );
             var host = u.hostname || '';
             var labels = host.split( '.' );
-            // If subdomain present and not 'www', use registrable root (last two labels). Keep protocol.
-            if( !noNormalize && labels.length > 2 && labels[0] !== 'www' )
+            // If subdomain present and not 'www', use registrable root (last two labels),
+            // but never normalize localhost/IP hosts.
+            if( _canNormalizeHost( host, noNormalize ) )
             {
                 host = labels.slice( -2 ).join( '.' );
             }
-            var canonical = u.protocol + '//' + host;
+            var hostWithPort = host + (u.port ? (':' + u.port) : '');
+            var canonical = u.protocol + '//' + hostWithPort;
             // Policy: never hit local favicon.ico; only Google S2 as base fallback
             return [
                 'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( canonical ) + '&sz=64'
@@ -317,7 +345,12 @@
 
     function _faviconCacheKey( href )
     {
-        try { var u = new URL( href ); return 'fav:' + u.hostname; }
+        try
+        {
+            var u = new URL( href );
+            if( u.origin && u.origin !== 'null' ) return 'fav:' + u.origin;
+            return 'fav:' + (u.protocol + '//' + u.host);
+        }
         catch(_e){ return 'fav:' + href; }
     }
 
