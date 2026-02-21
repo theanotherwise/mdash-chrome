@@ -297,6 +297,32 @@
             return [ 'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( href ) + '&sz=64' ];
         }
     };
+    var _faviconMemCache = {};
+
+    function _faviconCacheKey( href )
+    {
+        try { var u = new URL( href ); return 'fav:' + u.hostname; }
+        catch(_e){ return 'fav:' + href; }
+    }
+
+    function _saveFaviconToCache( img, href )
+    {
+        try
+        {
+            var c = document.createElement( 'canvas' );
+            c.width = img.naturalWidth || 32;
+            c.height = img.naturalHeight || 32;
+            c.getContext( '2d' ).drawImage( img, 0, 0, c.width, c.height );
+            var data = c.toDataURL( 'image/png' );
+            if( !data || data.length < 30 ) return;
+            var key = _faviconCacheKey( href );
+            _faviconMemCache[ key ] = data;
+            var store = {}; store[ key ] = data;
+            try { chrome.storage.local.set( store ); } catch(_e){}
+        }
+        catch(_e){}
+    }
+
     mdash.util.applyFaviconWithFallback = function( $img, href, noNormalize, title, overrideOnly )
     {
         var candidates = overrideOnly ? [] : mdash.util.getFaviconCandidates( href, !!noNormalize );
@@ -312,27 +338,100 @@
                 }
                 else
                 {
-                    // No map match: fall back to Google S2
                     candidates = mdash.util.getFaviconCandidates( href, !!noNormalize );
                 }
             }
         }
         catch( _e ){}
-        // no cache-buster: keep exact URLs (some hosts 404 on unknown query params)
-        $img.off( 'error.mdash' );
+
+        var cacheKey = _faviconCacheKey( href );
+
+        // Try in-memory cache first (instant, no async)
+        if( _faviconMemCache[ cacheKey ] )
+        {
+            $img.attr( 'src', _faviconMemCache[ cacheKey ] );
+            $img.off( 'error.mdash' );
+            return;
+        }
+
+        // Try chrome.storage.local cache
+        try
+        {
+            chrome.storage.local.get( cacheKey, function( result )
+            {
+                if( result && result[ cacheKey ] )
+                {
+                    _faviconMemCache[ cacheKey ] = result[ cacheKey ];
+                    // Only apply if still showing a broken/loading state
+                    if( !$img[0].naturalWidth || $img[0].naturalWidth < 2 )
+                    {
+                        $img.attr( 'src', result[ cacheKey ] );
+                    }
+                }
+            } );
+        }
+        catch(_e){}
+
+        $img.off( 'error.mdash load.mdash' );
         $img.data( 'favicon:candidates', candidates );
         $img.data( 'favicon:index', 0 );
+        $img.data( 'favicon:href', href );
+
+        $img.on( 'load.mdash', function()
+        {
+            var src = this.src || '';
+            if( src.indexOf( 'data:' ) === 0 ) return;
+            _saveFaviconToCache( this, $img.data( 'favicon:href' ) || href );
+        } );
+
         $img.on( 'error.mdash', function()
         {
             var $i = $( this );
+
+            // CORS retry: if crossorigin is set and this is the first failure, retry without it
+            if( this.getAttribute( 'crossorigin' ) && !$i.data( 'favicon:cors-retry' ) )
+            {
+                $i.data( 'favicon:cors-retry', true );
+                this.removeAttribute( 'crossorigin' );
+                this.src = this.src;
+                return;
+            }
+
             var list = $i.data( 'favicon:candidates' ) || [];
             var idx  = ($i.data( 'favicon:index' ) || 0) + 1;
             if( idx < list.length )
             {
                 $i.data( 'favicon:index', idx );
+                $i.data( 'favicon:cors-retry', false );
                 this.src = list[ idx ];
             }
+            else
+            {
+                var ck = _faviconCacheKey( $i.data( 'favicon:href' ) || href );
+                if( _faviconMemCache[ ck ] )
+                {
+                    $i.off( 'error.mdash' );
+                    this.src = _faviconMemCache[ ck ];
+                }
+                else
+                {
+                    try
+                    {
+                        chrome.storage.local.get( ck, function( r )
+                        {
+                            if( r && r[ ck ] )
+                            {
+                                _faviconMemCache[ ck ] = r[ ck ];
+                                $i.off( 'error.mdash' );
+                                $i[0].src = r[ ck ];
+                            }
+                        } );
+                    }
+                    catch(_e2){}
+                }
+            }
         } );
+
         if( candidates.length ) {
             $img.attr( 'src', candidates[0] );
         }
@@ -993,6 +1092,11 @@
             
             $h1.on( 'dragstart.mdash-section', function( e )
             {
+                if( $h1.hasClass( 'section-renaming' ) )
+                {
+                    e.preventDefault();
+                    return;
+                }
                 e.stopPropagation();
                 self._sectionDragging = true;
                 self._sectionHandledDrop = false;

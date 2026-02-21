@@ -10,7 +10,8 @@
     },
     "permissions": [
         "bookmarks",
-        "contextMenus"
+        "contextMenus",
+        "storage"
     ],
     "chrome_url_overrides": {
         "newtab": "html/dashboard.html"

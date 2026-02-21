@@ -322,8 +322,16 @@ html.theme-dark .edit #bookmarks a:hover {
     margin-right:               0px;
     margin-bottom:              0px;
     width:                      1.15em;
+    height:                     1.15em;
     flex:                       0 0 auto;
     align-self:                 flex-start;
+    object-fit:                 contain;
+}
+
+/* Broken images keep their box so layout stays stable */
+#bookmarks a > img[src=""],
+#bookmarks a > img:not([src]) {
+    visibility:                 hidden;
 }
 
 #bookmarks a > span {
@@ -975,7 +983,13 @@ html.theme-dark .confirmation .actions {
     -webkit-user-select:        none;
 }
 
-.edit #bookmarks section > h1.section-drag-handle:active {
+.edit #bookmarks section > h1.section-drag-handle.section-renaming {
+    cursor:                     text;
+    user-select:                text;
+    -webkit-user-select:        text;
+}
+
+.edit #bookmarks section > h1.section-drag-handle:active:not(.section-renaming) {
     cursor:                     grabbing;
 }
 

@@ -23,6 +23,7 @@
 - Font size control: small, medium, large (persisted in localStorage)
 - Improved keyboard accessibility with visible focus rings on interactive controls
 - Custom favicon mapping for known services (ArgoCD, Grafana, Jenkins, etc.) via `icons/icons.json`
+- Favicon caching in `chrome.storage.local` — icons are converted to base64 after first load and served from cache on subsequent visits (including offline)
 - Google S2 favicon fallback for all other bookmarks
 - `ICON_OVERRIDE` suffix in bookmark titles to force icon map lookup
 - `[VPN]` marker in titles to skip hostname normalization for favicons
