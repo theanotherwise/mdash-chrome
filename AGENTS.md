@@ -196,6 +196,7 @@ Version follows **semver** (`MAJOR.MINOR.PATCH`). The version must be updated in
 ### Rules
 
 - **MANDATORY**: After every code change (fix, feature, refactor), bump the version according to the table above. This is not optional — every change must end with a version bump.
+- **MANDATORY**: When finishing a batch of changes (before ending your turn or moving on to a different topic), always perform the version bump as the final step. Never leave a session with unbumped changes.
 - If multiple changes are made in one session, bump once at the end covering all changes.
 - Never skip a bump when the extension zip would need to be re-uploaded to Chrome Web Store.
 - Do not wait for the user to ask — bump proactively after completing changes.
