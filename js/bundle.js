@@ -297,7 +297,7 @@
             return [ 'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent( href ) + '&sz=64' ];
         }
     };
-    var _faviconMemCache = {};
+    var _faviconMemCache = mdash.util._faviconMemCache = {};
     var _faviconExtId = (typeof chrome !== 'undefined' && chrome.runtime) ? chrome.runtime.id : '';
 
     function _faviconCacheKey( href )
@@ -2773,6 +2773,16 @@
 
     proto.refreshFavicons = function()
     {
+        // Clear favicon cache from localStorage and memory
+        var keysToRemove = [];
+        for( var i = 0; i < localStorage.length; i++ )
+        {
+            var k = localStorage.key( i );
+            if( k && k.indexOf( 'fav:' ) === 0 ) keysToRemove.push( k );
+        }
+        keysToRemove.forEach( function( k ){ localStorage.removeItem( k ); } );
+        for( var key in mdash.util._faviconMemCache ) delete mdash.util._faviconMemCache[ key ];
+
         $( '#bookmarks a:not(.add) img' ).each( function( _, img )
         {
             var $img = $( img );
