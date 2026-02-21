@@ -37,11 +37,9 @@ mdash-chrome/
 ├── html/
 │   └── dashboard.html         # Main HTML — new tab override
 ├── js/
-│   ├── bundle.js              # Application logic (all modules, ~2020 lines)
-│   ├── ui.js                  # UI toolkit (Dialog, Overlay, Notification, etc.)
-│   └── lib/
-│       └── (icanhaz.min.js removed — replaced with direct DOM construction)
-│       └── (keymaster.min.js removed — was unused)
+│   ├── mdash.js               # Application logic (all modules)
+│   ├── mdash-ui.js            # UI toolkit (Dialog, Overlay, Notification, etc.)
+│   └── jquery-3.7.1.min.js    # jQuery (only external dependency)
 ├── css/
 │   ├── styles.css             # Main styles: layout, tiles, themes, search, controls
 │   └── ui.css                 # UI toolkit styles: dialogs, overlays, notifications
@@ -207,7 +205,7 @@ Version follows **semver** (`MAJOR.MINOR.PATCH`). The version must be updated in
 - **No build system / bundler** — vanilla JS, no transpilation, no npm dependencies.
 - **Module pattern** — each module is an IIFE adding to `window.mdash`.
 - **Prototype-based OOP** — constructors with `.prototype` methods.
-- **jQuery 3.7.1** — used for DOM manipulation (loaded from `js/lib/`, not in repo).
+- **jQuery 3.7.1** — used for DOM manipulation (loaded from `js/`).
 - **No template engine** — sections and bookmarks are built with direct jQuery DOM construction (safe by default).
 - **CSS custom properties** — design tokens in `:root` for theming (v2 minimal elegant palette).
 - **No tests** — no test framework or test files.
@@ -242,4 +240,4 @@ When a section is moved between columns:
 ## Known Issues
 
 - Drag & drop handler code for tiles is duplicated in three places (enableDragAndDrop, remove undo, AddBtn).
-- `img/icon.png` and `js/lib/jquery-3.7.1.min.js` referenced but not in repository.
+- `img/icon.png` referenced but not in repository.
