@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.3.3
+**Version**: 1.3.5
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -227,17 +227,18 @@ When a section is moved between columns:
 2. Chrome bookmark folder title prefix is updated (`+` ↔ `-`) via `chrome.bookmarks.update()`.
 3. Manager's cached `folder.children` is invalidated.
 
-## Security Hardening (v1.3.3)
+## Security Hardening (v1.3.5)
 
 - **URL validation**: `mdash.util.isSafeUrl()` rejects `javascript:`, `data:`, `vbscript:` URIs. Applied in `renderBookmark`, `normalizeUrl`, `Spotlight.openHref`.
 - **DOM injection prevention**: All undo notifications (`_undoNotify`, remove, update) build content via `document.createTextNode()` / `$().text()` instead of HTML string concatenation. Section `<select>` uses `$('<option>').val().text()`.
 - **ICanHaz.js / Mustache.js removed**: Replaced `ich.section()` / `ich.bookmark()` with direct DOM construction via `$('<element>').attr().text()`. Eliminates all template-based injection vectors.
-- **Explicit CSP**: `manifest.json` defines `content_security_policy` restricting `img-src`, `style-src`, `connect-src` to known origins (including `https://*.gstatic.com` required by Google favicon CDN redirects).
+- **Explicit CSP**: `manifest.json` defines `content_security_policy` restricting `img-src`, `style-src`, `connect-src` to known origins (including explicit Google favicon CDN hosts: `www.gstatic.com`, `t0.gstatic.com`…`t3.gstatic.com`).
 - **Local icons map**: `icons/icons.json` loaded via `chrome.runtime.getURL()` first, remote GitHub fallback only if local is unavailable.
 - **jQuery 3.7.1**: Upgraded from 3.2.1 (addresses CVE-2020-11022, CVE-2020-11023, CVE-2019-11358).
 - **mdash-ui.js**: ContextMenu `.add()` and Card `.render()` use safe DOM construction instead of HTML string concatenation.
 - **Removed**: `contextMenus` permission (unused), `keymaster.min.js` (unused dead code).
 - **Favicon stability fix**: `_favicon` background load no longer replaces a currently visible icon immediately; cache accepts only icons with enough opaque and dark pixels, and legacy `fav:*` cache is purged once (`fav:_purged_v2`) to prevent blink-and-disappear behavior (notably on `github.com`).
+- **Refresh behavior fix**: `refresh icons` click now performs a full page reload (stable default), while `Alt+click` performs in-place favicon-only refresh with full title/override/VPN-aware resolution logic.
 
 ## Known Issues
 
