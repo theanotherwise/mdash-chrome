@@ -236,6 +236,7 @@ html.theme-dark #getstarted {
 }
 
 #bookmarks h1 {
+    position:                   relative;
     font-size:                  0.82em;
     color:                      var(--section-color);
     font-weight:                600;
@@ -261,17 +262,24 @@ html.theme-dark #bookmarks h1::after {
 
 /* Inline rename via contenteditable — just add dashed border, zero layout shift */
 .edit #bookmarks h1.section-renaming {
+    border:                     none;
+}
+
+.edit #bookmarks h1.section-renaming .section-title-text {
     outline:                    1px dashed var(--focus-ring);
     outline-offset:             2px;
-    border:                     none;
     cursor:                     text;
+}
+
+.edit #bookmarks h1.section-renaming .section-color-dot {
+    pointer-events:             none;
 }
 
 .edit #bookmarks h1.section-renaming::after {
     display:                    none;
 }
 
-html.theme-dark .edit #bookmarks h1.section-renaming {
+html.theme-dark .edit #bookmarks h1.section-renaming .section-title-text {
     outline-color:              var(--focus-ring);
 }
 
@@ -1210,4 +1218,199 @@ html.theme-dark .confirmation .actions {
 html.theme-dark .edit #bookmarks > .left.column-drop-target,
 html.theme-dark .edit #bookmarks > .right.column-drop-target {
     background:                 rgba(62, 148, 67, 0.12);
+}
+
+/* --- Section color dot --- */
+
+.section-color-dot {
+    width:                      10px;
+    height:                     10px;
+    border-radius:              50%;
+    flex-shrink:                0;
+    display:                    none;
+    border:                     1.5px solid rgba(0, 0, 0, 0.1);
+    box-sizing:                 border-box;
+    transition:                 transform 80ms ease, opacity 80ms ease;
+}
+
+html.theme-dark .section-color-dot {
+    border-color:               rgba(255, 255, 255, 0.15);
+}
+
+section[data-section-color] .section-color-dot {
+    display:                    inline-block;
+}
+
+.edit .section-color-dot {
+    display:                    inline-block;
+    cursor:                     pointer;
+}
+
+.section-color-dot-empty {
+    background:                 transparent;
+    border-style:               dashed;
+    opacity:                    0.4;
+}
+
+.edit .section-color-dot-empty:hover {
+    opacity:                    1;
+    border-color:               var(--accent-color);
+}
+
+.edit .section-color-dot:hover {
+    transform:                  scale(1.3);
+}
+
+.section-title-text {
+    flex-shrink:                0;
+}
+
+/* --- Color palette popup --- */
+
+.section-color-palette {
+    position:                   absolute;
+    top:                        calc(100% + 4px);
+    left:                       0;
+    z-index:                    200;
+    display:                    flex;
+    flex-wrap:                  wrap;
+    gap:                        5px;
+    padding:                    10px;
+    background:                 var(--surface-strong);
+    border:                     1px solid var(--surface-border);
+    border-radius:              12px;
+    box-shadow:                 0 6px 20px rgba(0,0,0,0.14);
+    -webkit-backdrop-filter:    saturate(120%) blur(12px);
+    backdrop-filter:            saturate(120%) blur(12px);
+    max-width:                  148px;
+}
+
+.color-swatch {
+    width:                      24px;
+    height:                     24px;
+    border-radius:              50%;
+    border:                     2px solid transparent;
+    cursor:                     pointer;
+    padding:                    0;
+    outline:                    none;
+    transition:                 transform 80ms ease, border-color 80ms ease, box-shadow 80ms ease;
+}
+
+.color-swatch:hover {
+    transform:                  scale(1.2);
+    box-shadow:                 0 2px 6px rgba(0,0,0,0.18);
+}
+
+.color-swatch.active {
+    border-color:               var(--text-color);
+    box-shadow:                 0 0 0 2px var(--bg-color), 0 0 0 3.5px var(--text-color);
+}
+
+.color-swatch-none {
+    background:                 var(--tile-bg);
+    border:                     2px dashed var(--muted-color);
+    font-size:                  0.8em;
+    color:                      var(--muted-color);
+    display:                    flex;
+    align-items:                center;
+    justify-content:            center;
+    line-height:                1;
+}
+
+.color-swatch-none:hover {
+    border-color:               var(--text-color);
+    color:                      var(--text-color);
+}
+
+/* Small swatches for add-section form */
+.ui-color-label {
+    font-size:                  0.82em;
+    color:                      var(--muted-color);
+    margin:                     8px 0 4px;
+}
+
+.ui-color-swatches {
+    display:                    flex;
+    flex-wrap:                  wrap;
+    gap:                        5px;
+}
+
+.color-swatch-sm {
+    width:                      20px;
+    height:                     20px;
+    border-radius:              50%;
+    border:                     2px solid transparent;
+    cursor:                     pointer;
+    padding:                    0;
+    outline:                    none;
+    transition:                 transform 80ms ease, border-color 80ms ease;
+}
+
+.color-swatch-sm:hover {
+    transform:                  scale(1.2);
+}
+
+.color-swatch-sm.active {
+    border-color:               var(--text-color);
+    box-shadow:                 0 0 0 1.5px var(--bg-color), 0 0 0 3px var(--text-color);
+}
+
+/* --- Sort button --- */
+
+.section-sort {
+    position:                   absolute;
+    right:                      36px;
+    top:                        6px;
+    width:                      26px;
+    height:                     26px;
+    display:                    none;
+    align-items:                center;
+    justify-content:            center;
+    border-radius:              8px;
+    border:                     1px solid var(--surface-border);
+    background:                 var(--tile-bg);
+    color:                      var(--muted-color);
+    padding:                    0;
+    font-size:                  0.85rem;
+    line-height:                1;
+    cursor:                     pointer;
+    box-sizing:                 border-box;
+    opacity:                    0.6;
+    transition:                 opacity 120ms ease, background-color 120ms ease, color 120ms ease;
+}
+
+.edit .section-sort {
+    display:                    inline-flex;
+}
+
+.section-sort:hover {
+    opacity:                    1;
+    background:                 var(--tile-hover-bg);
+    color:                      var(--text-color);
+}
+
+html.theme-dark .section-sort {
+    border-color:               rgba(255, 255, 255, 0.1);
+    background:                 var(--tile-bg);
+    color:                      var(--muted-color);
+}
+
+html.theme-dark .section-sort:hover {
+    background:                 var(--tile-hover-bg);
+    color:                      var(--text-color);
+}
+
+/* --- Click count badge --- */
+
+.click-count {
+    position:                   absolute;
+    bottom:                     3px;
+    right:                      6px;
+    font-size:                  0.58em;
+    color:                      var(--muted-color);
+    opacity:                    0.45;
+    pointer-events:             none;
+    font-variant-numeric:       tabular-nums;
+    letter-spacing:             0;
+    line-height:                1;
 }

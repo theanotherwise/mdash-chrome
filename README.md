@@ -27,14 +27,22 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 - Drag & drop bookmarks between sections to reorder
 - Drag & drop entire sections between left and right columns
 - Rename sections by clicking the section title
+- Custom section colors: click the color dot next to a section title to assign a color from a 16-color palette; color is stored in the bookmark folder title as a `#RRGGBB` suffix
+- Sort bookmarks within a section A→Z or Z→A via the sort button (↕) in the section header
 - Add new bookmarks via the `+` tile at the end of each section
-- Create new sections with the bottom `+` button
+- Create new sections with the bottom `+` button (with optional color selection)
 - Delete entire sections (with confirmation)
+
+### Click Statistics
+- Per-bookmark click counter tracks how often you use each bookmark
+- Subtle badge on tiles shows click count
+- Tracks clicks from both dashboard tiles and Spotlight search results
+- Data persisted locally in `localStorage`
 
 ### Undo
 - 30-second undo window for all destructive actions:
   - Bookmark delete, create, edit, and drag & drop move
-  - Section create, delete, rename, and column move
+  - Section create, delete, rename, column move, color change, and sort
 
 ### Favicon Handling
 - Custom icon mapping for known services (ArgoCD, Grafana, Jenkins, etc.)

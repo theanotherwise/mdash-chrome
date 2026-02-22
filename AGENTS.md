@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.5.1
+**Version**: 1.6.0
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -18,7 +18,10 @@
 - Edit mode section-header remove button (`×`) to delete an entire section/folder (including nested bookmarks) with confirmation
 - Drag & drop reordering of bookmarks between sections
 - Drag & drop sections between columns (left ↔ right); automatically updates `+`/`-` prefix
-- Undo for all destructive/mutating operations (30-second window): bookmark delete, update, create, drag & drop move; section create, delete, rename, column move
+- Custom section colors: colored dot next to section title, stored as `#RRGGBB` suffix in folder name (e.g. `+Productivity #4CAF50`); editable via color palette popup in edit mode
+- Sort bookmarks within a section (A→Z / Z→A toggle button in edit mode); reorders via Chrome Bookmarks API with full undo support
+- Click statistics: per-bookmark click counter persisted in `localStorage`, subtle badge on tiles, tracks clicks from both dashboard and Spotlight
+- Undo for all destructive/mutating operations (30-second window): bookmark delete, update, create, drag & drop move; section create, delete, rename, column move, color change, sort
 - Spotlight search modal (Option+F on macOS, Ctrl+F on Windows) with results list, keyboard navigation, highlighted matches, and background-tab open via middle-click / Cmd/Ctrl+click without navigating the current tab
 - Light and dark themes (persisted in localStorage)
 - Font size control: small, medium, large (persisted in localStorage)
@@ -63,31 +66,33 @@ All application modules live in `js/mdash.js` as IIFE (Immediately Invoked Funct
 
 ```
 Dashboard (orchestrator)
-├── Manager          — Chrome Bookmarks API wrapper
-├── Column (×2)      — Renders sections and bookmark tiles
+├── Manager          — Chrome Bookmarks API wrapper (parses section colors)
+├── Column (×2)      — Renders sections (with color dot) and bookmark tiles (with click count)
 │   └── AddBtn       — "Add bookmark" modal per section
 ├── FontCtrl         — Font size dropdown
 ├── HelpCtrl         — Help/get-started toggle
 ├── ThemeCtrl        — Light/dark theme dropdown
-├── EditCtrl         — Edit mode, drag & drop, delete, rename
+├── EditCtrl         — Edit mode, drag & drop, delete, rename, color palette, sort
+├── Stats            — Click statistics tracker (localStorage)
 ├── KeyboardManager  — Keyboard shortcuts (currently disabled)
-└── Spotlight        — Spotlight-style search modal
+└── Spotlight        — Spotlight-style search modal (tracks clicks)
 ```
 
 ### Module Descriptions
 
 | Module | Namespace | Responsibility |
 |---|---|---|
-| **Manager** | `mdash.Manager` | Wraps `chrome.bookmarks` API. Locates or creates the `[Dashboard]` root folder and its `[MDASH_DO_NOT_DELETE]` placeholder. Fetches sections and their bookmarks. Determines side assignment (`+` → left, `-` → right). |
+| **Manager** | `mdash.Manager` | Wraps `chrome.bookmarks` API. Locates or creates the `[Dashboard]` root folder and its `[MDASH_DO_NOT_DELETE]` placeholder. Fetches sections and their bookmarks. Determines side assignment (`+` → left, `-` → right). Parses optional `#RRGGBB` color suffix from folder titles. |
 | **Column** | `mdash.Column` | Renders one column (left or right) by iterating sections and calling `renderSection()` / `renderBookmark()`. Appends an `AddBtn` to each section. Manages column visibility. |
 | **FontCtrl** | `mdash.FontCtrl` | Dropdown control for font sizes (`small`, `medium`, `large`). Persists selection in `localStorage.fontSize`. Applies CSS class to `<body>`. |
 | **HelpCtrl** | `mdash.HelpCtrl` | Toggles visibility between the help/get-started panel and the bookmarks interface. |
-| **EditCtrl** | `mdash.EditCtrl` | Toggles edit mode (`html.edit` class). In edit mode: click tile to edit (title, URL, section), Delete key to remove, click section title to rename, use section-header `button.section-remove` to delete a whole section via `chrome.bookmarks.removeTree()`, use bottom `#add-section-cta` to create a new section (with left/right column selection), drag & drop tiles between sections, and drag & drop sections between columns. The bookmark edit dialog uses a custom in-dialog section picker instead of the browser-native `<select>` popup for consistent styling. Provides undo for bookmark delete and update. Uses `enableSectionDragAndDrop()` / `disableSectionDragAndDrop()` for section-level DnD (separate from tile DnD). |
+| **EditCtrl** | `mdash.EditCtrl` | Toggles edit mode (`html.edit` class). In edit mode: click tile to edit (title, URL, section), Delete key to remove, click section title to rename, click section color dot to open color palette, use sort button to sort bookmarks A→Z/Z→A, use section-header `button.section-remove` to delete a whole section via `chrome.bookmarks.removeTree()`, use bottom `#add-section-cta` to create a new section (with column + color selection), drag & drop tiles between sections, and drag & drop sections between columns. The bookmark edit dialog uses a custom in-dialog section picker. Provides undo for all operations. |
 | **ThemeCtrl** | `mdash.ThemeCtrl` | Dropdown for light/dark theme. Toggles `theme-light` / `theme-dark` on `<html>`. Persists in `localStorage['mdash:theme']`. |
 | **KeyboardManager** | `mdash.KeyboardManager` | Keyboard-driven tile filtering. Guarded by `isEnabled()` check (disabled by default in localStorage). |
 | **AddBtn** | `mdash.AddBtn` | Per-section "+" button rendered as a tile at the end of the section list in edit mode. Opens a confirmation dialog to add a new bookmark. Normalizes URLs (prepends `http://` if needed). |
-| **Spotlight** | `mdash.Spotlight` | Spotlight-style search modal (Option+F / Ctrl+F). Shows a centered overlay with input + results list. Matches by title and URL. Keyboard navigation (↑/↓/Enter/Esc). Results show favicon, title (with highlighted match), URL, and section name. Supports opening in a background tab (`chrome.tabs.create` with `active: false`) using middle-click or Cmd/Ctrl+click while keeping the current tab on Spotlight. |
-| **Dashboard** | `mdash.Dashboard` | Main orchestrator. Initializes all modules, preloads the icon map, loads bookmarks into two columns, sets up the UI toolkit, handles the collapsible controls panel, and handles the "refresh icons" action. Works with the responsive grid/controls layout defined in CSS. |
+| **Spotlight** | `mdash.Spotlight` | Spotlight-style search modal (Option+F / Ctrl+F). Shows a centered overlay with input + results list. Matches by title and URL. Keyboard navigation (↑/↓/Enter/Esc). Results show favicon, title (with highlighted match), URL, and section name. Tracks click statistics on open. Supports opening in a background tab (`chrome.tabs.create` with `active: false`) using middle-click or Cmd/Ctrl+click while keeping the current tab on Spotlight. |
+| **Stats** | `mdash.stats` | Click statistics tracker. Persists per-URL click counts in `localStorage['mdash:clicks']` as a JSON object. Provides `trackClick(url)` and `getCount(url)`. |
+| **Dashboard** | `mdash.Dashboard` | Main orchestrator. Initializes all modules, preloads the icon map, loads bookmarks into two columns, sets up the UI toolkit, sets up click tracking, handles the collapsible controls panel, and handles the "refresh icons" action. Works with the responsive grid/controls layout defined in CSS. |
 
 ### UI Toolkit (`js/mdash-ui.js`)
 
@@ -118,14 +123,18 @@ The `ui` global provides:
 ```
 Bookmarks Root
 └── Other Bookmarks (or any parent)
-    └── [Dashboard]                    ← root folder (auto-created)
-        ├── [MDASH_DO_NOT_DELETE]      ← placeholder bookmark (about:blank)
-        ├── +Section Name             ← folder → left column section
+    └── [Dashboard]                         ← root folder (auto-created)
+        ├── [MDASH_DO_NOT_DELETE]           ← placeholder bookmark (about:blank)
+        ├── +Section Name                   ← folder → left column section
         │   ├── Bookmark 1
         │   └── Bookmark 2
-        └── -Another Section          ← folder → right column section
-            └── Bookmark 3
+        ├── +Productivity #4CAF50           ← folder with custom color
+        │   └── Bookmark 3
+        └── -Another Section               ← folder → right column section
+            └── Bookmark 4
 ```
+
+Section titles support an optional color suffix: `+Title #RRGGBB` or `-Title #RRGGBB`. The `#RRGGBB` is parsed at load time, stripped from the display title, and rendered as a colored dot next to the section header.
 
 ### Persistence
 
@@ -134,6 +143,7 @@ Bookmarks Root
 | `fontSize` | localStorage | `small` / `medium` / `large` |
 | `mdash:theme` | localStorage | `light` / `dark` |
 | `mdash:keyboard:isEnabled` | localStorage | `enabled` / `disabled` |
+| `mdash:clicks` | localStorage | JSON object `{ "url": count, ... }` — per-URL click statistics |
 
 ### Build & Packaging
 

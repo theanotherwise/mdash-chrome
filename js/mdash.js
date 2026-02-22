@@ -62,6 +62,12 @@
                 }
                 
                 b.title = b.title.substring( 1 );
+                var _colorMatch = b.title.match( /\s+#([0-9A-Fa-f]{6})$/ );
+                if( _colorMatch )
+                {
+                    b.color = '#' + _colorMatch[ 1 ];
+                    b.title = b.title.substring( 0, b.title.length - _colorMatch[ 0 ].length );
+                }
                 return true;
             } );
             
@@ -620,8 +626,21 @@
     proto.renderSection = function( section )
     {
         var _this    = this,
-            $section = $( '<section>' ).attr( 'id', section.id )
-                .append( $( '<h1>' ).text( section.title ) );
+            $section = $( '<section>' ).attr( 'id', section.id ),
+            $h1      = $( '<h1>' ),
+            $dot     = $( '<span class="section-color-dot"></span>' );
+
+        if( section.color )
+        {
+            $dot.css( 'background-color', section.color );
+            $section.attr( 'data-section-color', section.color );
+        }
+        else
+        {
+            $dot.addClass( 'section-color-dot-empty' );
+        }
+        $h1.append( $dot, $( '<span class="section-title-text">' ).text( section.title ) );
+        $section.append( $h1 );
         
         section.children.forEach( function( bookmark )
         {
@@ -630,8 +649,9 @@
             mdash.links[ $link.attr( 'href' ) ] = $link;
         } );
         
+        var $sortBtn = $( '<button type="button" class="section-sort" aria-label="Sort bookmarks" title="Sort A\u2192Z" draggable="false">\u2195</button>' );
         var $removeSectionBtn = $( '<button type="button" class="section-remove" aria-label="Delete section" title="Delete section" draggable="false">&times;</button>' );
-        $section.append( $removeSectionBtn );
+        $section.append( $sortBtn, $removeSectionBtn );
         
         var $addBtn = $( '<a href="#add" class="add" aria-label="Add bookmark" title="Add" draggable="false"><span>+</span></a>' );
         $section.append( $addBtn );
@@ -674,6 +694,15 @@
         
         // Attach fallback; if [VPN] in title, skip normalization (use exact host)
         mdash.util.applyFaviconWithFallback( $img, link.href, isVpnMarker, displayTitle, hasOverride );
+        
+        if( mdash.stats )
+        {
+            var clickCount = mdash.stats.getCount( link.href );
+            if( clickCount > 0 )
+            {
+                $el.append( $( '<span class="click-count">' ).text( clickCount ) );
+            }
+        }
         
         return $el;
     };
@@ -838,6 +867,8 @@
 {
     'use strict';
     
+    var PALETTE_COLORS = [ '#F44336','#E91E63','#9C27B0','#673AB7','#3F51B5','#2196F3','#03A9F4','#00BCD4','#009688','#4CAF50','#8BC34A','#FFC107','#FF9800','#FF5722','#795548','#607D8B' ];
+
     var EditCtrl = mdash.EditCtrl = function( $btn, $bookmarks )
     {
         this.$docEl       = $( document.documentElement );
@@ -883,6 +914,7 @@
         {
             if( !self.editMode ) return;
             if( self._sectionJustDragged ) return;
+            if( $( e.target ).hasClass( 'section-color-dot' ) ) return;
             e.preventDefault();
             e.stopPropagation();
             self.renameSection( $( this ) );
@@ -894,6 +926,22 @@
             e.preventDefault();
             e.stopPropagation();
             self.confirmRemoveSection( $( this ).closest( 'section' ) );
+        } );
+
+        this.$docEl.on( 'click', '#bookmarks section .section-color-dot', function( e )
+        {
+            if( !self.editMode ) return;
+            e.preventDefault();
+            e.stopPropagation();
+            self.showColorPalette( $( this ) );
+        } );
+
+        this.$docEl.on( 'click', '#bookmarks section > .section-sort', function( e )
+        {
+            if( !self.editMode ) return;
+            e.preventDefault();
+            e.stopPropagation();
+            self.sortSection( $( this ).closest( 'section' ) );
         } );
 
         // Track hovered/active bookmark for keyboard delete
@@ -1333,7 +1381,11 @@
             var isSourceLeft = $sourceCol.hasClass( 'left' );
             var oldPrefix = isSourceLeft ? '+' : '-';
             var newPrefix = isTargetLeft ? '+' : '-';
-            var currentTitle = $draggedSection.children( 'h1' ).text();
+            var $dragH1 = $draggedSection.children( 'h1' );
+            var $dragTitleSpan = $dragH1.find( '.section-title-text' );
+            var currentTitle = $dragTitleSpan.length ? $dragTitleSpan.text() : $dragH1.text();
+            var sectionColor = $draggedSection.attr( 'data-section-color' ) || '';
+            var colorSuffix = sectionColor ? ' ' + sectionColor : '';
             var sourceColClass = isSourceLeft ? '.left' : '.right';
 
             var $prevSibling = $draggedSection.prev( 'section' );
@@ -1354,7 +1406,7 @@
             $targetCol.removeClass( 'column-drop-target' );
             $sourceCol.removeClass( 'column-drop-target' );
             
-            self.api.update( sectionId, { title: newPrefix + currentTitle }, function()
+            self.api.update( sectionId, { title: newPrefix + currentTitle + colorSuffix }, function()
             {
                 if( mdash.dashboard && mdash.dashboard.manager )
                 {
@@ -1367,7 +1419,7 @@
 
                 mdash._undoNotify( 'Section moved', msg, function()
                 {
-                    self.api.update( sectionId, { title: oldPrefix + currentTitle }, function()
+                    self.api.update( sectionId, { title: oldPrefix + currentTitle + colorSuffix }, function()
                     {
                         if( mdash.dashboard && mdash.dashboard.manager )
                         {
@@ -1445,7 +1497,24 @@
         var $name = $( '<input id="section-name" type="text" placeholder="Section name" autocomplete="off" />' );
         var $side = $( '<select id="section-side"><option value="left">Left column (+)</option><option value="right">Right column (-)</option></select>' );
         
-        $form.append( $name, $side );
+        var selectedColor = '';
+        var $colorLabel = $( '<div class="ui-color-label">Color (optional)</div>' );
+        var $colorRow = $( '<div class="ui-color-swatches">' );
+        
+        PALETTE_COLORS.forEach( function( c )
+        {
+            var $s = $( '<button type="button" class="color-swatch-sm">' ).css( 'background-color', c ).attr( 'data-color', c );
+            $s.on( 'click', function( e )
+            {
+                e.preventDefault();
+                $colorRow.find( '.color-swatch-sm' ).removeClass( 'active' );
+                if( selectedColor === c ) { selectedColor = ''; }
+                else { $( this ).addClass( 'active' ); selectedColor = c; }
+            } );
+            $colorRow.append( $s );
+        } );
+        
+        $form.append( $name, $side, $colorLabel, $colorRow );
         
         var modal = ui.confirm( 'Create new section', $form );
         modal.el.addClass( 'dialog-form-wide' );
@@ -1465,7 +1534,7 @@
                 return;
             }
             
-            self.addSection( title, side, function( added )
+            self.addSection( title, side, selectedColor || null, function( added )
             {
                 if( !added )
                 {
@@ -1478,7 +1547,7 @@
         setTimeout( function(){ $name.focus(); }, 20 );
     };
     
-    EditCtrl.prototype.addSection = function( title, side, callback )
+    EditCtrl.prototype.addSection = function( title, side, color, callback )
     {
         var self = this;
         var manager = mdash.dashboard && mdash.dashboard.manager;
@@ -1491,10 +1560,11 @@
         
         var safeSide = side === 'right' ? 'right' : 'left';
         var prefix = safeSide === 'right' ? '-' : '+';
+        var colorSuffix = color ? ' ' + color : '';
         
         this.api.create( {
             parentId : manager.folder.id,
-            title    : prefix + title
+            title    : prefix + title + colorSuffix
         }, function( created )
         {
             if( !created )
@@ -1510,6 +1580,7 @@
                 id       : created.id,
                 title    : title,
                 side     : safeSide,
+                color    : color || null,
                 children : []
             } );
             
@@ -1628,6 +1699,13 @@
                         restoreChildren( savedTree.children, folder.id, function()
                         {
                             var displayTitle = savedTree.title.replace( /^[+\-]/, '' );
+                            var _restoredColor = null;
+                            var _cm = displayTitle.match( /\s+#([0-9A-Fa-f]{6})$/ );
+                            if( _cm )
+                            {
+                                _restoredColor = '#' + _cm[ 1 ];
+                                displayTitle = displayTitle.substring( 0, displayTitle.length - _cm[ 0 ].length );
+                            }
                             var side = savedTree.title.charAt(0) === '-' ? 'right' : 'left';
                             var $targetCol = self.$bookmarks.children( side === 'right' ? '.right' : '.left' );
 
@@ -1635,6 +1713,7 @@
                                 id       : folder.id,
                                 title    : displayTitle,
                                 side     : side,
+                                color    : _restoredColor,
                                 children : []
                             } );
 
@@ -1791,23 +1870,27 @@
 
     EditCtrl.prototype.renameSection = function( $h1 )
     {
-        if( $h1.attr( 'contenteditable' ) === 'true' ) return;
+        var $titleText = $h1.find( '.section-title-text' );
+        if( !$titleText.length ) $titleText = $h1;
+        if( $titleText.attr( 'contenteditable' ) === 'true' ) return;
         
         var self = this;
         var $section = $h1.closest( 'section' );
         var id = $section.attr( 'id' );
-        var original = $h1.text();
+        var original = $titleText.text();
         var isLeft = $section.closest( '.left' ).length > 0;
         var prefix = isLeft ? '+' : '-';
+        var sectionColor = $section.attr( 'data-section-color' ) || '';
+        var colorSuffix = sectionColor ? ' ' + sectionColor : '';
         var done = false;
         
-        $h1.attr( 'contenteditable', 'true' )
-           .attr( 'draggable', 'false' )
+        $titleText.attr( 'contenteditable', 'true' );
+        $h1.attr( 'draggable', 'false' )
            .addClass( 'section-renaming' );
         
-        $h1.focus();
+        $titleText.focus();
         var range = document.createRange();
-        range.selectNodeContents( $h1[0] );
+        range.selectNodeContents( $titleText[0] );
         var sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange( range );
@@ -1817,33 +1900,34 @@
             if( done ) return;
             done = true;
             
-            $h1.removeAttr( 'contenteditable' )
-               .removeClass( 'section-renaming' );
+            $titleText.removeAttr( 'contenteditable' );
+            $h1.removeClass( 'section-renaming' );
             
             if( self.editMode )
             {
                 $h1.attr( 'draggable', 'true' );
             }
             
+            $titleText.off( '.mdash-rename' );
             $h1.off( '.mdash-rename' );
             
             if( !save )
             {
-                $h1.text( original );
+                $titleText.text( original );
                 return;
             }
             
-            var title = ( $h1.text() || '' ).trim();
+            var title = ( $titleText.text() || '' ).trim();
             if( !title )
             {
-                $h1.text( original );
+                $titleText.text( original );
                 return;
             }
             
-            var oldFullTitle = prefix + original;
-            self.api.update( id, { title: prefix + title }, function()
+            var oldFullTitle = prefix + original + colorSuffix;
+            self.api.update( id, { title: prefix + title + colorSuffix }, function()
             {
-                $h1.text( title );
+                $titleText.text( title );
                 if( mdash.dashboard && mdash.dashboard.manager )
                 {
                     mdash.dashboard.manager.folder.children = null;
@@ -1852,7 +1936,7 @@
                 {
                     self.api.update( id, { title: oldFullTitle }, function()
                     {
-                        $h1.text( original );
+                        $titleText.text( original );
                         if( mdash.dashboard && mdash.dashboard.manager )
                         {
                             mdash.dashboard.manager.folder.children = null;
@@ -1862,7 +1946,7 @@
             } );
         }
         
-        $h1.on( 'keydown.mdash-rename', function( e )
+        $titleText.on( 'keydown.mdash-rename', function( e )
         {
             if( e.key === 'Enter' || e.keyCode === 13 )
             {
@@ -1878,9 +1962,9 @@
             }
         } );
         
-        $h1.on( 'blur.mdash-rename', function(){ finish( true ); } );
+        $titleText.on( 'blur.mdash-rename', function(){ finish( true ); } );
         
-        $h1.on( 'paste.mdash-rename', function( e )
+        $titleText.on( 'paste.mdash-rename', function( e )
         {
             e.preventDefault();
             var text = ( e.originalEvent.clipboardData || window.clipboardData ).getData( 'text/plain' );
@@ -1888,6 +1972,171 @@
         } );
     };
     
+    EditCtrl.prototype.showColorPalette = function( $dot )
+    {
+        $( '.section-color-palette' ).remove();
+        $( document ).off( 'click.mdash-palette' );
+        
+        var self = this;
+        var $h1 = $dot.closest( 'h1' );
+        var $section = $dot.closest( 'section' );
+        var sectionId = $section.attr( 'id' );
+        var isLeft = $section.closest( '.left' ).length > 0;
+        var prefix = isLeft ? '+' : '-';
+        var $titleSpan = $h1.find( '.section-title-text' );
+        var sectionTitle = $titleSpan.length ? $titleSpan.text() : $h1.text();
+        var oldColor = $section.attr( 'data-section-color' ) || '';
+        
+        var $palette = $( '<div class="section-color-palette">' );
+        
+        PALETTE_COLORS.forEach( function( color )
+        {
+            var $swatch = $( '<button type="button" class="color-swatch"></button>' )
+                .css( 'background-color', color )
+                .attr( 'data-color', color );
+            if( color === oldColor ) $swatch.addClass( 'active' );
+            $palette.append( $swatch );
+        } );
+        
+        var $none = $( '<button type="button" class="color-swatch color-swatch-none" title="Remove color">\u00d7</button>' );
+        if( !oldColor ) $none.addClass( 'active' );
+        $palette.append( $none );
+        
+        $h1.append( $palette );
+        
+        $palette.on( 'click', '.color-swatch', function( e )
+        {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            var newColor = $( this ).attr( 'data-color' ) || '';
+            var colorSuffix = newColor ? ' ' + newColor : '';
+            var newFullTitle = prefix + sectionTitle + colorSuffix;
+            var oldFullTitle = prefix + sectionTitle + ( oldColor ? ' ' + oldColor : '' );
+            
+            self.api.update( sectionId, { title: newFullTitle }, function()
+            {
+                if( newColor )
+                {
+                    $dot.css( 'background-color', newColor ).removeClass( 'section-color-dot-empty' );
+                    $section.attr( 'data-section-color', newColor );
+                }
+                else
+                {
+                    $dot.css( 'background-color', '' ).addClass( 'section-color-dot-empty' );
+                    $section.removeAttr( 'data-section-color' );
+                }
+                
+                if( mdash.dashboard && mdash.dashboard.manager )
+                {
+                    mdash.dashboard.manager.folder.children = null;
+                }
+                
+                $palette.remove();
+                $( document ).off( 'click.mdash-palette' );
+                
+                mdash._undoNotify( 'Color changed', 'Section color updated.', function()
+                {
+                    self.api.update( sectionId, { title: oldFullTitle }, function()
+                    {
+                        if( oldColor )
+                        {
+                            $dot.css( 'background-color', oldColor ).removeClass( 'section-color-dot-empty' );
+                            $section.attr( 'data-section-color', oldColor );
+                        }
+                        else
+                        {
+                            $dot.css( 'background-color', '' ).addClass( 'section-color-dot-empty' );
+                            $section.removeAttr( 'data-section-color' );
+                        }
+                        if( mdash.dashboard && mdash.dashboard.manager )
+                        {
+                            mdash.dashboard.manager.folder.children = null;
+                        }
+                    } );
+                } );
+            } );
+        } );
+        
+        setTimeout( function()
+        {
+            $( document ).on( 'click.mdash-palette', function( ev )
+            {
+                if( !$( ev.target ).closest( '.section-color-palette' ).length )
+                {
+                    $palette.remove();
+                    $( document ).off( 'click.mdash-palette' );
+                }
+            } );
+        }, 10 );
+    };
+    
+    EditCtrl.prototype.sortSection = function( $section )
+    {
+        var self = this;
+        var sectionId = $section.attr( 'id' );
+        var $tiles = $section.children( 'a' ).not( '.add,.drop-placeholder' );
+        if( $tiles.length < 2 ) return;
+        
+        var currentSort = $section.attr( 'data-sort' ) || '';
+        var ascending = currentSort !== 'asc';
+        
+        var originalIds = [];
+        $tiles.each( function(){ originalIds.push( this.id ); } );
+        
+        var sortedTiles = $tiles.toArray().sort( function( a, b )
+        {
+            var titleA = ( $( a ).find( 'span' ).not( '.click-count' ).first().text() || '' ).toLowerCase();
+            var titleB = ( $( b ).find( 'span' ).not( '.click-count' ).first().text() || '' ).toLowerCase();
+            return ascending ? titleA.localeCompare( titleB ) : titleB.localeCompare( titleA );
+        } );
+        
+        var $add = $section.find( 'a.add' );
+        sortedTiles.forEach( function( el ){ $add.before( el ); } );
+        
+        $section.attr( 'data-sort', ascending ? 'asc' : 'desc' );
+        var $sortBtn = $section.find( '.section-sort' );
+        $sortBtn.attr( 'title', ascending ? 'Sort Z\u2192A' : 'Sort A\u2192Z' );
+        
+        var sortedIds = sortedTiles.map( function( el ){ return el.id; } );
+        var moveIdx = 0;
+        ( function moveNext()
+        {
+            if( moveIdx >= sortedIds.length )
+            {
+                mdash._undoNotify( 'Sorted', 'Bookmarks sorted ' + ( ascending ? 'A\u2192Z' : 'Z\u2192A' ) + '.', function()
+                {
+                    var restoreIdx = 0;
+                    ( function restoreNext()
+                    {
+                        if( restoreIdx >= originalIds.length )
+                        {
+                            originalIds.forEach( function( oid )
+                            {
+                                var $el = $( document.getElementById( oid ) );
+                                $add.before( $el );
+                            } );
+                            $section.removeAttr( 'data-sort' );
+                            $sortBtn.attr( 'title', 'Sort A\u2192Z' );
+                            return;
+                        }
+                        self.api.move( originalIds[ restoreIdx ], { parentId: sectionId, index: restoreIdx }, function()
+                        {
+                            restoreIdx++;
+                            restoreNext();
+                        } );
+                    } )();
+                } );
+                return;
+            }
+            self.api.move( sortedIds[ moveIdx ], { parentId: sectionId, index: moveIdx }, function()
+            {
+                moveIdx++;
+                moveNext();
+            } );
+        } )();
+    };
+
     EditCtrl.prototype.edit = function( $b )
     {
         var $form, $title, $url, $section, $rmBtn, dialog,
@@ -2967,6 +3216,7 @@
     Spotlight.prototype.openHref = function( href, inNewTab, keepOpen )
     {
         if( !href || !mdash.util.isSafeUrl( href ) ) return;
+        if( mdash.stats ) mdash.stats.trackClick( href );
         
         if( inNewTab )
         {
@@ -2997,6 +3247,46 @@
 } )( window.mdash || ( window.mdash = {} ), window.jQuery || window.Zepto );
 
 
+/* --- stats.js --- */
+
+( function( mdash )
+{
+    'use strict';
+    var KEY = 'mdash:clicks';
+
+    var stats = mdash.stats = {};
+    stats._data = null;
+
+    stats._load = function()
+    {
+        if( this._data ) return this._data;
+        try { this._data = JSON.parse( localStorage.getItem( KEY ) ) || {}; }
+        catch( _e ) { this._data = {}; }
+        return this._data;
+    };
+
+    stats._save = function()
+    {
+        try { localStorage.setItem( KEY, JSON.stringify( this._data ) ); }
+        catch( _e ) {}
+    };
+
+    stats.trackClick = function( url )
+    {
+        var data = this._load();
+        data[ url ] = ( data[ url ] || 0 ) + 1;
+        this._save();
+        return data[ url ];
+    };
+
+    stats.getCount = function( url )
+    {
+        return this._load()[ url ] || 0;
+    };
+
+} )( window.mdash || ( window.mdash = {} ) );
+
+
 ( function( mdash, $ )
 {
     'use strict';
@@ -3004,7 +3294,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.5.1';
+    Dashboard.VERSION = '1.6.0';
 
     proto.init = function()
     {
@@ -3047,6 +3337,7 @@
         this.setupControlsPanel();
 
         this.keyboardManager.init();
+        this.setupClickTracking();
 
         // Refresh icons action:
         // - click: always purge favicon cache + reload (full rebuild)
@@ -3065,6 +3356,19 @@
             ui.notify( 'Refreshing', 'Purging favicon cache and reloading…' );
             _this.purgeFaviconCache();
             window.location.reload();
+        } );
+    };
+
+    proto.setupClickTracking = function()
+    {
+        $( '#bookmarks' ).on( 'click', 'a:not(.add,.drop-placeholder)', function()
+        {
+            if( document.documentElement.classList.contains( 'edit' ) ) return;
+            var href = $( this ).attr( 'href' );
+            if( href && href !== '#' && href !== 'about:blank' && mdash.stats )
+            {
+                mdash.stats.trackClick( href );
+            }
         } );
     };
 
