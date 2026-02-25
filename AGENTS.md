@@ -4,13 +4,14 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.6.1
+**Version**: 1.6.3
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
 
 - Two-column bookmark dashboard (left / right, controlled by `+` / `-` prefix in folder names)
 - Responsive CSS Grid layout for columns (auto-switches to one column on smaller screens)
+- Edit button as a standalone pill to the left of the controls menu for instant one-click access
 - Collapsible top-right controls pill with glass-style surface; expands downward on click
 - Edit mode: inline editing, adding, deleting, and renaming sections
 - Edit bookmark dialog uses a custom-styled section dropdown with full keyboard navigation (arrows + Enter/Space)

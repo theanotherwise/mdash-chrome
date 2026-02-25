@@ -1759,6 +1759,14 @@
         {
             if( self.altPressed ) return;
             
+            // Close controls panel if open
+            var $ctrl = $( '#controls' );
+            if( $ctrl.hasClass( 'expanded' ) )
+            {
+                $ctrl.removeClass( 'expanded' ).addClass( 'collapsed' );
+                $( '#controls-toggle' ).attr( 'aria-expanded', 'false' );
+            }
+            
             if( self.editMode )
             {
                 self.editMode = false;
@@ -3294,7 +3302,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.6.1';
+    Dashboard.VERSION = '1.6.3';
 
     proto.init = function()
     {
