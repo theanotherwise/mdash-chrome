@@ -941,7 +941,7 @@
             if( !self.editMode ) return;
             e.preventDefault();
             e.stopPropagation();
-            self.sortSection( $( this ).closest( 'section' ) );
+            self.showSortMenu( $( this ) );
         } );
 
         // Track hovered/active bookmark for keyboard delete
