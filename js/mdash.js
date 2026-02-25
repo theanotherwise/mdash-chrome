@@ -618,9 +618,7 @@
             _this.$el.append( _this.renderSection( section ) );
         } );
         
-        // If all sections are empty and hidden, also hide the column wrapper to remove gaps
-        var anyVisible = _this.$el.find( 'section' ).filter( function(){ return $(this).is(':visible'); } ).length > 0;
-        _this.$el.toggle( anyVisible || document.documentElement.classList.contains( 'edit' ) );
+        _this.$el.toggle( _this.$el.find( 'section' ).length > 0 );
     };
     
     proto.renderSection = function( section )
