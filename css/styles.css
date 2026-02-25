@@ -375,22 +375,27 @@ html.theme-dark .edit #bookmarks a:hover {
 
 #bookmarks a.add {
     position:                   absolute;
-    right:                      0;
-    bottom:                     10px;
+    right:                      66px;
+    top:                        6px;
     display:                    none;
     align-items:                center;
     justify-content:            center;
-    background:                 rgba(142, 142, 147, 0.06);
+    width:                      26px;
+    height:                     26px;
+    border-radius:              8px;
+    border:                     1px solid var(--surface-border);
+    background:                 var(--tile-bg);
     color:                      var(--muted-color);
-    border:                     1px dashed rgba(142, 142, 147, 0.4);
     box-shadow:                 none;
     padding:                    0;
     line-height:                1;
-    font-size:                  0.95em;
+    font-size:                  0.85rem;
     font-weight:                normal;
-    width:                      calc(3 * 1.35em + var(--tile-y-pad));
+    cursor:                     pointer;
+    box-sizing:                 border-box;
+    opacity:                    0.6;
     z-index:                    5;
-    transition:                 transform 120ms ease, background-color 120ms ease, border-color 120ms ease;
+    transition:                 opacity 120ms ease, background-color 120ms ease, border-color 120ms ease;
 }
 
 .edit #bookmarks a.add { display: inline-flex; }
@@ -444,29 +449,26 @@ html.theme-dark #bookmarks section > .section-remove:hover {
 }
 
 #bookmarks a.add:hover {
-    background-color:           rgba(142, 142, 147, 0.12);
+    opacity:                    1;
+    background:                 var(--tile-hover-bg);
     color:                      var(--text-color);
-    border-color:               rgba(142, 142, 147, 0.6);
-    transform:                  translateY(-1px);
 }
 
 html.theme-dark #bookmarks a.add {
-    border-color:               rgba(142, 142, 147, 0.35);
+    border-color:               rgba(255, 255, 255, 0.1);
+    background:                 var(--tile-bg);
     color:                      var(--muted-color);
-    background:                 rgba(142, 142, 147, 0.08);
-    box-shadow:                 none;
 }
 
 html.theme-dark #bookmarks a.add:hover {
-    background-color:           rgba(142, 142, 147, 0.16);
+    background:                 var(--tile-hover-bg);
     color:                      var(--text-color);
-    border-color:               rgba(142, 142, 147, 0.55);
 }
 
 #bookmarks a.add span {
     display:                    inline-block;
     flex:                       0 0 auto;
-    font-size:                  1.4em;
+    font-size:                  1.1em;
     line-height:                1;
     height:                     auto;
 }
