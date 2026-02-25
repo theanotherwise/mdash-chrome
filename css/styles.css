@@ -387,6 +387,7 @@ html.theme-dark .edit #bookmarks a:hover {
     background:                 var(--tile-bg);
     color:                      var(--muted-color);
     box-shadow:                 none;
+    margin:                     0;
     padding:                    0;
     line-height:                1;
     font-size:                  0.85rem;
@@ -395,6 +396,8 @@ html.theme-dark .edit #bookmarks a:hover {
     box-sizing:                 border-box;
     opacity:                    0.6;
     z-index:                    5;
+    overflow:                   visible;
+    text-overflow:              clip;
     transition:                 opacity 120ms ease, background-color 120ms ease, border-color 120ms ease;
 }
 
