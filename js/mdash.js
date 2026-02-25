@@ -2079,15 +2079,50 @@
         }, 10 );
     };
     
-    EditCtrl.prototype.sortSection = function( $section )
+    EditCtrl.prototype.showSortMenu = function( $btn )
+    {
+        $( '.section-sort-menu' ).remove();
+        $( document ).off( 'click.mdash-sortmenu' );
+        
+        var self = this;
+        var $section = $btn.closest( 'section' );
+        
+        var $menu = $( '<div class="section-sort-menu">' );
+        var $asc = $( '<button type="button" class="sort-menu-option" data-dir="asc">A \u2192 Z</button>' );
+        var $desc = $( '<button type="button" class="sort-menu-option" data-dir="desc">Z \u2192 A</button>' );
+        $menu.append( $asc, $desc );
+        
+        $btn.after( $menu );
+        
+        $menu.on( 'click', '.sort-menu-option', function( e )
+        {
+            e.preventDefault();
+            e.stopPropagation();
+            var dir = $( this ).attr( 'data-dir' );
+            $menu.remove();
+            $( document ).off( 'click.mdash-sortmenu' );
+            self.sortSection( $section, dir === 'asc' );
+        } );
+        
+        setTimeout( function()
+        {
+            $( document ).on( 'click.mdash-sortmenu', function( ev )
+            {
+                if( !$( ev.target ).closest( '.section-sort-menu' ).length )
+                {
+                    $menu.remove();
+                    $( document ).off( 'click.mdash-sortmenu' );
+                }
+            } );
+        }, 10 );
+    };
+    
+    EditCtrl.prototype.sortSection = function( $section, ascending )
     {
         var self = this;
         var sectionId = $section.attr( 'id' );
         var $tiles = $section.children( 'a' ).not( '.add,.drop-placeholder' );
         if( $tiles.length < 2 ) return;
-        
-        var currentSort = $section.attr( 'data-sort' ) || '';
-        var ascending = currentSort !== 'asc';
         
         var originalIds = [];
         $tiles.each( function(){ originalIds.push( this.id ); } );
@@ -2101,10 +2136,6 @@
         
         var $add = $section.find( 'a.add' );
         sortedTiles.forEach( function( el ){ $add.before( el ); } );
-        
-        $section.attr( 'data-sort', ascending ? 'asc' : 'desc' );
-        var $sortBtn = $section.find( '.section-sort' );
-        $sortBtn.attr( 'title', ascending ? 'Sort Z\u2192A' : 'Sort A\u2192Z' );
         
         var sortedIds = sortedTiles.map( function( el ){ return el.id; } );
         var moveIdx = 0;
@@ -2124,8 +2155,6 @@
                                 var $el = $( document.getElementById( oid ) );
                                 $add.before( $el );
                             } );
-                            $section.removeAttr( 'data-sort' );
-                            $sortBtn.attr( 'title', 'Sort A\u2192Z' );
                             return;
                         }
                         self.api.move( originalIds[ restoreIdx ], { parentId: sectionId, index: restoreIdx }, function()
@@ -3302,7 +3331,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.6.3';
+    Dashboard.VERSION = '1.6.4';
 
     proto.init = function()
     {

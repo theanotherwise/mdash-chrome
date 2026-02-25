@@ -1457,6 +1457,44 @@ html.theme-dark .section-sort:hover {
     color:                      var(--text-color);
 }
 
+.section-sort-menu {
+    position:                   absolute;
+    right:                      36px;
+    top:                        32px;
+    z-index:                    200;
+    display:                    flex;
+    flex-direction:             column;
+    gap:                        2px;
+    padding:                    5px;
+    background:                 var(--surface-strong);
+    border:                     1px solid var(--surface-border);
+    border-radius:              10px;
+    box-shadow:                 0 6px 20px rgba(0,0,0,0.14);
+    -webkit-backdrop-filter:    saturate(120%) blur(12px);
+    backdrop-filter:            saturate(120%) blur(12px);
+    min-width:                  80px;
+}
+
+.sort-menu-option {
+    display:                    flex;
+    align-items:                center;
+    justify-content:            center;
+    padding:                    6px 12px;
+    border:                     none;
+    border-radius:              8px;
+    background:                 transparent;
+    color:                      var(--text-color);
+    font-size:                  13px;
+    font-weight:                500;
+    cursor:                     pointer;
+    white-space:                nowrap;
+    transition:                 background-color 80ms ease;
+}
+
+.sort-menu-option:hover {
+    background:                 var(--tile-hover-bg);
+}
+
 /* --- Click count badge --- */
 
 .click-count {
