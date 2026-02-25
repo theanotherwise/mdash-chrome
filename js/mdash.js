@@ -649,22 +649,15 @@
             mdash.links[ $link.attr( 'href' ) ] = $link;
         } );
         
-        var $sortBtn = $( '<button type="button" class="section-sort" aria-label="Sort bookmarks" title="Sort A\u2192Z" draggable="false">\u2195</button>' );
-        var $removeSectionBtn = $( '<button type="button" class="section-remove" aria-label="Delete section" title="Delete section" draggable="false">&times;</button>' );
+        var $sortBtn = $( '<button type="button" class="section-sort" aria-label="Sort bookmarks" title="Sort bookmarks" draggable="false">Sort</button>' );
+        var $removeSectionBtn = $( '<button type="button" class="section-remove" aria-label="Delete section" title="Delete section" draggable="false">Delete</button>' );
         $section.append( $sortBtn, $removeSectionBtn );
         
-        var $addBtn = $( '<a href="#add" class="add" aria-label="Add bookmark" title="Add" draggable="false"><span>+</span></a>' );
+        var $addBtn = $( '<a href="#add" class="add" aria-label="Add bookmark" title="Add bookmark" draggable="false"><span>Add</span></a>' );
         $section.append( $addBtn );
         // Prevent default link-drag behaviour so the "+" button is never treated as a draggable item
         $addBtn.on( 'dragstart', function( e ){ e.preventDefault(); } );
         new mdash.AddBtn( $addBtn ).init();
-        
-        // Hide empty sections by default (shown in edit mode)
-        var hasBookmarks = Array.isArray( section.children ) && section.children.length > 0;
-        if( !hasBookmarks && !document.documentElement.classList.contains( 'edit' ) )
-        {
-            $section.hide();
-        }
         
         return $section;
     };
@@ -1392,6 +1385,11 @@
             var hadPrevSibling = $prevSibling.length > 0;
             var prevSiblingId = hadPrevSibling ? $prevSibling.attr( 'id' ) : null;
 
+            var oldSectionIds = [];
+            self.$bookmarks.children( '.left' ).children( 'section' ).each( function(){ oldSectionIds.push( this.id ); } );
+            self.$bookmarks.children( '.right' ).children( 'section' ).each( function(){ oldSectionIds.push( this.id ); } );
+            var oldIndex = oldSectionIds.indexOf( sectionId ) + 1;
+
             if( self.$sectionPlaceholder.parent().length )
             {
                 self.$sectionPlaceholder.replaceWith( $draggedSection );
@@ -1406,13 +1404,20 @@
             $targetCol.removeClass( 'column-drop-target' );
             $sourceCol.removeClass( 'column-drop-target' );
             
-            self.api.update( sectionId, { title: newPrefix + currentTitle + colorSuffix }, function()
+            var folderId = ( mdash.dashboard && mdash.dashboard.manager ) ? mdash.dashboard.manager.folder.id : null;
+
+            var allSectionIds = [];
+            self.$bookmarks.children( '.left' ).children( 'section' ).each( function(){ allSectionIds.push( this.id ); } );
+            self.$bookmarks.children( '.right' ).children( 'section' ).each( function(){ allSectionIds.push( this.id ); } );
+            var newIndex = allSectionIds.indexOf( sectionId ) + 1;
+
+            var finishMove = function()
             {
                 if( mdash.dashboard && mdash.dashboard.manager )
                 {
                     mdash.dashboard.manager.folder.children = null;
                 }
-                
+
                 var msg = ( isSourceLeft !== isTargetLeft )
                     ? 'Moved "' + currentTitle + '" to ' + ( isTargetLeft ? 'left' : 'right' ) + ' column.'
                     : 'Reordered "' + currentTitle + '".';
@@ -1421,25 +1426,62 @@
                 {
                     self.api.update( sectionId, { title: oldPrefix + currentTitle + colorSuffix }, function()
                     {
-                        if( mdash.dashboard && mdash.dashboard.manager )
+                        if( folderId && oldIndex >= 0 )
                         {
-                            mdash.dashboard.manager.folder.children = null;
-                        }
-                        var $sec = $( document.getElementById( sectionId ) );
-                        var $origCol = self.$bookmarks.children( sourceColClass );
-                        if( hadPrevSibling && prevSiblingId )
-                        {
-                            var $prev = $( '#' + prevSiblingId );
-                            if( $prev.length ) { $prev.after( $sec ); }
-                            else { $origCol.prepend( $sec ); }
+                            self.api.move( sectionId, { parentId: folderId, index: oldIndex }, function()
+                            {
+                                if( mdash.dashboard && mdash.dashboard.manager )
+                                {
+                                    mdash.dashboard.manager.folder.children = null;
+                                }
+                                var $sec = $( document.getElementById( sectionId ) );
+                                var $origCol = self.$bookmarks.children( sourceColClass );
+                                if( hadPrevSibling && prevSiblingId )
+                                {
+                                    var $prev = $( '#' + prevSiblingId );
+                                    if( $prev.length ) { $prev.after( $sec ); }
+                                    else { $origCol.prepend( $sec ); }
+                                }
+                                else
+                                {
+                                    $origCol.prepend( $sec );
+                                }
+                                $origCol.show();
+                            } );
                         }
                         else
                         {
-                            $origCol.prepend( $sec );
+                            var $sec = $( document.getElementById( sectionId ) );
+                            var $origCol = self.$bookmarks.children( sourceColClass );
+                            if( hadPrevSibling && prevSiblingId )
+                            {
+                                var $prev = $( '#' + prevSiblingId );
+                                if( $prev.length ) { $prev.after( $sec ); }
+                                else { $origCol.prepend( $sec ); }
+                            }
+                            else
+                            {
+                                $origCol.prepend( $sec );
+                            }
+                            $origCol.show();
                         }
-                        $origCol.show();
                     } );
                 } );
+            };
+
+            self.api.update( sectionId, { title: newPrefix + currentTitle + colorSuffix }, function()
+            {
+                if( folderId && newIndex >= 1 )
+                {
+                    self.api.move( sectionId, { parentId: folderId, index: newIndex }, function()
+                    {
+                        finishMove();
+                    } );
+                }
+                else
+                {
+                    finishMove();
+                }
             } );
         } );
         
@@ -1772,20 +1814,6 @@
                 self.editMode = false;
                 self.$docEl.removeClass( 'edit' );
                 self.$btn.text( 'edit' ).attr( 'aria-pressed', 'false' );
-                // Leaving edit: hide empty sections and columns again
-                $( '#bookmarks section' ).each( function( _, section )
-                {
-                    var $section = $( section );
-                    var hasLinks = $section.find( 'a' ).not( '.add' ).length > 0;
-                    $section.toggle( hasLinks );
-                } );
-                var $cols = $( '#bookmarks > .left, #bookmarks > .right' );
-                $cols.each( function( _, col )
-                {
-                    var $col = $( col );
-                    var visibleSections = $col.find( 'section' ).filter( function(){ return $(this).is(':visible'); } ).length;
-                    $col.toggle( visibleSections > 0 );
-                } );
 
                 // Disable DnD
                 self.disableDragAndDrop();
