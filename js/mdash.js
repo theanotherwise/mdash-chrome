@@ -2946,7 +2946,7 @@
             parentId: this.$section.attr( 'id' ),
             title: title,
             url: url,
-            index: this.$section.children().length - 3
+            index: this.$section.children().length - 4
         },
         function( result )
         {
@@ -3294,7 +3294,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.6.0';
+    Dashboard.VERSION = '1.6.1';
 
     proto.init = function()
     {
@@ -3406,7 +3406,7 @@
                 closePanel();
                 return;
             }
-            if( $a.is( '#edit' ) || $a.is( '#refresh-icons' ) || $a.is( '#helpctrl' ) )
+            if( $a.is( '#refresh-icons' ) || $a.is( '#helpctrl' ) )
             {
                 closePanel();
             }

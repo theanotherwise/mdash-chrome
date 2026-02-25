@@ -554,7 +554,9 @@ html.theme-dark #add-section-cta {
     top:                        10px;
     right:                      24px;
     z-index:                    20;
-    display:                    block;
+    display:                    flex;
+    align-items:                center;
+    gap:                        6px;
     width:                      auto;
     max-width:                  calc(100vw - 24px);
     margin:                     0;
@@ -581,6 +583,53 @@ html.theme-dark #add-section-cta {
     box-shadow:                 0 2px 8px rgba(0,0,0,0.06);
     -webkit-backdrop-filter:    saturate(120%) blur(12px);
     backdrop-filter:            saturate(120%) blur(12px);
+}
+
+#edit {
+    display:                    inline-flex;
+    align-items:                center;
+    justify-content:            center;
+    min-width:                  44px;
+    height:                     34px;
+    margin:                     0;
+    padding:                    0 12px;
+    border-radius:              999px;
+    color:                      var(--text-color);
+    font-size:                  12px;
+    letter-spacing:             0.06em;
+    text-transform:             lowercase;
+    font-weight:                600;
+    line-height:                1;
+    background:                 var(--surface-strong);
+    border:                     1px solid var(--surface-border);
+    box-shadow:                 0 2px 8px rgba(0,0,0,0.06);
+    -webkit-backdrop-filter:    saturate(120%) blur(12px);
+    backdrop-filter:            saturate(120%) blur(12px);
+    cursor:                     pointer;
+    transition:                 background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+#edit:hover {
+    background:                 var(--tile-hover-bg);
+}
+
+#edit:focus-visible {
+    outline:                    2px solid var(--focus-ring);
+    outline-offset:             2px;
+}
+
+.edit #edit {
+    background:                 var(--accent-color);
+    color:                      #fff;
+    border-color:               var(--accent-color);
+}
+
+.edit #edit:hover {
+    opacity:                    0.88;
+}
+
+html.theme-dark #edit {
+    box-shadow:                 0 2px 8px rgba(0,0,0,0.24);
 }
 
 #controls-panel {
