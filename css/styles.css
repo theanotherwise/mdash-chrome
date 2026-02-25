@@ -375,7 +375,7 @@ html.theme-dark .edit #bookmarks a:hover {
 
 #bookmarks a.add {
     position:                   relative;
-    display:                    none;
+    display:                    inline-flex;
     align-items:                center;
     justify-content:            center;
     background:                 rgba(142, 142, 147, 0.06);
@@ -386,12 +386,17 @@ html.theme-dark .edit #bookmarks a:hover {
     line-height:                1;
     font-size:                  0.95em;
     font-weight:                normal;
-    visibility:                 visible;
-    pointer-events:             auto;
-    transition:                 transform 120ms ease, background-color 120ms ease, border-color 120ms ease;
+    visibility:                 hidden;
+    pointer-events:             none;
+    opacity:                    0;
+    transition:                 transform 120ms ease, background-color 120ms ease, border-color 120ms ease, opacity 120ms ease;
 }
 
-.edit #bookmarks a.add { display: inline-flex; }
+.edit #bookmarks a.add {
+    visibility:                 visible;
+    pointer-events:             auto;
+    opacity:                    1;
+}
 
 #bookmarks section { position: relative; }
 
