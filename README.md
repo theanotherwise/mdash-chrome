@@ -23,6 +23,7 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 
 ### Edit Mode
 - Click any bookmark tile to edit its title, URL, or move it to another section
+- Edit dialog includes a `DUPLICATE` action to clone a bookmark (in the same or selected section)
 - Edit dialog section picker uses a custom styled dropdown with full keyboard navigation (arrows, Enter, Escape)
 - Drag & drop bookmarks between sections to reorder
 - Drag & drop entire sections between left and right columns

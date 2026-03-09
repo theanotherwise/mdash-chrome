@@ -871,6 +871,18 @@ html.theme-dark #edit {
     font-weight: 600;
 }
 
+.ui-edit-form > a.duplicate {
+    color: var(--accent-color);
+    display: inline-block;
+    margin-top: 25px;
+    margin-right: 14px;
+    font: -webkit-small-control;
+}
+
+.ui-edit-form > a.duplicate:hover {
+    text-decoration: underline;
+}
+
 .ui-edit-form > a.remove {
     color: #DC2626;
     display: inline-block;
