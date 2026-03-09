@@ -2217,7 +2217,7 @@
 
     EditCtrl.prototype.edit = function( $b )
     {
-        var $form, $title, $url, $section, $rmBtn, dialog,
+        var $form, $title, $url, $section, $dupBtn, $rmBtn, dialog,
             self  = this,
             id    = $b.attr( 'id' ),
             title = $b.find( 'span' ).text(),
@@ -2379,6 +2379,31 @@
         // Track current edited bookmark id for keyboard Delete
         this.currentEditId = id;
 
+        $dupBtn = $( '<a class="duplicate" href="#">DUPLICATE</a>' ).click( function( e )
+        {
+            e.preventDefault();
+
+            self.duplicate(
+                id,
+                {
+                    title: $title.val(),
+                    url: $url.val()
+                },
+                $section.val(),
+                function( duplicated )
+                {
+                    if( !duplicated )
+                    {
+                        ui.error( 'Error', 'Couldn\'t duplicate the bookmark.' );
+                        return;
+                    }
+
+                    dialog.hide();
+                    self.currentEditId = null;
+                }
+            );
+        } );
+
         $rmBtn = $( '<a class="remove" href="#">DELETE (shortcut key: DELETE)</a>' ).click( function( e )
         {
             e.preventDefault();
@@ -2390,7 +2415,7 @@
             } );
         } );
         
-        $form.append( $title, $url, $section, $sectionField, $rmBtn );
+        $form.append( $title, $url, $section, $sectionField, $dupBtn, $rmBtn );
         
         dialog = ui.confirm( 'Edit \'' + title + '\'', $form );
         dialog.el.addClass( 'dialog-form-wide' );
@@ -2413,6 +2438,104 @@
                 $section.val() != sectionId ? $section.val() : null,
                 function() { dialog.hide(); self.currentEditId = null; }
             );
+        } );
+    };
+
+    EditCtrl.prototype.duplicate = function( sourceId, props, sectionId, callback )
+    {
+        var self = this;
+        var $source = $( document.getElementById( sourceId ) );
+        if( !$source.length )
+        {
+            callback && callback( false );
+            return;
+        }
+
+        var sourceSectionId = '' + ( $source.closest( 'section' ).attr( 'id' ) || '' );
+        var targetSectionId = '' + ( sectionId || sourceSectionId );
+        var $targetSection = $( '#' + targetSectionId );
+        if( !$targetSection.length )
+        {
+            callback && callback( false );
+            return;
+        }
+
+        var duplicateTitle = ( props && props.title != null )
+            ? props.title
+            : ( $source.attr( 'data-raw-title' ) || $source.find( 'span' ).not( '.click-count' ).first().text() || '' );
+        var duplicateUrl = ( props && props.url != null ) ? props.url : $source.attr( 'href' );
+
+        if( duplicateUrl && !mdash.util.isSafeUrl( duplicateUrl ) )
+        {
+            var candidate = ( '' + duplicateUrl ).trim();
+            if( candidate.indexOf( '//' ) === 0 ) candidate = 'https:' + candidate;
+            try { new URL( candidate ); } catch( _e ) { candidate = 'http://' + candidate; }
+            duplicateUrl = mdash.util.isSafeUrl( candidate ) ? candidate : null;
+        }
+
+        if( !duplicateUrl || !mdash.util.isSafeUrl( duplicateUrl ) )
+        {
+            callback && callback( false );
+            return;
+        }
+
+        var $targetTiles = $targetSection.children( 'a' ).not( '.add,.drop-placeholder' );
+        var insertIndex = $targetTiles.length;
+        if( targetSectionId === sourceSectionId )
+        {
+            for( var i = 0; i < $targetTiles.length; i++ )
+            {
+                if( $targetTiles[ i ].id === sourceId )
+                {
+                    insertIndex = i + 1;
+                    break;
+                }
+            }
+        }
+
+        this.api.create( {
+            parentId: targetSectionId,
+            title: duplicateTitle,
+            url: duplicateUrl,
+            index: insertIndex
+        }, function( bookmark )
+        {
+            if( !bookmark )
+            {
+                callback && callback( false );
+                return;
+            }
+
+            var $new = mdash.Column.prototype.renderBookmark( bookmark );
+            var $currentTiles = $targetSection.children( 'a' ).not( '.add,.drop-placeholder' );
+            var $add = $targetSection.find( 'a.add' );
+            if( insertIndex < $currentTiles.length ) $currentTiles.eq( insertIndex ).before( $new );
+            else if( $add.length ) $add.before( $new );
+            else $targetSection.append( $new );
+
+            $targetSection.show();
+            $targetSection.parent().show();
+
+            if( self.editMode )
+            {
+                self.disableDragAndDrop();
+                self.enableDragAndDrop();
+            }
+
+            mdash._undoNotify( 'Duplicated', '\'' + bookmark.title + '\' duplicated.', function()
+            {
+                self.api.remove( bookmark.id, function()
+                {
+                    var $tile = $( document.getElementById( bookmark.id ) );
+                    if( $tile.length )
+                    {
+                        $tile.addClass( 'removed' );
+                        setTimeout( function(){ $tile.remove(); }, 500 );
+                    }
+                } );
+            } );
+
+            callback && callback( true, bookmark );
         } );
     };
     
