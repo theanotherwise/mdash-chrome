@@ -868,6 +868,8 @@
         this.$addSectionBtn = $( '#add-section-cta' );
         this.api        = chrome.bookmarks;
         this.editMode   = false;
+        this.altPressed = false;
+        this._altEditWasActive = false;
         this.$activeBookmark = null;
         this.currentEditId = null;
         this._dragging = false;
@@ -1849,10 +1851,17 @@
         {
             if( e.keyCode === 18 /* alt */ )
             {
-                self.$docEl.addClass( 'edit' );
-                self.editMode = self.altPressed = true;
-                // Show raw titles when Alt-edit is active
-                self.applyDisplayTitlesBasedOnMode();
+                // Track previous mode so releasing Alt restores state correctly.
+                if( self.altPressed ) return;
+                self.altPressed = true;
+                self._altEditWasActive = self.editMode;
+                if( !self._altEditWasActive )
+                {
+                    self.$docEl.addClass( 'edit' );
+                    self.editMode = true;
+                    // Show raw titles when Alt-edit is active
+                    self.applyDisplayTitlesBasedOnMode();
+                }
             }
             else if( self.editMode && (e.key === 'Escape' || e.keyCode === 27) )
             {
@@ -1894,10 +1903,16 @@
         {
             if( e.keyCode === 18 /* alt */ )
             {
-                self.$docEl.removeClass( 'edit' );
-                self.editMode = self.altPressed = false;
-                // Return to stripped titles
-                self.applyDisplayTitlesBasedOnMode();
+                if( !self.altPressed ) return;
+                self.altPressed = false;
+                if( !self._altEditWasActive )
+                {
+                    self.$docEl.removeClass( 'edit' );
+                    self.editMode = false;
+                    // Return to stripped titles
+                    self.applyDisplayTitlesBasedOnMode();
+                }
+                self._altEditWasActive = false;
             }
         } );
     };
@@ -3357,7 +3372,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.6.5';
+    Dashboard.VERSION = '1.6.6';
 
     proto.init = function()
     {
