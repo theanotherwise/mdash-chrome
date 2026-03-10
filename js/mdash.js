@@ -2819,6 +2819,7 @@
     ThemeCtrl.prototype.init = function()
     {
         var saved = localStorage.getItem( KEY );
+        var prefersDark = !!( window.matchMedia && window.matchMedia( '(prefers-color-scheme: dark)' ).matches );
         if( saved === 'dark' )
         {
             document.documentElement.classList.add( 'theme-dark' );
@@ -2833,8 +2834,19 @@
         }
         else
         {
-            // default to light
-            this.select( 'light' );
+            // If user has no stored preference, follow system preference.
+            if( prefersDark )
+            {
+                document.documentElement.classList.add( 'theme-dark' );
+                document.documentElement.classList.remove( 'theme-light' );
+                this.select( 'dark' );
+            }
+            else
+            {
+                document.documentElement.classList.add( 'theme-light' );
+                document.documentElement.classList.remove( 'theme-dark' );
+                this.select( 'light' );
+            }
         }
 
         this.$links.on( 'click', this.onClick.bind( this ) );
@@ -3495,7 +3507,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.7.0';
+    Dashboard.VERSION = '1.7.7';
 
     proto.init = function()
     {

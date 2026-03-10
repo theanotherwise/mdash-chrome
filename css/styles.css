@@ -10,6 +10,8 @@
     --focus-ring:               rgba(46, 125, 50, 0.42);
     --tile-bg:                  #FFFFFF;
     --tile-hover-bg:            #F2F2F7;
+    --bookmark-tile-bg:         rgba(255, 255, 255, 0.62);
+    --bookmark-tile-hover-bg:   rgba(255, 255, 255, 0.78);
     --tile-shadow:              0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
     --tile-radius:              12px;
     --tile-y-pad:               8px;
@@ -18,6 +20,7 @@
     --surface-strong:           rgba(255, 255, 255, 0.82);
     --hover-shadow:             0 4px 12px rgba(0,0,0,0.08);
     --section-color:            #3C3C43;
+    --section-alt-bg:           rgba(0, 0, 0, 0.035);
     color-scheme:               light;
 }
 
@@ -30,12 +33,15 @@ html.theme-dark {
     --focus-ring:               rgba(62, 148, 67, 0.48);
     --tile-bg:                  #2C2C2E;
     --tile-hover-bg:            #3A3A3C;
+    --bookmark-tile-bg:         rgba(44, 44, 46, 0.56);
+    --bookmark-tile-hover-bg:   rgba(58, 58, 60, 0.74);
     --tile-shadow:              0 1px 3px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.12);
     --input-border:             #48484A;
     --surface-border:           rgba(255, 255, 255, 0.08);
     --surface-strong:           rgba(44, 44, 46, 0.72);
     --hover-shadow:             0 4px 12px rgba(0,0,0,0.32);
     --section-color:            #AEAEB2;
+    --section-alt-bg:           rgba(0, 0, 0, 0.08);
     color-scheme:               dark;
 }
 
@@ -48,11 +54,14 @@ html.theme-light {
     --focus-ring:               rgba(46, 125, 50, 0.42);
     --tile-bg:                  #FFFFFF;
     --tile-hover-bg:            #F2F2F7;
+    --bookmark-tile-bg:         rgba(255, 255, 255, 0.62);
+    --bookmark-tile-hover-bg:   rgba(255, 255, 255, 0.78);
     --tile-shadow:              0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
     --surface-border:           rgba(0, 0, 0, 0.06);
     --surface-strong:           rgba(255, 255, 255, 0.82);
     --hover-shadow:             0 4px 12px rgba(0,0,0,0.08);
     --section-color:            #3C3C43;
+    --section-alt-bg:           rgba(0, 0, 0, 0.035);
     color-scheme:               light;
 }
 
@@ -235,6 +244,13 @@ html.theme-dark #getstarted {
     overflow:                   visible;
 }
 
+/* Subtle zebra striping: every second group from the top */
+#bookmarks > .left > section:nth-of-type(odd),
+#bookmarks > .right > section:nth-of-type(odd) {
+    background:                 var(--section-alt-bg);
+    border-radius:              10px;
+}
+
 #bookmarks h1 {
     position:                   relative;
     font-size:                  0.82em;
@@ -294,7 +310,7 @@ html.theme-dark .edit #bookmarks h1.section-renaming .section-title-text {
     font-weight:                normal;
     letter-spacing:             0.01em;
     line-height:                1.35;
-    background-color:           var(--tile-bg);
+    background-color:           var(--bookmark-tile-bg);
     border-radius:              var(--tile-radius);
     box-shadow:                 var(--tile-shadow);
     border:                     1px solid var(--surface-border);
@@ -307,27 +323,39 @@ html.theme-dark .edit #bookmarks h1.section-renaming .section-title-text {
     text-overflow:              ellipsis;
     transition:                 transform 120ms ease, background-color 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
     color:                      var(--text-color);
+    -webkit-backdrop-filter:    blur(2px) saturate(1.08);
+    backdrop-filter:            blur(2px) saturate(1.08);
+}
+
+/* Explicit theme parity for bookmark tile glass surfaces */
+html.theme-light #bookmarks a {
+    background-color:           var(--bookmark-tile-bg);
+}
+
+html.theme-dark #bookmarks a {
+    background-color:           var(--bookmark-tile-bg);
+    border-color:               rgba(255, 255, 255, 0.14);
 }
 
 #bookmarks a:hover {
-    background-color:           var(--tile-hover-bg);
+    background-color:           var(--bookmark-tile-hover-bg);
     transform:                  translateY(-1px);
     box-shadow:                 var(--hover-shadow);
     border-color:               rgba(0, 0, 0, 0.1);
 }
 
 html.theme-dark #bookmarks a:hover {
-    background-color:           var(--tile-hover-bg);
+    background-color:           var(--bookmark-tile-hover-bg);
     border-color:               rgba(255, 255, 255, 0.12);
     box-shadow:                 var(--hover-shadow);
 }
 
 .edit #bookmarks a:hover {
-    background-color:           #FFF3E0;
+    background-color:           rgba(255, 243, 224, 0.92);
 }
 
 html.theme-dark .edit #bookmarks a:hover {
-    background-color:           #FFF8E1;
+    background-color:           rgba(255, 248, 225, 0.88);
     color:                      #1C1C1E;
 }
 

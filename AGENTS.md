@@ -4,13 +4,15 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.7.0
+**Version**: 1.7.7
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
 
 - Two-column bookmark dashboard (left / right, controlled by `+` / `-` prefix in folder names)
 - Responsive CSS Grid layout for columns (auto-switches to one column on smaller screens)
+- Bookmark tiles use subtle translucency for a soft glass look
+- Subtle alternating group background in bookmark columns (starts from first section: dark/light/dark/light)
 - Edit button as a standalone pill to the left of the controls menu for instant one-click access
 - Collapsible top-right controls pill with glass-style surface; expands downward on click
 - Edit mode: inline editing, adding, deleting, and renaming sections
@@ -25,7 +27,7 @@
 - Click statistics: per-bookmark click counter persisted in `localStorage`, subtle badge on tiles, tracks clicks from both dashboard and Spotlight
 - Undo for all destructive/mutating operations (30-second window): bookmark delete, update, create, drag & drop move; section create, delete, rename, column move, color change, sort
 - Spotlight search modal (Option+F on macOS, Ctrl+F on Windows) with results list, keyboard navigation, highlighted matches, and background-tab open via middle-click / Cmd/Ctrl+click without navigating the current tab
-- Light and dark themes (persisted in localStorage)
+- Light and dark themes (persisted in localStorage; defaults to system preference when unset)
 - Font size control: small, medium, large (persisted in localStorage)
 - Improved keyboard accessibility with visible focus rings on interactive controls
 - In edit mode, `Escape` closes an open add/edit dialog before leaving edit mode
@@ -90,7 +92,7 @@ Dashboard (orchestrator)
 | **FontCtrl** | `mdash.FontCtrl` | Dropdown control for font sizes (`small`, `medium`, `large`). Persists selection in `localStorage.fontSize`. Applies CSS class to `<body>`. |
 | **HelpCtrl** | `mdash.HelpCtrl` | Toggles visibility between the help/get-started panel and the bookmarks interface. |
 | **EditCtrl** | `mdash.EditCtrl` | Toggles edit mode (`html.edit` class). In edit mode: click tile to edit (title, URL, section), duplicate from the edit dialog (`DUPLICATE`), Delete key to remove, click section title to rename, click section color dot to open color palette, use sort button to sort bookmarks A→Z/Z→A, use section-header `button.section-remove` to delete a whole section via `chrome.bookmarks.removeTree()`, use bottom `#add-section-cta` to create a new section (with column + color selection), drag & drop tiles between sections, and drag & drop sections between columns. The bookmark edit dialog uses a custom in-dialog section picker. Provides undo for all operations. |
-| **ThemeCtrl** | `mdash.ThemeCtrl` | Dropdown for light/dark theme. Toggles `theme-light` / `theme-dark` on `<html>`. Persists in `localStorage['mdash:theme']`. |
+| **ThemeCtrl** | `mdash.ThemeCtrl` | Dropdown for light/dark theme. Toggles `theme-light` / `theme-dark` on `<html>`. Persists in `localStorage['mdash:theme']`; when unset, defaults to OS color scheme via `prefers-color-scheme`. |
 | **KeyboardManager** | `mdash.KeyboardManager` | Keyboard-driven tile filtering. Guarded by `isEnabled()` check (disabled by default in localStorage). |
 | **AddBtn** | `mdash.AddBtn` | Per-section "+" button rendered as a tile at the end of the section list in edit mode. Opens a confirmation dialog to add a new bookmark. Normalizes URLs (prepends `http://` if needed). |
 | **Spotlight** | `mdash.Spotlight` | Spotlight-style search modal (Option+F / Ctrl+F). Shows a centered overlay with input + results list. Matches by title and URL. Keyboard navigation (↑/↓/Enter/Esc). Results show favicon, title (with highlighted match), URL, and section name. Tracks click statistics on open. Supports opening in a background tab (`chrome.tabs.create` with `active: false`) using middle-click or Cmd/Ctrl+click while keeping the current tab on Spotlight. |
@@ -170,6 +172,8 @@ Visual direction: clean, airy, Linear/Vercel-inspired. Near-white backgrounds, c
 | `--accent-color` | `#2E7D32` | `#3E9443` | Links, accents, active states |
 | `--tile-bg` | `#FFFFFF` | `#2C2C2E` | Tile background |
 | `--tile-hover-bg` | `#F2F2F7` | `#3A3A3C` | Tile hover background |
+| `--bookmark-tile-bg` | `rgba(255,255,255,0.62)` | `rgba(44,44,46,0.56)` | Bookmark tile background (glass) |
+| `--bookmark-tile-hover-bg` | `rgba(255,255,255,0.78)` | `rgba(58,58,60,0.74)` | Bookmark tile hover background (glass) |
 | `--tile-shadow` | ultra-subtle `0 1px 3px` | `0 1px 3px` darker | Tile resting shadow |
 | `--tile-radius` | `12px` | `12px` | Tile border-radius |
 | `--surface-border` | `rgba(0,0,0,0.06)` | `rgba(255,255,255,0.08)` | Subtle borders |
@@ -182,10 +186,11 @@ Visual direction: clean, airy, Linear/Vercel-inspired. Near-white backgrounds, c
 
 - No background pattern — flat solid `--bg-color`
 - Section headers: sentence case (no uppercase), font-weight 600, letter-spacing 0.03em
-- Tiles: 12px radius, 10.5em width, ultra-subtle shadows, gentle hover lift (-1px)
+- Tiles: 12px radius, 10.5em width, slightly translucent background, ultra-subtle shadows, gentle hover lift (-1px)
 - Controls pill: frosted glass with 12px blur, compact collapsed state, expands downward in a single rounded box
 - Spotlight modal: 14px radius, consistent shadow language
 - Edit-mode hover: soft warm tint (`#FFF3E0` light / `#FFF8E1` dark)
+- Every second section starting from the first (1st/3rd/5th...) has a subtle zebra background tint for row grouping
 - Grid gap: 24px row / 32px column
 - Scrollbars: 6px wide, very low opacity
 - DnD placeholders: pulsing animation for clear visual feedback

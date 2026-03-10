@@ -7,10 +7,12 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 ### Dashboard Layout
 - Two-column layout that mirrors your bookmark folder structure
 - Responsive grid — auto-switches to single column on smaller screens
+- Bookmark tiles are semi-transparent (glass effect) so the background is visible even before hover
+- Subtle zebra grouping: starts from the first section (dark/light/dark/light)
 - Collapsible top-right controls pill with animated expand/collapse and frosted glass effect
 - Dark-green accent color for focus, action buttons, and highlights
 - Smooth transitions on all interactive elements (hover, focus, drag & drop)
-- Light and dark themes (fully themed dialogs, notifications, and context menus)
+- Light and dark themes (fully themed dialogs, notifications, and context menus; defaults to system preference when unset)
 - Three font sizes: small, medium, large
 - Full ARIA accessibility for screen readers
 
