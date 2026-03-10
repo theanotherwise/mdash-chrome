@@ -322,7 +322,7 @@ html.theme-dark .edit #bookmarks section.drop-target {
     gap:                        8px;
     padding:                    0 var(--section-actions-reserve) 3px 2px;
     letter-spacing:             0.2px;
-    margin:                     0 0 4px 0;
+    margin:                     0 0 10px 0;
     border-bottom:              none;
 }
 

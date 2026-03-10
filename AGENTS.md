@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.64
+**Version**: 1.8.66
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -30,7 +30,7 @@
 - Undo for all destructive/mutating operations (30-second window): bookmark delete, update, create, drag & drop move; section create, delete, rename, column move, color change, sort
 - Spotlight search modal (Option+F on macOS, Ctrl+F on Windows) with debounced input, cached in-memory index, keyboard navigation, highlighted matches, and background-tab open via middle-click / Cmd/Ctrl+click without navigating the current tab
 - Theme mode selector: auto/light/dark (`auto` follows OS preference and reacts to live system theme changes)
-- Font size control: XXS, XS, small, medium, large, XL, XXL, XXXL (persisted in localStorage)
+- Font size control: XXS, XS, small, M, L, XL, XXL, XXXL (persisted in localStorage; `M` maps to `medium`, `L` maps to `large`)
 - Settings-panel typography is fixed and does not scale with dashboard font-size selection
 - XL+ dashboard presets use lighter text weights to avoid a visually over-bold look
 - Improved keyboard accessibility with visible focus rings on interactive controls
@@ -197,7 +197,7 @@ Visual direction: clean, intentional, and low-noise (Linear/Raycast/Vercel-like)
 ### Key Visual Rules
 
 - Background is flat and bright (`--bg-color`) with no decorative gradient noise
-- Section headers are explicit and compact: `14px`, weight `600`, slight letter-spacing, without an underline divider
+- Section headers are explicit and compact: `14px`, weight `600`, slight letter-spacing, without an underline divider, with a clearer gap above bookmark tags
 - Bookmark tags are compact pills (`6px 12px`, `8px` radius), adaptive width (content-fit with 32-char max), single-line ellipsis, 16px icons, and subtle hover lift (`translateY(-1px)`)
 - Left/right columns have no outer frame; only alternating zebra group backgrounds are visible
 - Settings UI: compact top-right quick actions (wrench + gear), where gear opens a right-side slide-in minimal panel
