@@ -16,7 +16,6 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 - Smooth transitions on all interactive elements (hover, focus, drag & drop)
 - Theme mode selector: auto / light / dark (auto follows OS)
 - Three font sizes: small, medium, large
-- Click-count badge visibility toggle (on/off)
 - Motion preference toggle (full/reduced)
 - Full ARIA accessibility for screen readers
 
@@ -42,12 +41,6 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 - Add new bookmarks via the `+` tile at the end of each section
 - Create new sections with the bottom `+` button (with optional color selection)
 - Delete entire sections (with confirmation)
-
-### Click Statistics
-- Per-bookmark click counter tracks how often you use each bookmark
-- Subtle badge on tiles shows click count
-- Tracks clicks from both dashboard tiles and Spotlight search results
-- Data persisted locally in `localStorage`
 
 ### Undo
 - 30-second undo window for all destructive actions:

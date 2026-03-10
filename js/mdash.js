@@ -765,15 +765,6 @@
         // Attach fallback; if [VPN] in title, skip normalization (use exact host)
         mdash.util.applyFaviconWithFallback( $img, link.href, isVpnMarker, displayTitle, hasOverride );
         
-        if( mdash.stats )
-        {
-            var clickCount = mdash.stats.getCount( link.href );
-            if( clickCount > 0 )
-            {
-                $el.append( $( '<span class="click-count">' ).text( clickCount ) );
-            }
-        }
-        
         return $el;
     };
 
@@ -3994,7 +3985,6 @@
     Spotlight.prototype.openHref = function( href, inNewTab, keepOpen )
     {
         if( !href || !mdash.util.isSafeUrl( href ) ) return;
-        if( mdash.stats ) mdash.stats.trackClick( href );
         
         if( inNewTab )
         {
@@ -4030,37 +4020,8 @@
 ( function( mdash )
 {
     'use strict';
-    var KEY = 'mdash:clicks';
-
-    var stats = mdash.stats = {};
-    stats._data = null;
-
-    stats._load = function()
-    {
-        if( this._data ) return this._data;
-        try { this._data = JSON.parse( localStorage.getItem( KEY ) ) || {}; }
-        catch( _e ) { this._data = {}; }
-        return this._data;
-    };
-
-    stats._save = function()
-    {
-        try { localStorage.setItem( KEY, JSON.stringify( this._data ) ); }
-        catch( _e ) {}
-    };
-
-    stats.trackClick = function( url )
-    {
-        var data = this._load();
-        data[ url ] = ( data[ url ] || 0 ) + 1;
-        this._save();
-        return data[ url ];
-    };
-
-    stats.getCount = function( url )
-    {
-        return this._load()[ url ] || 0;
-    };
+    // Click-count tracking was removed; keep namespace null for backward-safe checks.
+    mdash.stats = null;
 
 } )( window.mdash || ( window.mdash = {} ) );
 
@@ -4072,7 +4033,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.8.53';
+    Dashboard.VERSION = '1.8.54';
 
     proto.init = function()
     {
@@ -4083,7 +4044,6 @@
         this.$fontSizes  = $( '#fontctrl [data-size]' );
         this.$helpCtrl   = $( '#helpctrl' );
         this.$themeCtrl  = $( '#themectrl [data-theme]' );
-        this.$badgeCtrl  = $( '#badgectrl [data-badges]' );
         this.$motionCtrl = $( '#motionctrl [data-motion]' );
         this.$editBtn    = $( '#edit' );
         this.$refresh    = $( '#refresh-icons' );
@@ -4096,7 +4056,6 @@
         this.fontCtrl        = new mdash.FontCtrl( this.$fontSizes );
         this.helpCtrl        = new mdash.HelpCtrl( this.$helpCtrl, this.$getStarted, this.$bookmarks );
         this.themeCtrl       = new mdash.ThemeCtrl( this.$themeCtrl );
-        this.badgeCtrl       = new mdash.BadgeCtrl( this.$badgeCtrl );
         this.motionCtrl      = new mdash.MotionCtrl( this.$motionCtrl );
         this.editCtrl        = new mdash.EditCtrl( this.$editBtn, this.$bookmarks );
         this.keyboardManager = new mdash.KeyboardManager();
@@ -4104,9 +4063,16 @@
         this.fontCtrl.init();
         this.helpCtrl.init();
         this.themeCtrl.init();
-        this.badgeCtrl.init();
         this.motionCtrl.init();
         this.editCtrl.init();
+
+        // Cleanup legacy click-count storage/settings after feature removal.
+        try
+        {
+            localStorage.removeItem( 'mdash:clicks' );
+            localStorage.removeItem( 'mdash:badges' );
+        }
+        catch( _e ) {}
 
         // Preload icons map FIRST so favicon lookup prefers icons.json before any fallbacks
         try
@@ -4122,7 +4088,6 @@
         this.setupControlsPanel();
 
         this.keyboardManager.init();
-        this.setupClickTracking();
 
         // Refresh icons action:
         // - click: always purge favicon cache + reload (full rebuild)

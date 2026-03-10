@@ -302,7 +302,7 @@ html.theme-dark .edit #bookmarks section.drop-target {
 
 #bookmarks h1 {
     position:                   relative;
-    font-size:                  14px;
+    font-size:                  1em;
     color:                      var(--section-color);
     font-weight:                600;
     display:                    flex;
@@ -389,7 +389,7 @@ html.theme-dark .edit #bookmarks h1.section-renaming .section-title-text {
     gap:                        6px;
     vertical-align:             bottom;
     text-decoration:            none;
-    font-size:                  13px;
+    font-size:                  0.93em;
     font-weight:                500;
     letter-spacing:             0;
     line-height:                1.2;
@@ -521,7 +521,7 @@ html.theme-dark .edit #bookmarks a:hover {
     margin:                     0;
     padding:                    0 10px;
     line-height:                1;
-    font-size:                  12px;
+    font-size:                  0.86em;
     font-weight:                600;
     letter-spacing:             0.01em;
     text-transform:             lowercase;
@@ -859,7 +859,7 @@ html.settings-open #settings-panel {
 
 #settings-title {
     margin:                     0;
-    font-size:                  14px;
+    font-size:                  1em;
     letter-spacing:             0.2px;
     color:                      var(--text-color);
     font-weight:                600;
@@ -890,7 +890,7 @@ html.settings-open #settings-panel {
 }
 
 .setting-label {
-    font-size:                  12px;
+    font-size:                  0.86em;
     letter-spacing:             0.2px;
     color:                      var(--muted-color);
     font-weight:                600;
@@ -914,7 +914,7 @@ html.settings-open #settings-panel {
     border:                     1px solid var(--surface-border);
     background:                 var(--tile-bg);
     color:                      var(--text-color);
-    font-size:                  12px;
+    font-size:                  0.86em;
     font-weight:                600;
     letter-spacing:             0.01em;
     text-transform:             none;
@@ -1717,25 +1717,6 @@ section[data-section-color] .section-color-dot {
 
 .sort-menu-option:hover {
     background:                 var(--tile-hover-bg);
-}
-
-/* --- Click count badge --- */
-
-.click-count {
-    position:                   absolute;
-    bottom:                     3px;
-    right:                      6px;
-    font-size:                  0.58em;
-    color:                      var(--muted-color);
-    opacity:                    0.45;
-    pointer-events:             none;
-    font-variant-numeric:       tabular-nums;
-    letter-spacing:             0;
-    line-height:                1;
-}
-
-html.hide-click-counts .click-count {
-    display:                    none !important;
 }
 
 /* Reduce motion preference */

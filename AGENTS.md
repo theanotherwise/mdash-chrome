@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.53
+**Version**: 1.8.54
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -26,8 +26,6 @@
 - Drag & drop sections between columns (left ↔ right) in edit mode; automatically updates `+`/`-` prefix
 - Custom section colors: colored dot next to section title, stored as `#RRGGBB` suffix in folder name (e.g. `+Productivity #4CAF50`); editable via color palette popup in edit mode
 - Sort bookmarks within a section (A→Z / Z→A toggle button in edit mode); reorders via Chrome Bookmarks API with full undo support
-- Click statistics: per-bookmark click counter persisted in `localStorage`, subtle badge on tiles, tracks clicks from both dashboard and Spotlight (including middle-click/background-tab opens from dashboard tiles)
-- Settings toggle for click-count badge visibility (on/off)
 - Settings toggle for reduced/full motion preference
 - Undo for all destructive/mutating operations (30-second window): bookmark delete, update, create, drag & drop move; section create, delete, rename, column move, color change, sort
 - Spotlight search modal (Option+F on macOS, Ctrl+F on Windows) with debounced input, cached in-memory index, keyboard navigation, highlighted matches, and background-tab open via middle-click / Cmd/Ctrl+click without navigating the current tab
@@ -77,15 +75,13 @@ All application modules live in `js/mdash.js` as IIFE (Immediately Invoked Funct
 Dashboard (orchestrator)
 ├── Manager          — Chrome Bookmarks API wrapper (parses section colors)
 ├── SectionState     — Persists collapsed section state by section ID
-├── Column (×2)      — Renders sections (with color dot) and bookmark tiles (with click count)
+├── Column (×2)      — Renders sections (with color dot) and bookmark tiles
 │   └── AddBtn       — "Add bookmark" modal per section
 ├── FontCtrl         — Font size selector
 ├── HelpCtrl         — Help/get-started toggle
 ├── ThemeCtrl        — Auto/light/dark theme selector
-├── BadgeCtrl        — Click-count badge visibility toggle
 ├── MotionCtrl       — Reduced-motion toggle
 ├── EditCtrl         — Edit mode, drag & drop, delete, rename, color palette, sort
-├── Stats            — Click statistics tracker (localStorage)
 ├── KeyboardManager  — Keyboard shortcuts (currently disabled)
 └── Spotlight        — Spotlight-style search modal (tracks clicks)
 ```
@@ -101,12 +97,10 @@ Dashboard (orchestrator)
 | **HelpCtrl** | `mdash.HelpCtrl` | Toggles visibility between the help/get-started panel and the bookmarks interface. |
 | **EditCtrl** | `mdash.EditCtrl` | Toggles edit mode (`html.edit` class). In edit mode: click tile to edit (title, URL, section), duplicate from the edit dialog (`DUPLICATE`), Delete key to remove, click section title to rename, click section color dot to open color palette, use sort button to sort bookmarks A→Z/Z→A, use section-header `button.section-remove` to delete a whole section via `chrome.bookmarks.removeTree()`, use bottom `#add-section-cta` to create a new section (with column + color selection), drag & drop tiles between sections, and drag & drop sections between columns. Also controls section collapse toggles and persists collapse state. The bookmark edit dialog uses a custom in-dialog section picker. Provides undo for all operations. |
 | **ThemeCtrl** | `mdash.ThemeCtrl` | Settings-panel selector for `auto` / `light` / `dark` theme. In `auto`, listens to `prefers-color-scheme` changes and applies `theme-light` / `theme-dark` on `<html>`. Persists in `localStorage['mdash:theme']`. |
-| **BadgeCtrl** | `mdash.BadgeCtrl` | Settings-panel selector for click-count badge visibility (`show` / `hide`). Toggles `html.hide-click-counts`. Persists in `localStorage['mdash:badges']`. |
 | **MotionCtrl** | `mdash.MotionCtrl` | Settings-panel selector for motion level (`full` / `reduced`). Toggles `html.reduced-motion`. Persists in `localStorage['mdash:motion']`. |
 | **KeyboardManager** | `mdash.KeyboardManager` | Keyboard-driven tile filtering. Guarded by `isEnabled()` check (disabled by default in localStorage). |
 | **AddBtn** | `mdash.AddBtn` | Per-section "+" button rendered as a tile at the end of the section list in edit mode. Opens a confirmation dialog to add a new bookmark. Normalizes URLs (prepends `http://` if needed). |
 | **Spotlight** | `mdash.Spotlight` | Spotlight-style search modal (Option+F / Ctrl+F). Shows a centered overlay with input + results list. Uses a cached in-memory index rebuilt on open, with debounced input handling. Matches by title and URL. Keyboard navigation (↑/↓/Enter/Esc). Results show favicon, title (with highlighted match), URL, and section name. Tracks click statistics on open. Supports opening in a background tab (`chrome.tabs.create` with `active: false`) using middle-click or Cmd/Ctrl+click while keeping the current tab on Spotlight. |
-| **Stats** | `mdash.stats` | Click statistics tracker. Persists per-URL click counts in `localStorage['mdash:clicks']` as a JSON object. Provides `trackClick(url)` and `getCount(url)`. |
 | **Dashboard** | `mdash.Dashboard` | Main orchestrator. Initializes all modules, preloads the icon map, loads bookmarks into two columns, sets up the UI toolkit, sets up click tracking, handles the right-side slide-in settings panel, and handles the "refresh icons" action. Works with the responsive grid/settings layout defined in CSS. |
 
 ### UI Toolkit (`js/mdash-ui.js`)
@@ -157,11 +151,9 @@ Section titles support an optional color suffix: `+Title #RRGGBB` or `-Title #RR
 |---|---|---|
 | `fontSize` | localStorage | `small` / `medium` / `large` |
 | `mdash:theme` | localStorage | `auto` / `light` / `dark` |
-| `mdash:badges` | localStorage | `show` / `hide` |
 | `mdash:motion` | localStorage | `full` / `reduced` |
 | `mdash:sections:collapsed` | localStorage | JSON object map of collapsed section IDs |
 | `mdash:keyboard:isEnabled` | localStorage | `enabled` / `disabled` |
-| `mdash:clicks` | localStorage | JSON object `{ "url": count, ... }` — per-URL click statistics |
 
 ### Build & Packaging
 
