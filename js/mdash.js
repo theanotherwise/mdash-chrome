@@ -1009,6 +1009,81 @@
         } );
 
     };
+
+    EditCtrl.prototype._reportError = function( title, detail )
+    {
+        if( window.ui && typeof ui.error === 'function' )
+        {
+            ui.error( 'Error', detail ? ( title + ': ' + detail ) : title );
+        }
+    };
+
+    EditCtrl.prototype._hasApiError = function( title )
+    {
+        var err = ( window.chrome && chrome.runtime ) ? chrome.runtime.lastError : null;
+        if( !err ) return false;
+        this._reportError( title, err.message || '' );
+        return true;
+    };
+
+    EditCtrl.prototype._cleanupTileDrag = function()
+    {
+        this._dragging = false;
+        this.$bookmarks.find( 'a.dragging' ).removeClass( 'dragging' );
+        if( this.$placeholder ) this.$placeholder.removeClass( 'collapsed' ).detach();
+        this.$bookmarks.find( 'section' ).removeClass( 'drop-target' );
+    };
+
+    EditCtrl.prototype._bindTileDnD = function( $tiles )
+    {
+        var self = this;
+        if( !$tiles || !$tiles.length ) return;
+        if( !this.$placeholder || !this.$placeholder.length )
+        {
+            this.$placeholder = $( '<a class="drop-placeholder" aria-hidden="true"></a>' );
+        }
+
+        $tiles.each( function()
+        {
+            var $tile = $( this );
+            if( $tile.hasClass( 'add' ) || $tile.hasClass( 'drop-placeholder' ) ) return;
+
+            $tile.attr( 'draggable', true )
+                .off( 'dragstart.mdash dragend.mdash dragover.mdash' )
+                .on( 'dragstart.mdash', function( e )
+                {
+                    self._dragging = true;
+                    self._handledDrop = false;
+                    var id = $( this ).attr( 'id' );
+                    var dt = e.originalEvent.dataTransfer;
+                    try { dt.setData( 'application/x-mdash-bookmark-id', id ); } catch( _e ) {}
+                    try { dt.setData( 'text/plain', '' ); } catch( _e ) {}
+                    dt.effectAllowed = 'move';
+                    var el = this;
+                    requestAnimationFrame( function(){ $( el ).addClass( 'dragging' ); } );
+
+                    var $cur = $( this );
+                    self.$placeholder.addClass( 'collapsed' );
+                    $cur.before( self.$placeholder );
+                } )
+                .on( 'dragend.mdash', function()
+                {
+                    self._cleanupTileDrag();
+                } )
+                .on( 'dragover.mdash', function( e )
+                {
+                    if( self._sectionDragging ) return;
+                    e.preventDefault();
+                    var rect = this.getBoundingClientRect();
+                    var before = ( e.originalEvent.clientX < rect.left + rect.width / 2 );
+                    var $t = $( this );
+                    if( before ) { $t.before( self.$placeholder ); }
+                    else { $t.after( self.$placeholder ); }
+                    self.$placeholder.removeClass( 'collapsed' );
+                    $t.closest( 'section' ).addClass( 'drop-target' );
+                } );
+        } );
+    };
     
     EditCtrl.prototype.enableDragAndDrop = function()
     {
@@ -1016,54 +1091,7 @@
         var $tiles = this.$bookmarks.find( 'a' ).not( '.add' );
         // Visual placeholder for insertion point
         this.$placeholder = $('<a class="drop-placeholder" aria-hidden="true"></a>');
-
-        // Helper to reliably reset UI state after any drop/move
-        function cleanupDrag()
-        {
-            self._dragging = false;
-            self.$bookmarks.find( 'a.dragging' ).removeClass( 'dragging' );
-            if( self.$placeholder ) self.$placeholder.removeClass( 'collapsed' ).detach();
-            self.$bookmarks.find( 'section' ).removeClass( 'drop-target' );
-        }
-        $tiles.attr( 'draggable', true )
-            .on( 'dragstart.mdash', function( e )
-            {
-                self._dragging = true;
-                self._handledDrop = false;
-                var id = $( this ).attr( 'id' );
-                var dt = e.originalEvent.dataTransfer;
-                // Use a custom type so only our tiles are accepted by drop targets
-                try { dt.setData( 'application/x-mdash-bookmark-id', id ); } catch( _e ) {}
-                // Clear generic text to avoid browsers providing fallback text/url values
-                try { dt.setData( 'text/plain', '' ); } catch( _e ) {}
-                dt.effectAllowed = 'move';
-                // Defer hiding the source element so the browser captures a proper drag image
-                var el = this;
-                requestAnimationFrame( function(){ $( el ).addClass( 'dragging' ); } );
-
-                // Insert a collapsed placeholder at the original position to collapse the gap
-                var $cur = $( this );
-                self.$placeholder.addClass( 'collapsed' );
-                $cur.before( self.$placeholder );
-            } )
-            .on( 'dragend.mdash', function()
-            {
-                cleanupDrag();
-            } );
-
-        // While dragging over a tile, show the placeholder before/after the tile
-        $tiles.on( 'dragover.mdash', function( e )
-        {
-            if( self._sectionDragging ) return;
-            e.preventDefault();
-            var rect = this.getBoundingClientRect();
-            var before = (e.originalEvent.clientX < rect.left + rect.width / 2);
-            var $t = $( this );
-            if( before ) { $t.before( self.$placeholder ); }
-            else { $t.after( self.$placeholder ); }
-            self.$placeholder.removeClass( 'collapsed' );
-            $t.closest( 'section' ).addClass( 'drop-target' );
-        } );
+        this._bindTileDnD( $tiles );
 
         var $sections = this.$bookmarks.find( 'section' );
         $sections
@@ -1189,11 +1217,26 @@
 
                 self.api.move( id, { parentId: targetSectionId, index: index }, function()
                 {
-                    cleanupDrag();
+                    if( self._hasApiError( 'Could not move bookmark' ) )
+                    {
+                        self._cleanupTileDrag();
+                        var $tileRollback = $( document.getElementById( id ) );
+                        var $origSectionRollback = $( '#' + undoParentId );
+                        if( $tileRollback.length && $origSectionRollback.length )
+                        {
+                            var $origTilesRollback = $origSectionRollback.children( 'a' ).not( '.add' );
+                            var $origAddRollback = $origSectionRollback.find( 'a.add' );
+                            if( undoIndex < $origTilesRollback.length ) $origTilesRollback.eq( undoIndex ).before( $tileRollback );
+                            else $origAddRollback.before( $tileRollback );
+                        }
+                        return;
+                    }
+                    self._cleanupTileDrag();
                     mdash._undoNotify( 'Moved', 'Bookmark moved.', function()
                     {
                         self.api.move( id, { parentId: undoParentId, index: undoIndex }, function()
                         {
+                            if( self._hasApiError( 'Could not undo bookmark move' ) ) return;
                             var $tile = $( document.getElementById( id ) );
                             var $origSection = $( '#' + undoParentId );
                             if( !$tile.length || !$origSection.length ) return;
@@ -1310,11 +1353,26 @@
 
             self.api.move( id, { parentId: targetSectionId, index: index }, function()
             {
-                cleanupDrag();
+                if( self._hasApiError( 'Could not move bookmark' ) )
+                {
+                    self._cleanupTileDrag();
+                    var $rollbackTile = $( document.getElementById( id ) );
+                    var $rollbackSection = $( '#' + undoParentId2 );
+                    if( $rollbackTile.length && $rollbackSection.length )
+                    {
+                        var $rollbackTiles = $rollbackSection.children( 'a' ).not( '.add' );
+                        var $rollbackAdd = $rollbackSection.find( 'a.add' );
+                        if( undoIndex2 < $rollbackTiles.length ) $rollbackTiles.eq( undoIndex2 ).before( $rollbackTile );
+                        else $rollbackAdd.before( $rollbackTile );
+                    }
+                    return;
+                }
+                self._cleanupTileDrag();
                 mdash._undoNotify( 'Moved', 'Bookmark moved.', function()
                 {
                     self.api.move( id, { parentId: undoParentId2, index: undoIndex2 }, function()
                     {
+                        if( self._hasApiError( 'Could not undo bookmark move' ) ) return;
                         var $tile = $( document.getElementById( id ) );
                         var $origSec = $( '#' + undoParentId2 );
                         if( !$tile.length || !$origSec.length ) return;
@@ -1469,6 +1527,24 @@
             self.$bookmarks.children( '.right' ).children( 'section' ).each( function(){ allSectionIds.push( this.id ); } );
             var newIndex = allSectionIds.indexOf( sectionId ) + 1;
 
+            var rollbackSectionDom = function()
+            {
+                var $sec = $( document.getElementById( sectionId ) );
+                var $origCol = self.$bookmarks.children( sourceColClass );
+                if( !$sec.length || !$origCol.length ) return;
+                if( hadPrevSibling && prevSiblingId )
+                {
+                    var $prev = $( '#' + prevSiblingId );
+                    if( $prev.length ) { $prev.after( $sec ); }
+                    else { $origCol.prepend( $sec ); }
+                }
+                else
+                {
+                    $origCol.prepend( $sec );
+                }
+                $origCol.show();
+            };
+
             var finishMove = function()
             {
                 if( mdash.dashboard && mdash.dashboard.manager )
@@ -1484,10 +1560,12 @@
                 {
                     self.api.update( sectionId, { title: oldPrefix + currentTitle + colorSuffix }, function()
                     {
+                        if( self._hasApiError( 'Could not undo section move' ) ) return;
                         if( folderId && oldIndex >= 0 )
                         {
                             self.api.move( sectionId, { parentId: folderId, index: oldIndex }, function()
                             {
+                                if( self._hasApiError( 'Could not restore section order' ) ) return;
                                 if( mdash.dashboard && mdash.dashboard.manager )
                                 {
                                     mdash.dashboard.manager.folder.children = null;
@@ -1529,10 +1607,20 @@
 
             self.api.update( sectionId, { title: newPrefix + currentTitle + colorSuffix }, function()
             {
+                if( self._hasApiError( 'Could not move section' ) )
+                {
+                    rollbackSectionDom();
+                    return;
+                }
                 if( folderId && newIndex >= 1 )
                 {
                     self.api.move( sectionId, { parentId: folderId, index: newIndex }, function()
                     {
+                        if( self._hasApiError( 'Could not update section order' ) )
+                        {
+                            rollbackSectionDom();
+                            return;
+                        }
                         finishMove();
                     } );
                 }
@@ -1695,6 +1783,11 @@
             title    : prefix + title + colorSuffix
         }, function( created )
         {
+            if( self._hasApiError( 'Could not create section' ) )
+            {
+                callback && callback( false );
+                return;
+            }
             if( !created )
             {
                 callback && callback( false );
@@ -1728,6 +1821,7 @@
             {
                 self.api.removeTree( created.id, function()
                 {
+                    if( self._hasApiError( 'Could not undo section creation' ) ) return;
                     var $rem = $( '#' + created.id );
                     if( $rem.length ) $rem.remove();
                     if( manager.folder ) manager.folder.children = null;
@@ -1768,10 +1862,20 @@
 
         this.api.getSubTree( sectionId, function( tree )
         {
+            if( self._hasApiError( 'Could not read section before delete' ) )
+            {
+                callback && callback( false );
+                return;
+            }
             var savedTree = ( tree && tree[0] ) ? tree[0] : null;
 
             self.api.removeTree( sectionId, function()
             {
+                if( self._hasApiError( 'Could not remove section' ) )
+                {
+                    callback && callback( false );
+                    return;
+                }
                 if( mdash.dashboard && mdash.dashboard.manager )
                 {
                     mdash.dashboard.manager.folder.children = null;
@@ -1798,6 +1902,7 @@
 
                     self.api.create( { parentId: parentId, title: savedTree.title }, function( folder )
                     {
+                        if( self._hasApiError( 'Could not undo section delete' ) ) return;
                         if( !folder ) return;
                         if( manager && manager.folder ) manager.folder.children = null;
 
@@ -1811,12 +1916,17 @@
                                 var child = children[ i++ ];
                                 if( child.url )
                                 {
-                                    self.api.create( { parentId: newParentId, title: child.title, url: child.url }, function() { next(); } );
+                                    self.api.create( { parentId: newParentId, title: child.title, url: child.url }, function()
+                                    {
+                                        if( self._hasApiError( 'Could not restore bookmark in section undo' ) ) return;
+                                        next();
+                                    } );
                                 }
                                 else
                                 {
                                     self.api.create( { parentId: newParentId, title: child.title }, function( sub )
                                     {
+                                        if( self._hasApiError( 'Could not restore subfolder in section undo' ) ) return;
                                         if( sub && child.children ) restoreChildren( child.children, sub.id, next );
                                         else next();
                                     } );
@@ -2586,6 +2696,11 @@
             index: insertIndex
         }, function( bookmark )
         {
+            if( self._hasApiError( 'Could not duplicate bookmark' ) )
+            {
+                callback && callback( false );
+                return;
+            }
             if( !bookmark )
             {
                 callback && callback( false );
@@ -2612,6 +2727,7 @@
             {
                 self.api.remove( bookmark.id, function()
                 {
+                    if( self._hasApiError( 'Could not undo duplicate' ) ) return;
                     var $tile = $( document.getElementById( bookmark.id ) );
                     if( $tile.length )
                     {
@@ -2633,12 +2749,22 @@
         // Fetch node to capture undo info
         this.api.get( id, function( nodes )
         {
+            if( self._hasApiError( 'Could not load bookmark before delete' ) )
+            {
+                callback && callback( false );
+                return;
+            }
             var node = nodes && nodes[0];
             if( !node )
             {
                 // Fallback remove without undo if lookup failed
                 self.api.remove( id, function()
                 {
+                    if( self._hasApiError( 'Could not remove bookmark' ) )
+                    {
+                        callback && callback( false );
+                        return;
+                    }
                     $el.addClass( 'removed' );
                     setTimeout( callback, 0 );
                     setTimeout( function() { $el.remove(); }, 500 );
@@ -2655,6 +2781,11 @@
 
             self.api.remove( id, function()
             {
+                if( self._hasApiError( 'Could not remove bookmark' ) )
+                {
+                    callback && callback( false );
+                    return;
+                }
                 $el.addClass( 'removed' );
                 setTimeout( callback, 0 );
                 setTimeout( function() { $el.remove(); }, 500 );
@@ -2689,6 +2820,7 @@
                         url      : undoInfo.url
                     }, function( created )
                     {
+                        if( self._hasApiError( 'Could not undo bookmark delete' ) ) return;
                         if( !created ) return;
                         var $section = $( '#' + undoInfo.parentId );
                         var $new = mdash.Column.prototype.renderBookmark( created );
@@ -2708,36 +2840,7 @@
                         // If we are currently in edit mode, make the restored tile draggable and bind DnD handlers
                         if( self.editMode )
                         {
-                            $new.attr( 'draggable', true )
-                                .on( 'dragstart.mdash', function( e )
-                                {
-                                    self._dragging = true;
-                                    var id = $( this ).attr( 'id' );
-                                    var dt = e.originalEvent.dataTransfer;
-                                    try { dt.setData( 'application/x-mdash-bookmark-id', id ); } catch( _e ) {}
-                                    try { dt.setData( 'text/plain', '' ); } catch( _e ) {}
-                                    dt.effectAllowed = 'move';
-                                    var el = this;
-                                    setTimeout( function(){ $( el ).addClass( 'dragging' ); }, 0 );
-                                } )
-                                .on( 'dragend.mdash', function()
-                                {
-                                    self._dragging = false;
-                                    $( this ).removeClass( 'dragging' );
-                                    if( self.$placeholder ) self.$placeholder.detach();
-                                    self.$bookmarks.find( 'section' ).removeClass( 'drop-target' );
-                                } );
-
-                            $new.on( 'dragover.mdash', function( e )
-                            {
-                                e.preventDefault();
-                                var rect = this.getBoundingClientRect();
-                                var before = (e.originalEvent.clientX < rect.left + rect.width / 2);
-                                var $t = $( this );
-                                if( before ) { $t.before( self.$placeholder ); }
-                                else { $t.after( self.$placeholder ); }
-                                $t.closest( 'section' ).addClass( 'drop-target' );
-                            } );
+                            self._bindTileDnD( $new );
                         }
                     } );
                 } );
@@ -2750,6 +2853,12 @@
         var $el    = $( document.getElementById( id ) ),
             $title = $el.find( 'span' ),
             self   = this;
+
+        if( !$el.length )
+        {
+            callback && callback( false );
+            return;
+        }
 
         // Capture previous state for undo
         var prev = {
@@ -2802,6 +2911,7 @@
                     {
                         self.api.move( id, { parentId: prev.parentId, index: prev.index }, function()
                         {
+                            if( self._hasApiError( 'Could not undo bookmark move' ) ) return;
                             // Reposition in DOM
                             var $section = $( '#' + prev.parentId );
                             var $tiles = $section.children('a').not('.add');
@@ -2820,6 +2930,7 @@
                     // Restore title/url (raw title)
                     self.api.update( id, { title: prev.rawTitle, url: prev.url }, function()
                     {
+                        if( self._hasApiError( 'Could not undo bookmark update' ) ) return;
                         var $cur = $( document.getElementById( id ) );
                         var $t = $cur.find('span');
                         $cur.attr( 'data-raw-title', prev.rawTitle );
@@ -2838,6 +2949,11 @@
 
         this.api.update( id, props, function()
         {
+            if( self._hasApiError( 'Could not update bookmark' ) )
+            {
+                callback && callback( false );
+                return;
+            }
             var newRawTitle = (props.title != null) ? props.title : ( $el.attr('data-raw-title') || $title.text() );
             $el.attr( 'data-raw-title', newRawTitle );
             var displayNow = self.editMode ? newRawTitle : mdash.util.stripIconOverride( newRawTitle );
@@ -2876,6 +2992,11 @@
             {
                 self.api.move( id, { parentId: moveTo }, function()
                 {
+                    if( self._hasApiError( 'Could not move bookmark to selected section' ) )
+                    {
+                        callback && callback( false );
+                        return;
+                    }
                     $( '#' + id ).remove().appendTo( $( '#' + moveTo ) );
                     afterUpdate();
                 } );
@@ -2900,44 +3021,83 @@
         this.$links = $links;
         this.$dropdown = this.$links.closest('.dropdown');
         this.$toggle = this.$dropdown.find('.dropdown-toggle');
+        this._currentTheme = 'auto';
+        this._mediaQuery = ( window.matchMedia ? window.matchMedia( '(prefers-color-scheme: dark)' ) : null );
+        this._boundMediaHandler = this.handleSystemThemeChange.bind( this );
     };
 
     ThemeCtrl.prototype.init = function()
     {
         var saved = localStorage.getItem( KEY );
-        var prefersDark = !!( window.matchMedia && window.matchMedia( '(prefers-color-scheme: dark)' ).matches );
-        if( saved === 'dark' )
+        var theme = ( saved === 'light' || saved === 'dark' || saved === 'auto' ) ? saved : 'auto';
+        this.applyTheme( theme );
+
+        this.$links.on( 'click', this.onClick.bind( this ) );
+        this.$toggle.on( 'click', this.toggleOpen.bind( this ) );
+        $(document).on('click', this.closeOnOutsideClick.bind(this));
+    };
+
+    ThemeCtrl.prototype.applyTheme = function( theme )
+    {
+        this._currentTheme = ( theme === 'light' || theme === 'dark' ) ? theme : 'auto';
+
+        if( this._currentTheme === 'auto' )
         {
-            document.documentElement.classList.add( 'theme-dark' );
-            document.documentElement.classList.remove( 'theme-light' );
-            this.select( 'dark' );
-        }
-        else if( saved === 'light' )
-        {
-            document.documentElement.classList.add( 'theme-light' );
-            document.documentElement.classList.remove( 'theme-dark' );
-            this.select( 'light' );
+            this.bindAutoThemeListener();
+            this.applySystemTheme();
         }
         else
         {
-            // If user has no stored preference, follow system preference.
-            if( prefersDark )
+            this.unbindAutoThemeListener();
+            if( this._currentTheme === 'dark' )
             {
                 document.documentElement.classList.add( 'theme-dark' );
                 document.documentElement.classList.remove( 'theme-light' );
-                this.select( 'dark' );
             }
             else
             {
                 document.documentElement.classList.add( 'theme-light' );
                 document.documentElement.classList.remove( 'theme-dark' );
-                this.select( 'light' );
             }
         }
 
-        this.$links.on( 'click', this.onClick.bind( this ) );
-        this.$toggle.on( 'click', this.toggleOpen.bind( this ) );
-        $(document).on('click', this.closeOnOutsideClick.bind(this));
+        localStorage.setItem( KEY, this._currentTheme );
+        this.select( this._currentTheme );
+    };
+
+    ThemeCtrl.prototype.applySystemTheme = function()
+    {
+        var prefersDark = !!( this._mediaQuery && this._mediaQuery.matches );
+        if( prefersDark )
+        {
+            document.documentElement.classList.add( 'theme-dark' );
+            document.documentElement.classList.remove( 'theme-light' );
+        }
+        else
+        {
+            document.documentElement.classList.add( 'theme-light' );
+            document.documentElement.classList.remove( 'theme-dark' );
+        }
+    };
+
+    ThemeCtrl.prototype.bindAutoThemeListener = function()
+    {
+        if( !this._mediaQuery ) return;
+        if( this._mediaQuery.addEventListener ) this._mediaQuery.addEventListener( 'change', this._boundMediaHandler );
+        else if( this._mediaQuery.addListener ) this._mediaQuery.addListener( this._boundMediaHandler );
+    };
+
+    ThemeCtrl.prototype.unbindAutoThemeListener = function()
+    {
+        if( !this._mediaQuery ) return;
+        if( this._mediaQuery.removeEventListener ) this._mediaQuery.removeEventListener( 'change', this._boundMediaHandler );
+        else if( this._mediaQuery.removeListener ) this._mediaQuery.removeListener( this._boundMediaHandler );
+    };
+
+    ThemeCtrl.prototype.handleSystemThemeChange = function()
+    {
+        if( this._currentTheme !== 'auto' ) return;
+        this.applySystemTheme();
     };
 
     ThemeCtrl.prototype.select = function( theme )
@@ -2951,18 +3111,7 @@
     {
         e.preventDefault();
         var theme = e.target.getAttribute( 'data-theme' );
-        if( theme === 'dark' )
-        {
-            document.documentElement.classList.add( 'theme-dark' );
-            document.documentElement.classList.remove( 'theme-light' );
-        }
-        else
-        {
-            document.documentElement.classList.add( 'theme-light' );
-            document.documentElement.classList.remove( 'theme-dark' );
-        }
-        localStorage.setItem( KEY, theme );
-        this.select( theme );
+        this.applyTheme( theme );
         this.$dropdown.removeClass('open');
     };
 
@@ -2974,6 +3123,131 @@
     };
 
     ThemeCtrl.prototype.closeOnOutsideClick = function(e)
+    {
+        if(!$(e.target).closest(this.$dropdown).length) {
+            this.$dropdown.removeClass('open');
+        }
+    };
+
+} )( window.mdash || ( window.mdash = {} ) );
+
+
+( function( mdash )
+{
+    'use strict';
+    var KEY = 'mdash:badges';
+
+    var BadgeCtrl = mdash.BadgeCtrl = function( $links )
+    {
+        this.$links = $links;
+        this.$dropdown = this.$links.closest('.dropdown');
+        this.$toggle = this.$dropdown.find('.dropdown-toggle');
+    };
+
+    BadgeCtrl.prototype.init = function()
+    {
+        var saved = localStorage.getItem( KEY );
+        var mode = ( saved === 'hide' ) ? 'hide' : 'show';
+        this.applyMode( mode );
+        this.$links.on( 'click', this.onClick.bind( this ) );
+        this.$toggle.on( 'click', this.toggleOpen.bind( this ) );
+        $(document).on('click', this.closeOnOutsideClick.bind(this));
+    };
+
+    BadgeCtrl.prototype.applyMode = function( mode )
+    {
+        var hide = mode === 'hide';
+        document.documentElement.classList.toggle( 'hide-click-counts', hide );
+        localStorage.setItem( KEY, hide ? 'hide' : 'show' );
+        this.select( hide ? 'hide' : 'show' );
+    };
+
+    BadgeCtrl.prototype.select = function( mode )
+    {
+        this.$links.removeClass( 'selected' );
+        this.$links.parent().find( 'a[data-badges="' + mode + '"]' ).addClass( 'selected' );
+        this.$toggle.text( ( mode === 'hide' ? 'badges off' : 'badges on' ) + ' ▾' );
+    };
+
+    BadgeCtrl.prototype.onClick = function( e )
+    {
+        e.preventDefault();
+        var mode = e.target.getAttribute( 'data-badges' ) === 'hide' ? 'hide' : 'show';
+        this.applyMode( mode );
+        this.$dropdown.removeClass('open');
+    };
+
+    BadgeCtrl.prototype.toggleOpen = function(e)
+    {
+        e.preventDefault();
+        e.stopPropagation();
+        this.$dropdown.toggleClass('open');
+    };
+
+    BadgeCtrl.prototype.closeOnOutsideClick = function(e)
+    {
+        if(!$(e.target).closest(this.$dropdown).length) {
+            this.$dropdown.removeClass('open');
+        }
+    };
+
+} )( window.mdash || ( window.mdash = {} ) );
+
+
+( function( mdash )
+{
+    'use strict';
+    var KEY = 'mdash:motion';
+
+    var MotionCtrl = mdash.MotionCtrl = function( $links )
+    {
+        this.$links = $links;
+        this.$dropdown = this.$links.closest('.dropdown');
+        this.$toggle = this.$dropdown.find('.dropdown-toggle');
+    };
+
+    MotionCtrl.prototype.init = function()
+    {
+        var saved = localStorage.getItem( KEY );
+        var prefersReduced = !!( window.matchMedia && window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches );
+        var mode = ( saved === 'reduced' || saved === 'full' ) ? saved : ( prefersReduced ? 'reduced' : 'full' );
+        this.applyMode( mode );
+        this.$links.on( 'click', this.onClick.bind( this ) );
+        this.$toggle.on( 'click', this.toggleOpen.bind( this ) );
+        $(document).on('click', this.closeOnOutsideClick.bind(this));
+    };
+
+    MotionCtrl.prototype.applyMode = function( mode )
+    {
+        var reduced = mode === 'reduced';
+        document.documentElement.classList.toggle( 'reduced-motion', reduced );
+        localStorage.setItem( KEY, reduced ? 'reduced' : 'full' );
+        this.select( reduced ? 'reduced' : 'full' );
+    };
+
+    MotionCtrl.prototype.select = function( mode )
+    {
+        this.$links.removeClass( 'selected' );
+        this.$links.parent().find( 'a[data-motion="' + mode + '"]' ).addClass( 'selected' );
+        this.$toggle.text( ( mode === 'reduced' ? 'motion reduced' : 'motion full' ) + ' ▾' );
+    };
+
+    MotionCtrl.prototype.onClick = function( e )
+    {
+        e.preventDefault();
+        var mode = e.target.getAttribute( 'data-motion' ) === 'reduced' ? 'reduced' : 'full';
+        this.applyMode( mode );
+        this.$dropdown.removeClass('open');
+    };
+
+    MotionCtrl.prototype.toggleOpen = function(e)
+    {
+        e.preventDefault();
+        e.stopPropagation();
+        this.$dropdown.toggleClass('open');
+    };
+
+    MotionCtrl.prototype.closeOnOutsideClick = function(e)
     {
         if(!$(e.target).closest(this.$dropdown).length) {
             this.$dropdown.removeClass('open');
@@ -3181,6 +3455,8 @@
                     {
                         chrome.bookmarks.remove( bookmark.id, function()
                         {
+                            var err = ( window.chrome && chrome.runtime ) ? chrome.runtime.lastError : null;
+                            if( err ) return;
                             var $tile = $( document.getElementById( bookmark.id ) );
                             if( $tile.length ) { $tile.addClass( 'removed' ); setTimeout( function(){ $tile.remove(); }, 500 ); }
                         } );
@@ -3191,45 +3467,7 @@
                         var edit = mdash.dashboard && mdash.dashboard.editCtrl;
                         if( edit && edit.editMode )
                         {
-                            if( !edit.$placeholder || !edit.$placeholder.length )
-                            {
-                                edit.$placeholder = $('<a class="drop-placeholder" aria-hidden="true"></a>');
-                            }
-                            $new.attr( 'draggable', true )
-                                .on( 'dragstart.mdash', function( e )
-                                {
-                                    edit._dragging = true;
-                                    edit._handledDrop = false;
-                                    var id = $( this ).attr( 'id' );
-                                    var dt = e.originalEvent.dataTransfer;
-                                    try { dt.setData( 'application/x-mdash-bookmark-id', id ); } catch( _e ) {}
-                                    try { dt.setData( 'text/plain', '' ); } catch( _e ) {}
-                                    dt.effectAllowed = 'move';
-                                    var el = this;
-                                    setTimeout( function(){ $( el ).addClass( 'dragging' ); }, 0 );
-                                    var $cur = $( this );
-                                    edit.$placeholder.addClass( 'collapsed' );
-                                    $cur.before( edit.$placeholder );
-                                } )
-                                .on( 'dragend.mdash', function()
-                                {
-                                    edit._dragging = false;
-                                    $( this ).removeClass( 'dragging' );
-                                    if( edit.$placeholder ) edit.$placeholder.removeClass( 'collapsed' ).detach();
-                                    edit.$bookmarks.find( 'section' ).removeClass( 'drop-target' );
-                                } );
-
-                            $new.on( 'dragover.mdash', function( e )
-                            {
-                                e.preventDefault();
-                                var rect = this.getBoundingClientRect();
-                                var before = (e.originalEvent.clientX < rect.left + rect.width / 2);
-                                var $t = $( this );
-                                if( before ) { $t.before( edit.$placeholder ); }
-                                else { $t.after( edit.$placeholder ); }
-                                edit.$placeholder.removeClass( 'collapsed' );
-                                $t.closest( 'section' ).addClass( 'drop-target' );
-                            } );
+                            edit._bindTileDnD( $new );
                         }
                     } catch( _e ) {}
 
@@ -3249,6 +3487,12 @@
         },
         function( result )
         {
+            var err = ( window.chrome && chrome.runtime ) ? chrome.runtime.lastError : null;
+            if( err )
+            {
+                callback && setTimeout( function() { callback( false, null ); }, 0 );
+                return;
+            }
             callback && setTimeout( function() { callback( !!result, result ); }, 0 );
         } );
     };
@@ -3273,6 +3517,8 @@
         this.$input    = $( '#spotlight-input' );
         this.$results  = $( '#spotlight-results' );
         this.visible   = false;
+        this._index    = [];
+        this._searchTimer = null;
     };
     
     Spotlight.prototype.init = function()
@@ -3322,7 +3568,11 @@
         
         this.$input.on( 'input', function()
         {
-            self.search( self.$input.val() );
+            if( self._searchTimer ) clearTimeout( self._searchTimer );
+            self._searchTimer = setTimeout( function()
+            {
+                self.search( self.$input.val() );
+            }, 70 );
         } );
         
         this.$backdrop.on( 'click', function()
@@ -3386,6 +3636,7 @@
         this.$input.val( '' );
         this.$results.empty();
         _selectedIdx = -1;
+        this.rebuildIndex();
         
         var self = this;
         requestAnimationFrame( function(){ self.$input.focus(); } );
@@ -3396,6 +3647,34 @@
         this.visible = false;
         this.$el.addClass( 'spotlight-hidden' );
         this.$input.blur();
+        if( this._searchTimer ) { clearTimeout( this._searchTimer ); this._searchTimer = null; }
+    };
+
+    Spotlight.prototype.rebuildIndex = function()
+    {
+        var index = [];
+        $( '#bookmarks a' ).not( '.add,.drop-placeholder' ).each( function( _, el )
+        {
+            var $el   = $( el );
+            var href  = $el.attr( 'href' ) || '';
+            if( !href ) return;
+            var rawTitle = $el.attr( 'data-raw-title' ) || $el.attr( 'data-title' ) || '';
+            var displayTitle = mdash.util ? mdash.util.stripIconOverride( rawTitle ) : ( rawTitle || '' );
+            if( !displayTitle ) displayTitle = $el.find( 'span' ).not( '.click-count' ).first().text() || '';
+            var $section = $el.closest( 'section' );
+            var sectionName = $section.find( '.section-title-text' ).first().text() || $section.find( 'h1' ).first().text() || '';
+            var imgSrc = '';
+            try { imgSrc = $el.find( 'img' ).first().attr( 'src' ) || ''; } catch( _e ) {}
+
+            index.push( {
+                title   : displayTitle,
+                href    : href,
+                section : sectionName,
+                imgSrc  : imgSrc
+            } );
+        } );
+
+        this._index = index;
     };
     
     Spotlight.prototype.search = function( query )
@@ -3414,28 +3693,15 @@
         try { regex = new RegExp( escaped, 'i' ); } catch( _e ) { return; }
         
         var matches = [];
-        
-        $( '#bookmarks a' ).not( '.add,.drop-placeholder' ).each( function( _, el )
+        var index = this._index || [];
+        for( var i = 0; i < index.length; i++ )
         {
-            var $el   = $( el );
-            var title = $el.find( 'span' ).text() || $el.attr( 'data-title' ) || $el.data( 'title' ) || '';
-            var href  = $el.attr( 'href' ) || '';
-            var rawTitle = $el.attr( 'data-raw-title' ) || title;
-            var displayTitle = mdash.util ? mdash.util.stripIconOverride( rawTitle ) : title;
-            
-            if( regex.test( displayTitle ) || regex.test( href ) )
+            var item = index[ i ];
+            if( regex.test( item.title ) || regex.test( item.href ) )
             {
-                var $section = $el.closest( 'section' );
-                var sectionName = $section.find( 'h1' ).text() || '';
-                
-                matches.push( {
-                    title   : displayTitle,
-                    href    : href,
-                    section : sectionName,
-                    $img    : $el.find( 'img' ).first()
-                } );
+                matches.push( item );
             }
-        } );
+        }
         
         if( matches.length === 0 )
         {
@@ -3447,8 +3713,7 @@
         for( var i = 0; i < count; i++ )
         {
             var m = matches[ i ];
-            var imgSrc = '';
-            try { imgSrc = m.$img.attr( 'src' ) || ''; } catch( _e ) {}
+            var imgSrc = m.imgSrc || '';
             
             var $titleSpan = $( '<span class="spotlight-title">' );
             var hlRegex = new RegExp( escaped, 'gi' );
@@ -3603,6 +3868,8 @@
         this.$fontSizes  = $( '#fontctrl .dropdown-menu a' );
         this.$helpCtrl   = $( '#helpctrl' );
         this.$themeCtrl  = $( '#themectrl .dropdown-menu a' );
+        this.$badgeCtrl  = $( '#badgectrl .dropdown-menu a' );
+        this.$motionCtrl = $( '#motionctrl .dropdown-menu a' );
         this.$editBtn    = $( '#edit' );
         this.$refresh    = $( '#refresh-icons' );
         this.$getStarted = $( '#getstarted' );
@@ -3614,12 +3881,16 @@
         this.fontCtrl        = new mdash.FontCtrl( this.$fontSizes );
         this.helpCtrl        = new mdash.HelpCtrl( this.$helpCtrl, this.$getStarted, this.$bookmarks );
         this.themeCtrl       = new mdash.ThemeCtrl( this.$themeCtrl );
+        this.badgeCtrl       = new mdash.BadgeCtrl( this.$badgeCtrl );
+        this.motionCtrl      = new mdash.MotionCtrl( this.$motionCtrl );
         this.editCtrl        = new mdash.EditCtrl( this.$editBtn, this.$bookmarks );
         this.keyboardManager = new mdash.KeyboardManager();
 
         this.fontCtrl.init();
         this.helpCtrl.init();
         this.themeCtrl.init();
+        this.badgeCtrl.init();
+        this.motionCtrl.init();
         this.editCtrl.init();
 
         // Preload icons map FIRST so favicon lookup prefers icons.json before any fallbacks
