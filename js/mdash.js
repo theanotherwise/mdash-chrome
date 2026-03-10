@@ -84,8 +84,7 @@
         
         this.fetchSections( function( sections )
         {
-            var results = [],
-                index   = 1;
+            var results = [];
             
             sections.forEach( function( section )
             {
@@ -100,19 +99,18 @@
                 callback( results );
                 return;
             }
-            
+
+            var pending = results.length;
             results.forEach( function( section )
             {
-                _this.fetchSectionBookmarks( section, function( i )
+                _this.fetchSectionBookmarks( section, function()
                 {
-                    return function()
+                    pending--;
+                    if( pending <= 0 )
                     {
-                        if( i === results.length )
-                        {
-                            callback( results );
-                        }
+                        callback( results );
                     }
-                }( index++ ) );
+                } );
             } );
         } );
     };
@@ -121,9 +119,9 @@
     {
         this.api.getChildren( section.id, function( bookmarks )
         {
-            section.children = bookmarks;
+            section.children = Array.isArray( bookmarks ) ? bookmarks : [];
             
-            callback( section.bookmarks );
+            callback( section.children );
         } )
     };
     
@@ -191,6 +189,50 @@
         );
     };
     
+} )( window.mdash || ( window.mdash = {} ) );
+
+
+/* --- section_state.js --- */
+
+( function( mdash )
+{
+    'use strict';
+
+    var KEY = 'mdash:sections:collapsed';
+
+    var state = mdash.sectionState = {};
+    state._data = null;
+
+    state._load = function()
+    {
+        if( this._data ) return this._data;
+        try { this._data = JSON.parse( localStorage.getItem( KEY ) ) || {}; }
+        catch( _e ) { this._data = {}; }
+        return this._data;
+    };
+
+    state._save = function()
+    {
+        try { localStorage.setItem( KEY, JSON.stringify( this._data || {} ) ); }
+        catch( _e ) {}
+    };
+
+    state.isCollapsed = function( sectionId )
+    {
+        if( !sectionId ) return false;
+        var data = this._load();
+        return !!data[ '' + sectionId ];
+    };
+
+    state.setCollapsed = function( sectionId, collapsed )
+    {
+        if( !sectionId ) return;
+        var data = this._load();
+        if( collapsed ) data[ '' + sectionId ] = 1;
+        else delete data[ '' + sectionId ];
+        this._save();
+    };
+
 } )( window.mdash || ( window.mdash = {} ) );
 
 
@@ -626,6 +668,7 @@
         var _this    = this,
             $section = $( '<section>' ).attr( 'id', section.id ),
             $h1      = $( '<h1>' ),
+            $collapse= $( '<button type="button" class="section-collapse" aria-label="Collapse section" aria-expanded="true" title="Collapse section">▾</button>' ),
             $dot     = $( '<span class="section-color-dot"></span>' );
 
         if( section.color )
@@ -637,8 +680,15 @@
         {
             $dot.addClass( 'section-color-dot-empty' );
         }
-        $h1.append( $dot, $( '<span class="section-title-text">' ).text( section.title ) );
+        var isCollapsed = !!( mdash.sectionState && mdash.sectionState.isCollapsed( section.id ) );
+        $h1.append( $collapse, $dot, $( '<span class="section-title-text">' ).text( section.title ) );
         $section.append( $h1 );
+        $section.attr( 'data-collapsed', isCollapsed ? 'true' : 'false' );
+        if( isCollapsed )
+        {
+            $section.addClass( 'section-collapsed' );
+            $collapse.attr( 'aria-expanded', 'false' ).attr( 'aria-label', 'Expand section' ).attr( 'title', 'Expand section' ).text( '▸' );
+        }
         
         section.children.forEach( function( bookmark )
         {
@@ -908,9 +958,17 @@
             if( !self.editMode ) return;
             if( self._sectionJustDragged ) return;
             if( $( e.target ).hasClass( 'section-color-dot' ) ) return;
+            if( $( e.target ).hasClass( 'section-collapse' ) ) return;
             e.preventDefault();
             e.stopPropagation();
             self.renameSection( $( this ) );
+        } );
+
+        this.$docEl.on( 'click', '#bookmarks .section-collapse', function( e )
+        {
+            e.preventDefault();
+            e.stopPropagation();
+            self.toggleSectionCollapsed( $( this ).closest( 'section' ) );
         } );
         
         this.$docEl.on( 'click', '#bookmarks section > .section-remove', function( e )
@@ -1516,6 +1574,34 @@
                 try { $img.attr( 'alt', visible ); } catch( _e ) {}
             }
         } );
+    };
+
+    EditCtrl.prototype.toggleSectionCollapsed = function( $section, forceCollapsed )
+    {
+        if( !$section || !$section.length ) return;
+        var sectionId = $section.attr( 'id' );
+        if( !sectionId ) return;
+
+        var collapsed = ( typeof forceCollapsed === 'boolean' )
+            ? forceCollapsed
+            : !$section.hasClass( 'section-collapsed' );
+
+        $section.toggleClass( 'section-collapsed', collapsed )
+                .attr( 'data-collapsed', collapsed ? 'true' : 'false' );
+
+        var $btn = $section.find( '> h1 .section-collapse' );
+        if( $btn.length )
+        {
+            $btn.attr( 'aria-expanded', collapsed ? 'false' : 'true' )
+                .attr( 'aria-label', collapsed ? 'Expand section' : 'Collapse section' )
+                .attr( 'title', collapsed ? 'Expand section' : 'Collapse section' )
+                .text( collapsed ? '▸' : '▾' );
+        }
+
+        if( mdash.sectionState )
+        {
+            mdash.sectionState.setCollapsed( sectionId, collapsed );
+        }
     };
     
     EditCtrl.prototype.setupAddSectionButton = function()

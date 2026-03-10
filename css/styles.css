@@ -120,6 +120,12 @@ a {
 }
 
 a:hover {
+    opacity:                    1;
+}
+
+#getstarted a:hover,
+#notifications a:hover,
+.notification a:hover {
     opacity:                    0.82;
 }
 
@@ -244,6 +250,18 @@ html.theme-dark #getstarted {
     overflow:                   visible;
 }
 
+.edit #bookmarks section.drop-target {
+    background:                 rgba(46, 125, 50, 0.16);
+    border-radius:              10px;
+    box-shadow:                 inset 0 0 0 1px rgba(46, 125, 50, 0.32);
+    transition:                 background 100ms ease, box-shadow 100ms ease;
+}
+
+html.theme-dark .edit #bookmarks section.drop-target {
+    background:                 rgba(62, 148, 67, 0.2);
+    box-shadow:                 inset 0 0 0 1px rgba(129, 199, 132, 0.32);
+}
+
 /* Subtle zebra striping: every second group from the top */
 #bookmarks > .left > section:nth-of-type(odd),
 #bookmarks > .right > section:nth-of-type(odd) {
@@ -260,8 +278,40 @@ html.theme-dark #getstarted {
     align-items:                center;
     gap:                        10px;
     padding-left:               6px;
+    padding-right:              6px;
     letter-spacing:             0.03em;
     margin:                     0.5em 0 0.35em 0;
+}
+
+.edit #bookmarks h1 {
+    padding-right:              190px;
+}
+
+#bookmarks .section-collapse {
+    width:                      18px;
+    height:                     18px;
+    margin:                     0;
+    padding:                    0;
+    border:                     none;
+    border-radius:              6px;
+    background:                 transparent;
+    color:                      var(--muted-color);
+    font-size:                  12px;
+    line-height:                1;
+    display:                    inline-flex;
+    align-items:                center;
+    justify-content:            center;
+    cursor:                     pointer;
+}
+
+#bookmarks .section-collapse:hover {
+    background:                 var(--tile-hover-bg);
+    color:                      var(--text-color);
+}
+
+#bookmarks .section-collapse:focus-visible {
+    outline:                    2px solid var(--focus-ring);
+    outline-offset:             1px;
 }
 
 #bookmarks h1::after {
@@ -274,6 +324,16 @@ html.theme-dark #getstarted {
 
 html.theme-dark #bookmarks h1::after {
     background:                 linear-gradient(to right, rgba(255, 255, 255, 0.14), transparent);
+}
+
+#bookmarks section.section-collapsed {
+    padding-bottom:             2px;
+}
+
+#bookmarks section.section-collapsed > a,
+#bookmarks section.section-collapsed > .section-sort,
+#bookmarks section.section-collapsed > .section-sort-menu {
+    display:                    none !important;
 }
 
 /* Inline rename via contenteditable — just add dashed border, zero layout shift */
@@ -1170,6 +1230,11 @@ html.theme-dark #spotlight-results::-webkit-scrollbar-thumb {
     transform:                  translateY(0);
 }
 
+#bookmarks a:not(.add)[title]:focus-visible::after {
+    opacity:                    1;
+    transform:                  translateY(0);
+}
+
 /* Global focus visibility */
 a:focus-visible,
 button:focus-visible,
@@ -1181,8 +1246,14 @@ select:focus-visible,
 }
 
 #bookmarks a:focus-visible {
+    background-color:           var(--bookmark-tile-hover-bg);
+    border-color:               rgba(0, 0, 0, 0.1);
     transform:                  translateY(-1px);
     box-shadow:                 0 0 0 2px var(--focus-ring), var(--tile-shadow);
+}
+
+html.theme-dark #bookmarks a:focus-visible {
+    border-color:               rgba(255, 255, 255, 0.12);
 }
 
 /* Modernized dialog / notification look */
@@ -1364,7 +1435,16 @@ section[data-section-color] .section-color-dot {
 }
 
 .section-title-text {
-    flex-shrink:                0;
+    flex:                       0 1 auto;
+    min-width:                  0;
+    max-width:                  100%;
+    overflow:                   hidden;
+    text-overflow:              ellipsis;
+    white-space:                nowrap;
+}
+
+.edit #bookmarks .section-title-text {
+    max-width:                  calc(100% - 186px);
 }
 
 /* --- Color palette popup --- */
@@ -1554,4 +1634,20 @@ html.theme-dark .section-sort:hover {
     font-variant-numeric:       tabular-nums;
     letter-spacing:             0;
     line-height:                1;
+}
+
+html.hide-click-counts .click-count {
+    display:                    none !important;
+}
+
+/* Reduce motion preference */
+html.reduced-motion *,
+html.reduced-motion *::before,
+html.reduced-motion *::after {
+    transition-duration:        0.01ms !important;
+    transition-delay:           0ms !important;
+    animation-duration:         0.01ms !important;
+    animation-delay:            0ms !important;
+    animation-iteration-count:  1 !important;
+    scroll-behavior:            auto !important;
 }
