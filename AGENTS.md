@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.55
+**Version**: 1.8.62
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -30,7 +30,9 @@
 - Undo for all destructive/mutating operations (30-second window): bookmark delete, update, create, drag & drop move; section create, delete, rename, column move, color change, sort
 - Spotlight search modal (Option+F on macOS, Ctrl+F on Windows) with debounced input, cached in-memory index, keyboard navigation, highlighted matches, and background-tab open via middle-click / Cmd/Ctrl+click without navigating the current tab
 - Theme mode selector: auto/light/dark (`auto` follows OS preference and reacts to live system theme changes)
-- Font size control: small, medium, large (persisted in localStorage)
+- Font size control: small, medium, large, XL, XXL, XXXL (persisted in localStorage)
+- Settings-panel typography is fixed and does not scale with dashboard font-size selection
+- XL+ dashboard presets use lighter text weights to avoid a visually over-bold look
 - Improved keyboard accessibility with visible focus rings on interactive controls
 - In edit mode, `Escape` closes an open add/edit dialog before leaving edit mode
 - Holding `Option`/`Alt` while already in edit mode no longer exits persistent edit mode on key release
@@ -83,7 +85,7 @@ Dashboard (orchestrator)
 ├── MotionCtrl       — Reduced-motion toggle
 ├── EditCtrl         — Edit mode, drag & drop, delete, rename, color palette, sort
 ├── KeyboardManager  — Keyboard shortcuts (currently disabled)
-└── Spotlight        — Spotlight-style search modal (tracks clicks)
+└── Spotlight        — Spotlight-style search modal
 ```
 
 ### Module Descriptions
@@ -93,14 +95,14 @@ Dashboard (orchestrator)
 | **Manager** | `mdash.Manager` | Wraps `chrome.bookmarks` API. Locates or creates the `[Dashboard]` root folder and its `[MDASH_DO_NOT_DELETE]` placeholder. Fetches sections and their bookmarks. Determines side assignment (`+` → left, `-` → right). Parses optional `#RRGGBB` color suffix from folder titles. |
 | **SectionState** | `mdash.sectionState` | Persists collapsed/expanded section state in `localStorage['mdash:sections:collapsed']`. |
 | **Column** | `mdash.Column` | Renders one column (left or right) by iterating sections and calling `renderSection()` / `renderBookmark()`. Appends an `AddBtn` to each section. Manages column visibility. |
-| **FontCtrl** | `mdash.FontCtrl` | Settings-panel selector for font sizes (`small`, `medium`, `large`). Persists selection in `localStorage.fontSize`. Applies CSS class to `<body>`. |
+| **FontCtrl** | `mdash.FontCtrl` | Settings-panel selector for font sizes (`small`, `medium`, `large`, `xl`, `xxl`, `xxxl`). Persists selection in `localStorage.fontSize`. Applies CSS class to `<body>` for dashboard content only. |
 | **HelpCtrl** | `mdash.HelpCtrl` | Toggles visibility between the help/get-started panel and the bookmarks interface. |
 | **EditCtrl** | `mdash.EditCtrl` | Toggles edit mode (`html.edit` class). In edit mode: click tile to edit (title, URL, section), duplicate from the edit dialog (`DUPLICATE`), Delete key to remove, click section title to rename, click section color dot to open color palette, use sort button to sort bookmarks A→Z/Z→A, use section-header `button.section-remove` to delete a whole section via `chrome.bookmarks.removeTree()`, use bottom `#add-section-cta` to create a new section (with column + color selection), drag & drop tiles between sections, and drag & drop sections between columns. Also controls section collapse toggles and persists collapse state. The bookmark edit dialog uses a custom in-dialog section picker. Provides undo for all operations. |
 | **ThemeCtrl** | `mdash.ThemeCtrl` | Settings-panel selector for `auto` / `light` / `dark` theme. In `auto`, listens to `prefers-color-scheme` changes and applies `theme-light` / `theme-dark` on `<html>`. Persists in `localStorage['mdash:theme']`. |
 | **MotionCtrl** | `mdash.MotionCtrl` | Settings-panel selector for motion level (`full` / `reduced`). Toggles `html.reduced-motion`. Persists in `localStorage['mdash:motion']`. |
 | **KeyboardManager** | `mdash.KeyboardManager` | Keyboard-driven tile filtering. Guarded by `isEnabled()` check (disabled by default in localStorage). |
 | **AddBtn** | `mdash.AddBtn` | Per-section "+" button rendered as a tile at the end of the section list in edit mode. Opens a confirmation dialog to add a new bookmark. Normalizes URLs (prepends `http://` if needed). |
-| **Spotlight** | `mdash.Spotlight` | Spotlight-style search modal (Option+F / Ctrl+F). Shows a centered overlay with input + results list. Uses a cached in-memory index rebuilt on open, with debounced input handling. Matches by title and URL. Keyboard navigation (↑/↓/Enter/Esc). Results show favicon, title (with highlighted match), URL, and section name. Tracks click statistics on open. Supports opening in a background tab (`chrome.tabs.create` with `active: false`) using middle-click or Cmd/Ctrl+click while keeping the current tab on Spotlight. |
+| **Spotlight** | `mdash.Spotlight` | Spotlight-style search modal (Option+F / Ctrl+F). Shows a centered overlay with input + results list. Uses a cached in-memory index rebuilt on open, with debounced input handling. Matches by title and URL. Keyboard navigation (↑/↓/Enter/Esc). Results show favicon, title (with highlighted match), URL, and section name. Supports opening in a background tab (`chrome.tabs.create` with `active: false`) using middle-click or Cmd/Ctrl+click while keeping the current tab on Spotlight. |
 | **Dashboard** | `mdash.Dashboard` | Main orchestrator. Initializes all modules, preloads the icon map, loads bookmarks into two columns, sets up the UI toolkit, handles the right-side slide-in settings panel, and handles the "refresh icons" action. Works with the responsive grid/settings layout defined in CSS. |
 
 ### UI Toolkit (`js/mdash-ui.js`)
@@ -149,7 +151,7 @@ Section titles support an optional color suffix: `+Title #RRGGBB` or `-Title #RR
 
 | Key | Storage | Value |
 |---|---|---|
-| `fontSize` | localStorage | `small` / `medium` / `large` |
+| `fontSize` | localStorage | `small` / `medium` / `large` / `xl` / `xxl` / `xxxl` |
 | `mdash:theme` | localStorage | `auto` / `light` / `dark` |
 | `mdash:motion` | localStorage | `full` / `reduced` |
 | `mdash:sections:collapsed` | localStorage | JSON object map of collapsed section IDs |
@@ -200,11 +202,12 @@ Visual direction: clean, intentional, and low-noise (Linear/Raycast/Vercel-like)
 - Left/right columns have no outer frame; only alternating zebra group backgrounds are visible
 - Settings UI: compact top-right quick actions (wrench + gear), where gear opens a right-side slide-in minimal panel
 - Quick-action icons use local SVG assets (`dashboard-edit.svg`, `dashboard-gear.svg`) sized to 34px controls
-- Edit-mode section action buttons (`Add` / `Sort` / `Delete`) are compact (`26px` high), right-aligned in section headers, and color-coded (success / neutral / danger)
+- Edit-mode section action buttons (`Add` / `Sort` / `Delete`) are compact icon+label pills (`34px` high), right-aligned in section headers, with accent icon/text colors (success / neutral / danger) and consistent horizontal spacing
+- Entering/leaving edit mode does not reflow section layout: action-space reservation and border box metrics stay constant between states
 - Spotlight modal: 14px radius, consistent shadow language
 - Edit mode state: sections receive a subtle dashed outline; tag hover brightens to signal editability
 - Zebra phase is offset by column: left tints 1st/3rd/5th... sections, right tints 2nd/4th/6th... sections
-- Compact spacing pass: section and tag vertical gaps reduced aggressively (~50%) to minimize empty space between groups
+- Balanced spacing pass: section-to-section gaps were increased from the ultra-compact mode for better visual separation
 - Grid gap: 18px row / 28px column
 - Scrollbars: 6px wide, very low opacity
 - DnD placeholders: pulsing animation for clear visual feedback

@@ -787,12 +787,15 @@
     FontCtrl.prototype.init = function()
     {
         var sizeFromStorage = localStorage.fontSize;
-        var valid = { small: true, medium: true, large: true };
+        var valid = { small: true, medium: true, large: true, xl: true, xxl: true, xxxl: true };
 
         var size = valid[sizeFromStorage] ? sizeFromStorage : (function(){
             if( document.body.classList.contains('small') ) return 'small';
             if( document.body.classList.contains('medium') ) return 'medium';
             if( document.body.classList.contains('large') ) return 'large';
+            if( document.body.classList.contains('xl') ) return 'xl';
+            if( document.body.classList.contains('xxl') ) return 'xxl';
+            if( document.body.classList.contains('xxxl') ) return 'xxxl';
             return 'large';
         })();
 
@@ -810,7 +813,7 @@
 
     FontCtrl.prototype.applySize = function( size )
     {
-        document.body.classList.remove('small','medium','large');
+        document.body.classList.remove('small','medium','large','xl','xxl','xxxl');
         document.body.classList.add( size );
     };
     
@@ -3969,7 +3972,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.8.55';
+    Dashboard.VERSION = '1.8.62';
 
     proto.init = function()
     {
