@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.32
+**Version**: 1.8.40
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -12,9 +12,9 @@
 - Two-column bookmark dashboard (left / right, controlled by `+` / `-` prefix in folder names)
 - Responsive CSS Grid layout for columns (auto-switches to one column on smaller screens)
 - Bookmark tiles use subtle translucency for a soft glass look
+- Bookmark tile titles are rendered on a single line with adaptive tile width up to a 32-character cap; longer titles are truncated with `...`
 - Subtle alternating group background in bookmark columns (starts from first section: dark/light/dark/light)
-- Edit button as a standalone pill to the left of the controls menu for instant one-click access
-- Collapsible top-right controls pill with glass-style surface; expands downward on click
+- Compact top-right settings trigger (gear icon) opens a right-side slide-in settings panel
 - Edit mode: inline editing, adding, deleting, and renaming sections
 - Sections can be collapsed/expanded via a chevron in each section header; state is persisted
 - Edit bookmark dialog uses a custom-styled section dropdown with full keyboard navigation (arrows + Enter/Space)
@@ -26,8 +26,8 @@
 - Custom section colors: colored dot next to section title, stored as `#RRGGBB` suffix in folder name (e.g. `+Productivity #4CAF50`); editable via color palette popup in edit mode
 - Sort bookmarks within a section (A→Z / Z→A toggle button in edit mode); reorders via Chrome Bookmarks API with full undo support
 - Click statistics: per-bookmark click counter persisted in `localStorage`, subtle badge on tiles, tracks clicks from both dashboard and Spotlight (including middle-click/background-tab opens from dashboard tiles)
-- Controls toggle for click-count badge visibility (on/off)
-- Controls toggle for reduced/full motion preference
+- Settings toggle for click-count badge visibility (on/off)
+- Settings toggle for reduced/full motion preference
 - Undo for all destructive/mutating operations (30-second window): bookmark delete, update, create, drag & drop move; section create, delete, rename, column move, color change, sort
 - Spotlight search modal (Option+F on macOS, Ctrl+F on Windows) with debounced input, cached in-memory index, keyboard navigation, highlighted matches, and background-tab open via middle-click / Cmd/Ctrl+click without navigating the current tab
 - Theme mode selector: auto/light/dark (`auto` follows OS preference and reacts to live system theme changes)
@@ -35,8 +35,8 @@
 - Improved keyboard accessibility with visible focus rings on interactive controls
 - In edit mode, `Escape` closes an open add/edit dialog before leaving edit mode
 - Holding `Option`/`Alt` while already in edit mode no longer exits persistent edit mode on key release
-- Smooth animated transitions: controls panel expand/collapse, bookmark remove, custom select dropdown, drag placeholders with pulse animation
-- Full ARIA support: spotlight search, edit toggle, controls panel, help button, column regions, get-started dialog
+- Smooth animated transitions: settings panel slide-in/out, bookmark remove, custom select dropdown, drag placeholders with pulse animation
+- Full ARIA support: spotlight search, edit toggle, settings panel, help button, column regions, get-started dialog
 - Custom favicon mapping for known services (ArgoCD, Grafana, Jenkins, etc.) via `icons/icons.json`
 - Favicon caching via Chrome `_favicon` API + `localStorage` — icons are converted to base64 via canvas and served from cache on subsequent visits (including offline); writes are quota-aware, and `refresh icons` always purges `fav:*` cache first, then rebuilds
 - Google S2 favicon fallback for all other bookmarks
@@ -56,7 +56,7 @@ mdash-chrome/
 │   ├── mdash-ui.js            # UI toolkit (Dialog, Overlay, Notification, etc.)
 │   └── jquery-3.7.1.min.js    # jQuery (only external dependency)
 ├── css/
-│   ├── styles.css             # Main styles: layout, tiles, themes, search, controls
+│   ├── styles.css             # Main styles: layout, tiles, themes, search, settings panel
 │   └── ui.css                 # UI toolkit styles: dialogs, overlays, notifications
 ├── icons/
 │   └── icons.json             # Keyword → icon filename mapping for custom favicons
@@ -78,9 +78,9 @@ Dashboard (orchestrator)
 ├── SectionState     — Persists collapsed section state by section ID
 ├── Column (×2)      — Renders sections (with color dot) and bookmark tiles (with click count)
 │   └── AddBtn       — "Add bookmark" modal per section
-├── FontCtrl         — Font size dropdown
+├── FontCtrl         — Font size selector
 ├── HelpCtrl         — Help/get-started toggle
-├── ThemeCtrl        — Auto/light/dark theme dropdown
+├── ThemeCtrl        — Auto/light/dark theme selector
 ├── BadgeCtrl        — Click-count badge visibility toggle
 ├── MotionCtrl       — Reduced-motion toggle
 ├── EditCtrl         — Edit mode, drag & drop, delete, rename, color palette, sort
@@ -96,17 +96,17 @@ Dashboard (orchestrator)
 | **Manager** | `mdash.Manager` | Wraps `chrome.bookmarks` API. Locates or creates the `[Dashboard]` root folder and its `[MDASH_DO_NOT_DELETE]` placeholder. Fetches sections and their bookmarks. Determines side assignment (`+` → left, `-` → right). Parses optional `#RRGGBB` color suffix from folder titles. |
 | **SectionState** | `mdash.sectionState` | Persists collapsed/expanded section state in `localStorage['mdash:sections:collapsed']`. |
 | **Column** | `mdash.Column` | Renders one column (left or right) by iterating sections and calling `renderSection()` / `renderBookmark()`. Appends an `AddBtn` to each section. Manages column visibility. |
-| **FontCtrl** | `mdash.FontCtrl` | Dropdown control for font sizes (`small`, `medium`, `large`). Persists selection in `localStorage.fontSize`. Applies CSS class to `<body>`. |
+| **FontCtrl** | `mdash.FontCtrl` | Settings-panel selector for font sizes (`small`, `medium`, `large`). Persists selection in `localStorage.fontSize`. Applies CSS class to `<body>`. |
 | **HelpCtrl** | `mdash.HelpCtrl` | Toggles visibility between the help/get-started panel and the bookmarks interface. |
 | **EditCtrl** | `mdash.EditCtrl` | Toggles edit mode (`html.edit` class). In edit mode: click tile to edit (title, URL, section), duplicate from the edit dialog (`DUPLICATE`), Delete key to remove, click section title to rename, click section color dot to open color palette, use sort button to sort bookmarks A→Z/Z→A, use section-header `button.section-remove` to delete a whole section via `chrome.bookmarks.removeTree()`, use bottom `#add-section-cta` to create a new section (with column + color selection), drag & drop tiles between sections, and drag & drop sections between columns. Also controls section collapse toggles and persists collapse state. The bookmark edit dialog uses a custom in-dialog section picker. Provides undo for all operations. |
-| **ThemeCtrl** | `mdash.ThemeCtrl` | Dropdown for `auto` / `light` / `dark` theme. In `auto`, listens to `prefers-color-scheme` changes and applies `theme-light` / `theme-dark` on `<html>`. Persists in `localStorage['mdash:theme']`. |
-| **BadgeCtrl** | `mdash.BadgeCtrl` | Dropdown for click-count badge visibility (`show` / `hide`). Toggles `html.hide-click-counts`. Persists in `localStorage['mdash:badges']`. |
-| **MotionCtrl** | `mdash.MotionCtrl` | Dropdown for motion level (`full` / `reduced`). Toggles `html.reduced-motion`. Persists in `localStorage['mdash:motion']`. |
+| **ThemeCtrl** | `mdash.ThemeCtrl` | Settings-panel selector for `auto` / `light` / `dark` theme. In `auto`, listens to `prefers-color-scheme` changes and applies `theme-light` / `theme-dark` on `<html>`. Persists in `localStorage['mdash:theme']`. |
+| **BadgeCtrl** | `mdash.BadgeCtrl` | Settings-panel selector for click-count badge visibility (`show` / `hide`). Toggles `html.hide-click-counts`. Persists in `localStorage['mdash:badges']`. |
+| **MotionCtrl** | `mdash.MotionCtrl` | Settings-panel selector for motion level (`full` / `reduced`). Toggles `html.reduced-motion`. Persists in `localStorage['mdash:motion']`. |
 | **KeyboardManager** | `mdash.KeyboardManager` | Keyboard-driven tile filtering. Guarded by `isEnabled()` check (disabled by default in localStorage). |
 | **AddBtn** | `mdash.AddBtn` | Per-section "+" button rendered as a tile at the end of the section list in edit mode. Opens a confirmation dialog to add a new bookmark. Normalizes URLs (prepends `http://` if needed). |
 | **Spotlight** | `mdash.Spotlight` | Spotlight-style search modal (Option+F / Ctrl+F). Shows a centered overlay with input + results list. Uses a cached in-memory index rebuilt on open, with debounced input handling. Matches by title and URL. Keyboard navigation (↑/↓/Enter/Esc). Results show favicon, title (with highlighted match), URL, and section name. Tracks click statistics on open. Supports opening in a background tab (`chrome.tabs.create` with `active: false`) using middle-click or Cmd/Ctrl+click while keeping the current tab on Spotlight. |
 | **Stats** | `mdash.stats` | Click statistics tracker. Persists per-URL click counts in `localStorage['mdash:clicks']` as a JSON object. Provides `trackClick(url)` and `getCount(url)`. |
-| **Dashboard** | `mdash.Dashboard` | Main orchestrator. Initializes all modules, preloads the icon map, loads bookmarks into two columns, sets up the UI toolkit, sets up click tracking, handles the collapsible controls panel, and handles the "refresh icons" action. Works with the responsive grid/controls layout defined in CSS. |
+| **Dashboard** | `mdash.Dashboard` | Main orchestrator. Initializes all modules, preloads the icon map, loads bookmarks into two columns, sets up the UI toolkit, sets up click tracking, handles the right-side slide-in settings panel, and handles the "refresh icons" action. Works with the responsive grid/settings layout defined in CSS. |
 
 ### UI Toolkit (`js/mdash-ui.js`)
 
@@ -179,6 +179,7 @@ Visual direction: clean, airy, Linear/Vercel-inspired. Near-white backgrounds, c
 | Token | Light | Dark | Purpose |
 |---|---|---|---|
 | `--bg-color` | `#F5F5F7` | `#1C1C1E` | Page background |
+| `--bg-accent-*` | soft pastel radial accents | muted dark radial accents | Ambient background gradient layers |
 | `--text-color` | `#1C1C1E` | `#F5F5F7` | Primary text |
 | `--muted-color` | `#8E8E93` | `#A1A1A6` | Secondary/muted text (WCAG AA in dark) |
 | `--accent-color` | `#2E7D32` | `#3E9443` | Links, accents, active states |
@@ -188,6 +189,10 @@ Visual direction: clean, airy, Linear/Vercel-inspired. Near-white backgrounds, c
 | `--bookmark-tile-hover-bg` | `rgba(255,255,255,0.78)` | `rgba(58,58,60,0.74)` | Bookmark tile hover background (glass) |
 | `--tile-shadow` | ultra-subtle `0 1px 3px` | `0 1px 3px` darker | Tile resting shadow |
 | `--tile-radius` | `12px` | `12px` | Tile border-radius |
+| `--bookmark-tile-min-height` | `calc(1.35em + 14px)` | `calc(1.35em + 14px)` | Single-line bookmark tile height baseline |
+| `--bookmark-tile-max-width` | `calc(32ch + 1em + 28px)` | `calc(32ch + 1em + 28px)` | Max tile width for one-line, 32-char bookmark labels |
+| `--column-surface-bg` | `rgba(255,255,255,0.34)` | `rgba(30,30,32,0.52)` | Glass panel background for left/right columns |
+| `--column-surface-border` | `rgba(255,255,255,0.56)` | `rgba(255,255,255,0.12)` | Column panel border |
 | `--surface-border` | `rgba(0,0,0,0.06)` | `rgba(255,255,255,0.08)` | Subtle borders |
 | `--surface-strong` | `rgba(255,255,255,0.82)` | `rgba(44,44,46,0.72)` | Glass surfaces |
 | `--hover-shadow` | `0 4px 12px` | `0 4px 12px` darker | Hover elevation |
@@ -196,17 +201,19 @@ Visual direction: clean, airy, Linear/Vercel-inspired. Near-white backgrounds, c
 
 ### Key Visual Rules
 
-- No background pattern — flat solid `--bg-color`
+- Background uses `--bg-color` plus subtle radial accent gradients (`--bg-accent-*`) for soft depth
 - Section headers: sentence case (no uppercase), font-weight 600, letter-spacing 0.03em
-- Tiles: 12px radius, 10.5em width, slightly translucent background, ultra-subtle shadows, gentle hover lift (-1px)
-- Controls pill: frosted glass with 12px blur, compact collapsed state, expands downward in a single rounded box
+- Tiles: 12px radius, adaptive width (content-fit with 32-char max), slightly translucent background, ultra-subtle shadows, gentle hover lift (-1px); icon is aligned to text height and labels stay single-line with ellipsis
+- Left/right bookmark columns render as rounded glass panels with blur + soft border
+- Settings UI: compact top-right gear trigger with a right-side slide-in glass panel
+- Edit-mode section action buttons (`Add` / `Sort` / `Delete`) use unified width/height and shared visual style for consistent alignment
 - Spotlight modal: 14px radius, consistent shadow language
 - Edit-mode hover: soft warm tint (`#FFF3E0` light / `#FFF8E1` dark)
 - Every second section starting from the first (1st/3rd/5th...) has a subtle zebra background tint for row grouping
-image.png- Grid gap: 24px row / 32px column
+- Grid gap: 24px row / 32px column
 - Scrollbars: 6px wide, very low opacity
 - DnD placeholders: pulsing animation for clear visual feedback
-- Controls panel: animated expand/collapse (opacity + scale + transform, 120ms)
+- Settings panel: animated slide-in/out from right (with backdrop)
 - All interactive elements: smooth transition on hover/focus (80-120ms)
 
 ## Documentation Policy
@@ -259,7 +266,50 @@ Two independent drag & drop systems coexist in edit mode:
 
 Guards prevent interference: tile handlers check `if( self._sectionDragging ) return;` and section handlers check `if( !self._sectionDragging ) return;`.
 
-Tile DnD hover behavior keeps the dragged source tile in normal document flow (styled as a dimmed source placeholder) instead of removing it immediately, which avoids hard-disappearance regressions when native drag preview is inconsistent. Drag preview uses native `setDragImage` directly from the source tile with pointer-aligned hotspot (no cloned ghost element), reducing preview mismatches such as oversized icon/text artifacts. To prevent Chromium native child-node dragging artifacts (large icon/text preview with missing placeholder), bookmark child nodes are non-interactive in edit mode (`pointer-events: none`) and favicon images are explicitly `draggable="false"`, forcing drag initiation through the anchor tile handler. When hovering a non-empty target tile, the hovered tile itself gets the visible placeholder styling (`drop-hover-target`) while the internal drop marker is collapsed and used only for index calculation; collapsed marker rendering is disabled (`display:none`) to avoid the tiny side artifact box. Same-section insertion direction is determined by relative source/target order (dragging right inserts after hovered tile; dragging left inserts before), so dropping onto a later tile moves the dragged item into that tile's slot instead of always before it. Reordering starts only after a small pointer-move threshold from drag start (with baseline captured from pointer-down), invalid drag coordinates (for example synthetic `0,0`) are ignored, and placement is blocked while the pointer remains inside original source bounds to prevent snap-away on pickup. Repeated placements are deduplicated and drop index calculation excludes the currently dragged tile to avoid off-by-one reorder jitter. The placeholder marker remains visual-only (`pointer-events: none`) so it never blocks hover handoff to the next tile.
+### Tile DnD Runtime Behavior (current)
+
+1. **Drag start and source capture**
+   - Tile drag is active only in edit mode and only on bookmark anchor elements (`a`).
+   - Child nodes are drag-safe: bookmark icons are `draggable="false"` and tile children are non-interactive in edit mode (`pointer-events: none`) so drag always starts from the tile anchor handler.
+   - On `dragstart`, the controller stores source metadata: source tile ID, source tile bounding box, and pointer-down coordinates captured from `mousedown`.
+   - `dataTransfer` is initialized with bookmark ID (`application/x-mdash-bookmark-id`) and `effectAllowed='move'`.
+   - Drag preview uses native `setDragImage(this, hotX, hotY)` with hotspot aligned to pointer-down position relative to the tile.
+
+2. **Hover targeting and insertion marker model**
+   - Reordering is gated by `_canRepositionOnDragOver()`:
+     - ignores invalid synthetic coordinates (e.g. `0,0`),
+     - requires an initial movement threshold (~4px) from drag start,
+     - blocks reposition while pointer is still inside source tile bounds.
+   - For non-empty sections, the hovered target tile receives `drop-hover-target` (visible dashed highlight on the tile itself).
+   - Internal insertion marker is still `a.drop-placeholder`, but when targeting a tile it is collapsed (`display:none`) and used only as a logical index marker.
+   - For empty sections, `drop-placeholder` is rendered visibly (before `a.add` when present, otherwise appended).
+
+3. **Same-section direction and cross-section behavior**
+   - In same-section moves, insertion side is directional:
+     - source index < target index: insert **after** hovered tile,
+     - source index > target index: insert **before** hovered tile.
+   - If jQuery index lookup is unavailable, relative DOM order fallback (`compareDocumentPosition`) is used.
+   - In cross-section moves, marker placement follows hovered tile/section targeting logic without same-section directional assumptions.
+
+4. **Drop index computation, commit, and rollback**
+   - Drop index is computed by iterating section children until the internal marker, skipping:
+     - `.add` tiles,
+     - the dragged tile itself,
+     - temporary dragging classes.
+   - Same-section no-op is short-circuited when computed target index equals original source index.
+   - UI commits immediately by replacing marker with the dragged tile, then persists via `chrome.bookmarks.move(...)`.
+   - On API failure, DOM is rolled back to original section/index and error reporting is surfaced through existing error handlers.
+
+5. **Cleanup and guardrails**
+   - `_cleanupTileDrag()` resets all tile drag transient state:
+     - flags (`_dragging`, placement flags),
+     - source geometry and pointer baselines,
+     - temporary classes (`dragging`, `drop-hover-target`, section `drop-target`),
+     - placeholder detachment.
+   - Tile and section DnD are isolated with guards:
+     - tile handlers return early when `_sectionDragging` is active,
+     - section handlers run only for section drag namespace (`.mdash-section`).
+   - Global container-level `dragover`/`drop` handlers cover whitespace drops and keep insertion behavior deterministic across tile gaps.
 
 When a section is moved between columns:
 1. DOM `<section>` element is repositioned at the placeholder location.
@@ -280,15 +330,15 @@ When a section is moved between columns:
 - **Refresh behavior fix**: `refresh icons` now always purges favicon cache (`localStorage` `fav:*` + memory). Normal click purges then reloads page (full rebuild); `Alt+click` purges then rebuilds favicons in place with full title/override/VPN-aware resolution logic.
 - **Local dev favicon correctness fix**: cache key now uses full page origin (protocol + host + port), preventing collisions across `127.0.0.1:*` / `localhost:*`; host normalization for S2 fallback is skipped for IP/localhost hosts so `127.0.0.1` is never collapsed to invalid roots (e.g. `0.1`).
 - **Cache resilience/performance fix**: `_saveFaviconToLocalStorage()` handles `QuotaExceededError` by evicting a controlled fraction of `fav:*` entries (~20%) and retrying once; in-place refresh uses a concurrency guard and batched processing; background favicon loaders clean up handlers on `load`/`error`.
-- **Top-gap layout fix**: controls are now a compact, fixed top-right pill that expands downward on demand; right-column-only offset was removed so left/right columns start aligned.
+- **Top-gap layout fix**: settings trigger is a compact, fixed top-right gear; right-column-only offset was removed so left/right columns start aligned.
 
 ## UI Polish (v1.5.0)
 
-- **Animated transitions**: controls panel expand/collapse (opacity + scale + transform, 120ms), bookmark remove (opacity + scale + max-height collapse), custom select dropdown (opacity + translateY, 100ms).
+- **Animated transitions**: settings panel slide-in/out, bookmark remove (opacity + scale + max-height collapse), custom select dropdown (opacity + translateY, 100ms).
 - **Dark mode completeness**: `ui.css` rewritten to use CSS custom properties with fallbacks — dialogs, notifications, context menu, overlay, close buttons, and card component all inherit theme tokens automatically.
 - **Custom select keyboard**: full arrow-key navigation (↑/↓), Enter/Space to select, Escape to close, focused-option highlighting with scroll-into-view.
-- **ARIA accessibility**: spotlight input (`aria-label`, `aria-controls`), results list (`role="listbox"`), edit toggle (`aria-pressed`), controls toggle (`aria-controls`, `role="button"`), help button (`aria-label`), column regions (`role="region"`), get-started overlay (`role="dialog"`, `aria-labelledby`), refresh icons (`aria-label`).
-- **Visual polish**: link hover feedback (opacity fade), controls/dropdown items hover transition (100ms), drop placeholder pulse animation, stronger section header underline, higher muted-color contrast in dark mode (`#A1A1A6` vs `#8E8E93`).
+- **ARIA accessibility**: spotlight input (`aria-label`, `aria-controls`), results list (`role="listbox"`), edit toggle (`aria-pressed`), settings toggle (`aria-controls`, `aria-expanded`), help button (`aria-label`), column regions (`role="region"`), get-started overlay (`role="dialog"`, `aria-labelledby`), refresh icons (`aria-label`).
+- **Visual polish**: link hover feedback (opacity fade), settings-option hover/selected states, drop placeholder pulse animation, stronger section header underline, higher muted-color contrast in dark mode (`#A1A1A6` vs `#8E8E93`).
 - **Consistency**: unified `outline-offset: 2px` on all focus rings, input `border-radius: 10px` matching custom select, `width: 100%` + `box-sizing: border-box` on all form inputs.
 - **Performance**: `requestAnimationFrame` for drag-start class and spotlight focus instead of `setTimeout`, smooth `scrollIntoView` for spotlight keyboard navigation.
 - **Removed**: legacy `-webkit-` only prefixes in `ui.css` replaced with standard properties (with `-webkit-` kept where needed for older Chromium).

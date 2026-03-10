@@ -15,45 +15,60 @@
                 <ul id="spotlight-results" role="listbox" aria-label="Search results"></ul>
             </div>
         </div>
-        <div id="controls" class="collapsed">
-            <a id="edit" href="#" role="button" aria-pressed="false">edit</a>
-            <a id="controls-toggle" href="#" role="button" aria-expanded="false" aria-controls="controls-panel" aria-label="Open controls" title="Controls">menu</a>
-            <div id="controls-panel" role="menu">
-                <div class="controls-title">controls</div>
-                <div id="iconctrl" class="inline"><a id="refresh-icons" href="#" role="button" aria-label="Refresh bookmark icons">refresh icons</a></div>
-                <div id="fontctrl" class="dropdown inline" data-current="large">
-                    <a href="#" class="dropdown-toggle">large ▾</a>
-                    <div class="dropdown-menu">
-                        <a href="#" data-size="small">small</a>
-                        <a href="#" data-size="medium">medium</a>
-                        <a href="#" data-size="large" class="selected">large</a>
-                    </div>
-                </div>
-                <div id="themectrl" class="dropdown inline" data-current="auto">
-                    <a href="#" class="dropdown-toggle">auto ▾</a>
-                    <div class="dropdown-menu">
-                        <a href="#" data-theme="auto" class="selected">auto</a>
-                        <a href="#" data-theme="light">light</a>
-                        <a href="#" data-theme="dark">dark</a>
-                    </div>
-                </div>
-                <div id="badgectrl" class="dropdown inline" data-current="show">
-                    <a href="#" class="dropdown-toggle">badges ▾</a>
-                    <div class="dropdown-menu">
-                        <a href="#" data-badges="show" class="selected">badges: on</a>
-                        <a href="#" data-badges="hide">badges: off</a>
-                    </div>
-                </div>
-                <div id="motionctrl" class="dropdown inline" data-current="full">
-                    <a href="#" class="dropdown-toggle">motion ▾</a>
-                    <div class="dropdown-menu">
-                        <a href="#" data-motion="full" class="selected">motion: full</a>
-                        <a href="#" data-motion="reduced">motion: reduced</a>
-                    </div>
-                </div>
-                <a id="helpctrl" href="#" role="button" aria-label="Show help">?</a>
+        <button id="settings-toggle" type="button" aria-expanded="false" aria-controls="settings-panel" aria-label="Open settings"></button>
+        <div id="settings-backdrop" aria-hidden="true"></div>
+        <aside id="settings-panel" aria-hidden="true" aria-labelledby="settings-title">
+            <div class="settings-header">
+                <h2 id="settings-title">Settings</h2>
+                <a id="settings-close" href="#" role="button" aria-label="Close settings">×</a>
             </div>
-        </div>
+
+            <div id="editctrl" class="setting-group">
+                <div class="setting-label">Edit mode</div>
+                <div class="setting-options">
+                    <a id="edit" href="#" role="button" aria-pressed="false">off</a>
+                </div>
+            </div>
+
+            <div id="themectrl" class="setting-group" data-current="auto">
+                <div class="setting-label">Theme</div>
+                <div class="setting-options">
+                    <a href="#" data-theme="dark">dark</a>
+                    <a href="#" data-theme="light">light</a>
+                    <a href="#" data-theme="auto" class="selected">auto</a>
+                </div>
+            </div>
+
+            <div id="fontctrl" class="setting-group" data-current="large">
+                <div class="setting-label">Font size</div>
+                <div class="setting-options">
+                    <a href="#" data-size="small">small</a>
+                    <a href="#" data-size="medium">medium</a>
+                    <a href="#" data-size="large" class="selected">large</a>
+                </div>
+            </div>
+
+            <div id="badgectrl" class="setting-group" data-current="show">
+                <div class="setting-label">Click counts</div>
+                <div class="setting-options">
+                    <a href="#" data-badges="show" class="selected">on</a>
+                    <a href="#" data-badges="hide">off</a>
+                </div>
+            </div>
+
+            <div id="motionctrl" class="setting-group" data-current="full">
+                <div class="setting-label">Motion</div>
+                <div class="setting-options">
+                    <a href="#" data-motion="full" class="selected">full</a>
+                    <a href="#" data-motion="reduced">reduced</a>
+                </div>
+            </div>
+
+            <div class="setting-group setting-actions">
+                <a id="refresh-icons" href="#" role="button" aria-label="Refresh bookmark icons">refresh icons</a>
+                <a id="helpctrl" href="#" role="button" aria-label="Show help">help</a>
+            </div>
+        </aside>
         <div id="getstarted-overlay" role="dialog" aria-labelledby="getstarted-title">
             <div class="getstarted-backdrop"></div>
             <div id="getstarted">
@@ -86,7 +101,7 @@
                 </p>
                 <h2>Features</h2>
                 <ul>
-                    <li><strong>Edit mode</strong>: click <em>edit</em> to enable editing. Click a tile to edit its title, URL, or move it to another section.</li>
+                    <li><strong>Edit mode</strong>: open <em>settings</em> and switch <em>Edit mode</em> to <em>on</em>. Click a tile to edit its title, URL, or move it to another section.</li>
                     <li><strong>Add bookmark</strong>: in edit mode each section shows a <em>+</em> tile — click it to add a new bookmark.</li>
                     <li><strong>Delete bookmark</strong>: click a tile in edit mode, then use the <em>Delete</em> link or press <kbd>Delete</kbd> inside the edit dialog.</li>
                     <li><strong>Rename section</strong>: in edit mode click a section title to rename it inline. Press <kbd>Enter</kbd> to save, <kbd>Esc</kbd> to cancel.</li>
@@ -97,12 +112,12 @@
                     <li><strong>Drag &amp; drop sections</strong>: in edit mode drag a section header to move the entire section between left and right columns.</li>
                     <li><strong>Undo everything</strong>: every action (add, delete, edit, move, rename, create/remove section) shows an <em>Undo</em> notification — click it within <em>30s</em> to revert.</li>
                     <li><strong>Search</strong>: press <kbd>Option+F</kbd> (macOS) or <kbd>Ctrl+F</kbd> (Windows) to open Spotlight search. Navigate with <kbd>↑</kbd>/<kbd>↓</kbd>, press <kbd>Enter</kbd> to open. Middle-click or <kbd>Cmd/Ctrl+Click</kbd> opens in a background tab.</li>
-                    <li><strong>Themes</strong>: open the top-right controls pill, then switch <em>auto / light / dark</em>.</li>
-                    <li><strong>Font size</strong>: open the controls pill and choose <em>small / medium / large</em>.</li>
-                    <li><strong>Badges</strong>: toggle click count badges on/off from controls.</li>
-                    <li><strong>Motion</strong>: choose full or reduced motion from controls.</li>
+                    <li><strong>Themes</strong>: open the right-side <em>settings</em> panel and switch <em>auto / light / dark</em>.</li>
+                    <li><strong>Font size</strong>: open settings and choose <em>small / medium / large</em>.</li>
+                    <li><strong>Badges</strong>: toggle click count badges on/off from settings.</li>
+                    <li><strong>Motion</strong>: choose full or reduced motion from settings.</li>
                     <li><strong>Refresh icons</strong>: click <em>refresh icons</em> to purge favicon cache and reload the page (full rebuild). <kbd>Alt+Click</kbd> also purges cache, then rebuilds favicons in place.</li>
-                    <li><strong>Help</strong>: click <em>?</em> to toggle this panel. Click outside to close.</li>
+                    <li><strong>Help</strong>: open settings and click <em>help</em> to toggle this panel. Click outside to close.</li>
                 </ul>
                 <p>
                     Make sure to also take a look at the <a href="https://github.com/theanotherwise/mdash-chrome" target="_blank" rel="noopener noreferrer">online documentation</a>, which features more detailed explanations (with images), and describe every features of the extensions.

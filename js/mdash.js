@@ -322,6 +322,21 @@
         if( !title ) return false;
         return /\s*ICON_OVERRIDE\s*$/.test( title );
     };
+    mdash.util.MAX_TILE_TITLE_CHARS = 32;
+    mdash.util.truncateTileTitle = function( title )
+    {
+        var t = ( title || '' );
+        if( t.length <= this.MAX_TILE_TITLE_CHARS ) return t;
+        return t.substring( 0, Math.max( this.MAX_TILE_TITLE_CHARS - 3, 0 ) ).replace( /\s+$/, '' ) + '...';
+    };
+    mdash.util.buildTitleView = function( rawTitle, showRaw )
+    {
+        var full = showRaw ? ( rawTitle || '' ) : mdash.util.stripIconOverride( rawTitle || '' );
+        return {
+            full: full,
+            tile: mdash.util.truncateTileTitle( full )
+        };
+    };
 
     function _isIPv4Host( host )
     {
@@ -731,7 +746,8 @@
         var faviconCandidates = mdash.util.getFaviconCandidates( link.href );
 
         var isVpnMarker = (bookmark.title || '').indexOf('[VPN]') !== -1;
-        var displayTitle = mdash.util.stripIconOverride( bookmark.title );
+        var titleView = mdash.util.buildTitleView( bookmark.title, false );
+        var displayTitle = titleView.full;
         var hasOverride = mdash.util.hasIconOverride( bookmark.title );
         var faviconSrc = bookmark.favicon ? bookmark.favicon : (hasOverride ? '' : faviconCandidates[ 0 ]);
 
@@ -744,7 +760,7 @@
             'data-title': displayTitle,
             'data-raw-title': bookmark.title,
             draggable: 'false'
-        } ).append( $img, $( '<span>' ).text( displayTitle ) );
+        } ).append( $img, $( '<span>' ).text( titleView.tile ) );
         
         // Attach fallback; if [VPN] in title, skip normalization (use exact host)
         mdash.util.applyFaviconWithFallback( $img, link.href, isVpnMarker, displayTitle, hasOverride );
@@ -794,8 +810,11 @@
         this.select( size );
         
         this.$sizes.on( 'click', this.sizeSelected.bind( this ) );
-        this.$toggle.on('click', this.toggleOpen.bind(this));
-        $(document).on('click', this.closeOnOutsideClick.bind(this));
+        if( this.$toggle.length )
+        {
+            this.$toggle.on( 'click', this.toggleOpen.bind( this ) );
+            $( document ).on( 'click', this.closeOnOutsideClick.bind( this ) );
+        }
     };
 
     FontCtrl.prototype.applySize = function( size )
@@ -807,26 +826,28 @@
     FontCtrl.prototype.select = function( size )
     {
         this.$sizes.removeClass( 'selected' );
-        this.$sizes.parent().find( 'a[data-size="' + size + '"]' ).addClass( 'selected' );
-        this.$toggle.text(size + ' ▾');
+        this.$sizes.filter( '[data-size="' + size + '"]' ).addClass( 'selected' );
+        if( this.$toggle.length ) this.$toggle.text( size + ' ▾' );
     };
     
     FontCtrl.prototype.sizeSelected = function( e )
     {
-        var $this = $( e.target );
+        e.preventDefault();
+        var $this = $( e.currentTarget );
         
-        $this.siblings().removeClass( 'selected' );
+        this.$sizes.removeClass( 'selected' );
         $this.addClass( 'selected' );
         
         var size = $this.attr( 'data-size' );
         this.applySize( size );
         localStorage.fontSize = size;
-        this.$toggle.text( size + ' ▾');
-        this.$dropdown.removeClass('open');
+        if( this.$toggle.length ) this.$toggle.text( size + ' ▾' );
+        if( this.$dropdown.length ) this.$dropdown.removeClass( 'open' );
     };
 
     FontCtrl.prototype.toggleOpen = function(e)
     {
+        if( !this.$dropdown.length ) return;
         e.preventDefault();
         e.stopPropagation();
         this.$dropdown.toggleClass('open');
@@ -834,6 +855,7 @@
 
     FontCtrl.prototype.closeOnOutsideClick = function(e)
     {
+        if( !this.$dropdown.length ) return;
         if(!$(e.target).closest(this.$dropdown).length) {
             this.$dropdown.removeClass('open');
         }
@@ -1803,16 +1825,16 @@
             var $a = $( a );
             var $titleSpan = $a.find( 'span' ).not( '.click-count' ).first();
             var raw = $a.attr( 'data-raw-title' ) || ( $titleSpan.text() || '' );
-            var visible = self.editMode ? raw : mdash.util.stripIconOverride( raw );
-            if( $titleSpan.length ) $titleSpan.text( visible );
-            $a.attr( 'title', visible );
-            $a.attr( 'aria-label', visible );
-            $a.attr( 'data-title', visible );
-            $a.data( 'title', visible );
+            var titleView = mdash.util.buildTitleView( raw, self.editMode );
+            if( $titleSpan.length ) $titleSpan.text( titleView.tile );
+            $a.attr( 'title', titleView.full );
+            $a.attr( 'aria-label', titleView.full );
+            $a.attr( 'data-title', titleView.full );
+            $a.data( 'title', titleView.full );
             var $img = $a.find( 'img' );
             if( $img && $img.length )
             {
-                try { $img.attr( 'alt', visible ); } catch( _e ) {}
+                try { $img.attr( 'alt', titleView.full ); } catch( _e ) {}
             }
         } );
     };
@@ -2150,19 +2172,21 @@
         {
             if( self.altPressed ) return;
             
-            // Close controls panel if open
-            var $ctrl = $( '#controls' );
-            if( $ctrl.hasClass( 'expanded' ) )
+            // Close settings panel if open
+            var $docRoot = $( document.documentElement );
+            if( $docRoot.hasClass( 'settings-open' ) )
             {
-                $ctrl.removeClass( 'expanded' ).addClass( 'collapsed' );
-                $( '#controls-toggle' ).attr( 'aria-expanded', 'false' );
+                $docRoot.removeClass( 'settings-open' );
+                $( '#settings-toggle' ).attr( 'aria-expanded', 'false' );
+                $( '#settings-panel' ).attr( 'aria-hidden', 'true' );
+                $( '#settings-backdrop' ).attr( 'aria-hidden', 'true' );
             }
             
             if( self.editMode )
             {
                 self.editMode = false;
                 self.$docEl.removeClass( 'edit' );
-                self.$btn.text( 'edit' ).attr( 'aria-pressed', 'false' );
+                self.$btn.text( 'off' ).attr( 'aria-pressed', 'false' );
 
                 // Disable DnD
                 self.disableDragAndDrop();
@@ -2175,7 +2199,7 @@
             {
                 self.editMode = true;
                 self.$docEl.addClass( 'edit' );
-                self.$btn.text( 'done' ).attr( 'aria-pressed', 'true' );
+                self.$btn.text( 'on' ).attr( 'aria-pressed', 'true' );
 
                 // Entering edit: show all sections and columns so add buttons are visible
                 $( '#bookmarks > .left, #bookmarks > .right' ).show();
@@ -2527,8 +2551,10 @@
         
         var sortedTiles = $tiles.toArray().sort( function( a, b )
         {
-            var titleA = ( $( a ).find( 'span' ).not( '.click-count' ).first().text() || '' ).toLowerCase();
-            var titleB = ( $( b ).find( 'span' ).not( '.click-count' ).first().text() || '' ).toLowerCase();
+            var rawA = $( a ).attr( 'data-raw-title' ) || ( $( a ).find( 'span' ).not( '.click-count' ).first().text() || '' );
+            var rawB = $( b ).attr( 'data-raw-title' ) || ( $( b ).find( 'span' ).not( '.click-count' ).first().text() || '' );
+            var titleA = mdash.util.buildTitleView( rawA, self.editMode ).full.toLowerCase();
+            var titleB = mdash.util.buildTitleView( rawB, self.editMode ).full.toLowerCase();
             return ascending ? titleA.localeCompare( titleB ) : titleB.localeCompare( titleA );
         } );
         
@@ -3091,16 +3117,16 @@
                     {
                         if( self._hasApiError( 'Could not undo bookmark update' ) ) return;
                         var $cur = $( document.getElementById( id ) );
-                        var $t = $cur.find('span');
+                        var $t = $cur.find( 'span' ).not( '.click-count' ).first();
                         $cur.attr( 'data-raw-title', prev.rawTitle );
-                        var displayPrev = self.editMode ? prev.rawTitle : mdash.util.stripIconOverride( prev.rawTitle );
-                        $t.text( displayPrev );
+                        var displayPrevView = mdash.util.buildTitleView( prev.rawTitle, self.editMode );
+                        $t.text( displayPrevView.tile );
                         $cur.attr('href', prev.url );
-                        $cur.attr('title', displayPrev );
-                        $cur.attr('aria-label', displayPrev );
-                        $cur.attr( 'data-title', displayPrev );
-                        $cur.data( 'title', displayPrev );
-                        refreshFaviconForUrl( $cur, prev.url, displayPrev );
+                        $cur.attr('title', displayPrevView.full );
+                        $cur.attr('aria-label', displayPrevView.full );
+                        $cur.attr( 'data-title', displayPrevView.full );
+                        $cur.data( 'title', displayPrevView.full );
+                        refreshFaviconForUrl( $cur, prev.url, displayPrevView.full );
                     } );
                 } );
             });
@@ -3114,10 +3140,11 @@
             }
             var newRawTitle = (props.title != null) ? props.title : ( $el.attr('data-raw-title') || $title.text() );
             $el.attr( 'data-raw-title', newRawTitle );
-            var displayNow = self.editMode ? newRawTitle : mdash.util.stripIconOverride( newRawTitle );
+            var displayNowView = mdash.util.buildTitleView( newRawTitle, self.editMode );
+            var displayNow = displayNowView.full;
             if( props.title )
             {
-                $title.text( displayNow );
+                $title.text( displayNowView.tile );
             }
             if( props.url )
             {
@@ -3134,10 +3161,10 @@
 
             if( props.title )
             {
-                $el.attr( 'title', displayNow );
-                $el.attr( 'aria-label', displayNow );
-                $el.attr( 'data-title', displayNow );
-                $el.data( 'title', displayNow );
+                $el.attr( 'title', displayNowView.full );
+                $el.attr( 'aria-label', displayNowView.full );
+                $el.attr( 'data-title', displayNowView.full );
+                $el.data( 'title', displayNowView.full );
             }
             
             function afterUpdate()
@@ -3190,8 +3217,11 @@
         this.applyTheme( theme );
 
         this.$links.on( 'click', this.onClick.bind( this ) );
-        this.$toggle.on( 'click', this.toggleOpen.bind( this ) );
-        $(document).on('click', this.closeOnOutsideClick.bind(this));
+        if( this.$toggle.length )
+        {
+            this.$toggle.on( 'click', this.toggleOpen.bind( this ) );
+            $( document ).on( 'click', this.closeOnOutsideClick.bind( this ) );
+        }
     };
 
     ThemeCtrl.prototype.applyTheme = function( theme )
@@ -3261,8 +3291,8 @@
     ThemeCtrl.prototype.select = function( theme )
     {
         this.$links.removeClass( 'selected' );
-        this.$links.parent().find( 'a[data-theme="' + theme + '"]' ).addClass( 'selected' );
-        this.$toggle.text(theme + ' ▾');
+        this.$links.filter( '[data-theme="' + theme + '"]' ).addClass( 'selected' );
+        if( this.$toggle.length ) this.$toggle.text( theme + ' ▾' );
     };
 
     ThemeCtrl.prototype.onClick = function( e )
@@ -3270,11 +3300,12 @@
         e.preventDefault();
         var theme = $( e.currentTarget ).attr( 'data-theme' );
         this.applyTheme( theme );
-        this.$dropdown.removeClass('open');
+        if( this.$dropdown.length ) this.$dropdown.removeClass( 'open' );
     };
 
     ThemeCtrl.prototype.toggleOpen = function(e)
     {
+        if( !this.$dropdown.length ) return;
         e.preventDefault();
         e.stopPropagation();
         this.$dropdown.toggleClass('open');
@@ -3282,6 +3313,7 @@
 
     ThemeCtrl.prototype.closeOnOutsideClick = function(e)
     {
+        if( !this.$dropdown.length ) return;
         if(!$(e.target).closest(this.$dropdown).length) {
             this.$dropdown.removeClass('open');
         }
@@ -3308,8 +3340,11 @@
         var mode = ( saved === 'hide' ) ? 'hide' : 'show';
         this.applyMode( mode );
         this.$links.on( 'click', this.onClick.bind( this ) );
-        this.$toggle.on( 'click', this.toggleOpen.bind( this ) );
-        $(document).on('click', this.closeOnOutsideClick.bind(this));
+        if( this.$toggle.length )
+        {
+            this.$toggle.on( 'click', this.toggleOpen.bind( this ) );
+            $( document ).on( 'click', this.closeOnOutsideClick.bind( this ) );
+        }
     };
 
     BadgeCtrl.prototype.applyMode = function( mode )
@@ -3323,8 +3358,8 @@
     BadgeCtrl.prototype.select = function( mode )
     {
         this.$links.removeClass( 'selected' );
-        this.$links.parent().find( 'a[data-badges="' + mode + '"]' ).addClass( 'selected' );
-        this.$toggle.text( ( mode === 'hide' ? 'badges off' : 'badges on' ) + ' ▾' );
+        this.$links.filter( '[data-badges="' + mode + '"]' ).addClass( 'selected' );
+        if( this.$toggle.length ) this.$toggle.text( ( mode === 'hide' ? 'badges off' : 'badges on' ) + ' ▾' );
     };
 
     BadgeCtrl.prototype.onClick = function( e )
@@ -3332,11 +3367,12 @@
         e.preventDefault();
         var mode = $( e.currentTarget ).attr( 'data-badges' ) === 'hide' ? 'hide' : 'show';
         this.applyMode( mode );
-        this.$dropdown.removeClass('open');
+        if( this.$dropdown.length ) this.$dropdown.removeClass( 'open' );
     };
 
     BadgeCtrl.prototype.toggleOpen = function(e)
     {
+        if( !this.$dropdown.length ) return;
         e.preventDefault();
         e.stopPropagation();
         this.$dropdown.toggleClass('open');
@@ -3344,6 +3380,7 @@
 
     BadgeCtrl.prototype.closeOnOutsideClick = function(e)
     {
+        if( !this.$dropdown.length ) return;
         if(!$(e.target).closest(this.$dropdown).length) {
             this.$dropdown.removeClass('open');
         }
@@ -3371,8 +3408,11 @@
         var mode = ( saved === 'reduced' || saved === 'full' ) ? saved : ( prefersReduced ? 'reduced' : 'full' );
         this.applyMode( mode );
         this.$links.on( 'click', this.onClick.bind( this ) );
-        this.$toggle.on( 'click', this.toggleOpen.bind( this ) );
-        $(document).on('click', this.closeOnOutsideClick.bind(this));
+        if( this.$toggle.length )
+        {
+            this.$toggle.on( 'click', this.toggleOpen.bind( this ) );
+            $( document ).on( 'click', this.closeOnOutsideClick.bind( this ) );
+        }
     };
 
     MotionCtrl.prototype.applyMode = function( mode )
@@ -3386,8 +3426,8 @@
     MotionCtrl.prototype.select = function( mode )
     {
         this.$links.removeClass( 'selected' );
-        this.$links.parent().find( 'a[data-motion="' + mode + '"]' ).addClass( 'selected' );
-        this.$toggle.text( ( mode === 'reduced' ? 'motion reduced' : 'motion full' ) + ' ▾' );
+        this.$links.filter( '[data-motion="' + mode + '"]' ).addClass( 'selected' );
+        if( this.$toggle.length ) this.$toggle.text( ( mode === 'reduced' ? 'motion reduced' : 'motion full' ) + ' ▾' );
     };
 
     MotionCtrl.prototype.onClick = function( e )
@@ -3395,11 +3435,12 @@
         e.preventDefault();
         var mode = $( e.currentTarget ).attr( 'data-motion' ) === 'reduced' ? 'reduced' : 'full';
         this.applyMode( mode );
-        this.$dropdown.removeClass('open');
+        if( this.$dropdown.length ) this.$dropdown.removeClass( 'open' );
     };
 
     MotionCtrl.prototype.toggleOpen = function(e)
     {
+        if( !this.$dropdown.length ) return;
         e.preventDefault();
         e.stopPropagation();
         this.$dropdown.toggleClass('open');
@@ -3407,6 +3448,7 @@
 
     MotionCtrl.prototype.closeOnOutsideClick = function(e)
     {
+        if( !this.$dropdown.length ) return;
         if(!$(e.target).closest(this.$dropdown).length) {
             this.$dropdown.removeClass('open');
         }
@@ -4016,18 +4058,19 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.8.32';
+    Dashboard.VERSION = '1.8.40';
 
     proto.init = function()
     {
-        this.$controls   = $( '#controls' );
-        this.$controlsToggle = $( '#controls-toggle' );
-        this.$controlsPanel = $( '#controls-panel' );
-        this.$fontSizes  = $( '#fontctrl .dropdown-menu a' );
+        this.$settingsToggle = $( '#settings-toggle' );
+        this.$settingsPanel = $( '#settings-panel' );
+        this.$settingsBackdrop = $( '#settings-backdrop' );
+        this.$settingsClose = $( '#settings-close' );
+        this.$fontSizes  = $( '#fontctrl [data-size]' );
         this.$helpCtrl   = $( '#helpctrl' );
-        this.$themeCtrl  = $( '#themectrl .dropdown-menu a' );
-        this.$badgeCtrl  = $( '#badgectrl .dropdown-menu a' );
-        this.$motionCtrl = $( '#motionctrl .dropdown-menu a' );
+        this.$themeCtrl  = $( '#themectrl [data-theme]' );
+        this.$badgeCtrl  = $( '#badgectrl [data-badges]' );
+        this.$motionCtrl = $( '#motionctrl [data-motion]' );
         this.$editBtn    = $( '#edit' );
         this.$refresh    = $( '#refresh-icons' );
         this.$getStarted = $( '#getstarted' );
@@ -4109,46 +4152,56 @@
     proto.setupControlsPanel = function()
     {
         var _this = this;
-        if( !this.$controls.length || !this.$controlsToggle.length || !this.$controlsPanel.length ) return;
+        if( !this.$settingsToggle.length || !this.$settingsPanel.length || !this.$settingsBackdrop.length ) return;
 
         var closePanel = function()
         {
-            _this.$controls.removeClass( 'expanded' ).addClass( 'collapsed' );
-            _this.$controlsToggle.attr( 'aria-expanded', 'false' );
-            _this.$controls.find( '.dropdown' ).removeClass( 'open' );
+            document.documentElement.classList.remove( 'settings-open' );
+            _this.$settingsToggle.attr( 'aria-expanded', 'false' );
+            _this.$settingsPanel.attr( 'aria-hidden', 'true' );
+            _this.$settingsBackdrop.attr( 'aria-hidden', 'true' );
         };
 
         var openPanel = function()
         {
-            _this.$controls.removeClass( 'collapsed' ).addClass( 'expanded' );
-            _this.$controlsToggle.attr( 'aria-expanded', 'true' );
+            document.documentElement.classList.add( 'settings-open' );
+            _this.$settingsToggle.attr( 'aria-expanded', 'true' );
+            _this.$settingsPanel.attr( 'aria-hidden', 'false' );
+            _this.$settingsBackdrop.attr( 'aria-hidden', 'false' );
         };
 
-        this.$controlsToggle.on( 'click', function( e )
+        this.$settingsToggle.on( 'click', function( e )
         {
             e.preventDefault();
-            if( _this.$controls.hasClass( 'expanded' ) ) closePanel();
+            if( document.documentElement.classList.contains( 'settings-open' ) ) closePanel();
             else openPanel();
         } );
 
-        this.$controlsPanel.on( 'click', 'a', function( e )
+        if( this.$settingsClose.length )
+        {
+            this.$settingsClose.on( 'click', function( e )
+            {
+                e.preventDefault();
+                closePanel();
+            } );
+        }
+
+        this.$settingsBackdrop.on( 'click', function()
+        {
+            closePanel();
+        } );
+
+        this.$settingsPanel.on( 'click', 'a', function( e )
         {
             var $a = $( e.currentTarget );
-            if( $a.hasClass( 'dropdown-toggle' ) ) return;
-            if( $a.closest( '.dropdown-menu' ).length )
-            {
-                closePanel();
-                return;
-            }
-            if( $a.is( '#refresh-icons' ) || $a.is( '#helpctrl' ) )
-            {
-                closePanel();
-            }
+            if( $a.is( '#refresh-icons' ) || $a.is( '#helpctrl' ) ) closePanel();
         } );
 
         $( document ).on( 'click', function( e )
         {
-            if( !$( e.target ).closest( '#controls' ).length ) closePanel();
+            if( !document.documentElement.classList.contains( 'settings-open' ) ) return;
+            if( $( e.target ).closest( '#settings-panel, #settings-toggle' ).length ) return;
+            closePanel();
         } );
 
         $( document ).on( 'keydown', function( e )

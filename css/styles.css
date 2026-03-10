@@ -4,6 +4,9 @@
 /* Design tokens — v2 minimal elegant palette */
 :root {
     --bg-color:                 #E5E5EA;
+    --bg-accent-1:              rgba(255, 181, 214, 0.34);
+    --bg-accent-2:              rgba(255, 224, 178, 0.30);
+    --bg-accent-3:              rgba(180, 218, 255, 0.28);
     --text-color:               #1C1C1E;
     --muted-color:              #8E8E93;
     --accent-color:             #2E7D32;
@@ -15,6 +18,10 @@
     --tile-shadow:              0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
     --tile-radius:              12px;
     --tile-y-pad:               8px;
+    --bookmark-tile-min-height: calc(1.35em + 14px);
+    --bookmark-tile-max-width:  calc(32ch + 1em + 28px);
+    --column-surface-bg:        rgba(255, 255, 255, 0.34);
+    --column-surface-border:    rgba(255, 255, 255, 0.56);
     --input-border:             #D1D5DB;
     --surface-border:           rgba(0, 0, 0, 0.06);
     --surface-strong:           rgba(255, 255, 255, 0.82);
@@ -27,6 +34,9 @@
 /* Explicit dark theme toggled by user */
 html.theme-dark {
     --bg-color:                 #1C1C1E;
+    --bg-accent-1:              rgba(115, 56, 84, 0.30);
+    --bg-accent-2:              rgba(111, 96, 60, 0.24);
+    --bg-accent-3:              rgba(54, 84, 125, 0.28);
     --text-color:               #F5F5F7;
     --muted-color:              #A1A1A6;
     --accent-color:             #3E9443;
@@ -36,6 +46,8 @@ html.theme-dark {
     --bookmark-tile-bg:         rgba(44, 44, 46, 0.56);
     --bookmark-tile-hover-bg:   rgba(58, 58, 60, 0.74);
     --tile-shadow:              0 1px 3px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.12);
+    --column-surface-bg:        rgba(30, 30, 32, 0.52);
+    --column-surface-border:    rgba(255, 255, 255, 0.12);
     --input-border:             #48484A;
     --surface-border:           rgba(255, 255, 255, 0.08);
     --surface-strong:           rgba(44, 44, 46, 0.72);
@@ -48,6 +60,9 @@ html.theme-dark {
 /* Explicit light theme class to override system dark */
 html.theme-light {
     --bg-color:                 #E5E5EA;
+    --bg-accent-1:              rgba(255, 181, 214, 0.34);
+    --bg-accent-2:              rgba(255, 224, 178, 0.30);
+    --bg-accent-3:              rgba(180, 218, 255, 0.28);
     --text-color:               #1C1C1E;
     --muted-color:              #8E8E93;
     --accent-color:             #2E7D32;
@@ -65,10 +80,10 @@ html.theme-light {
     color-scheme:               light;
 }
 
-html.theme-dark #controls {
+html.theme-dark #settings-toggle {
     background:                  var(--surface-strong);
     border-color:                var(--surface-border);
-    box-shadow:                  0 2px 8px rgba(0,0,0,0.24);
+    box-shadow:                  0 4px 12px rgba(0,0,0,0.30);
 }
 
 html {
@@ -77,15 +92,19 @@ html {
 
 body {
     background-color:           var(--bg-color);
+    background-image:           radial-gradient(1100px 520px at -8% 10%, var(--bg-accent-2), transparent 63%),
+                                radial-gradient(900px 460px at 100% 16%, var(--bg-accent-1), transparent 60%),
+                                radial-gradient(980px 520px at 66% 100%, var(--bg-accent-3), transparent 64%);
+    background-attachment:      fixed;
     font-family:                -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, Cantarell, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
     color:                      var(--text-color);
     margin:                     0px 0px 0px 0px;
-    padding:                    0px 24px 28px 24px;
+    padding:                    24px 24px 28px 24px;
     -ms-overflow-style:         auto;
     scrollbar-width:            thin;
 }
 
-/* Clean flat background — no pattern */
+/* Soft gradient wash for depth */
 
 /* Subtle WebKit scrollbar styling */
 html::-webkit-scrollbar,
@@ -226,7 +245,7 @@ html.theme-dark #getstarted {
 }
 
 #bookmarks {
-    padding-top:                52px;
+    padding-top:                0;
     display:                    grid;
     grid-template-columns:      repeat(auto-fit, minmax(320px, 1fr));
     gap:                        24px 32px;
@@ -236,18 +255,29 @@ html.theme-dark #getstarted {
 #bookmarks > div {
     width:                      auto;
     margin:                     0;
-    padding:                    0;
+    padding:                    10px 12px 14px;
     min-width:                  0;
+    background:                 var(--column-surface-bg);
+    border:                     1px solid var(--column-surface-border);
+    border-radius:              18px;
+    box-shadow:                 0 10px 28px rgba(0, 0, 0, 0.07);
+    -webkit-backdrop-filter:    blur(14px) saturate(112%);
+    backdrop-filter:            blur(14px) saturate(112%);
 }
 
 #bookmarks > .left {            float: none; }
 #bookmarks > .right {           float: none; }
 
+html.theme-dark #bookmarks > div {
+    box-shadow:                 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
 #bookmarks section {
     clear:                      none;
-    padding:                    4px 0 10px 0;
+    padding:                    6px 6px 10px 6px;
     height:                     auto;
     overflow:                   visible;
+    border-radius:              12px;
 }
 
 .edit #bookmarks section.drop-target {
@@ -280,7 +310,7 @@ html.theme-dark .edit #bookmarks section.drop-target {
     padding-left:               6px;
     padding-right:              6px;
     letter-spacing:             0.03em;
-    margin:                     0.5em 0 0.35em 0;
+    margin:                     0.42em 0 0.45em 0;
 }
 
 .edit #bookmarks h1 {
@@ -362,22 +392,24 @@ html.theme-dark .edit #bookmarks h1.section-renaming .section-title-text {
 #bookmarks a {
     position:                   relative;
     display:                    inline-flex;
-    align-items:                flex-start;
-    gap:                        4px;
+    align-items:                center;
+    gap:                        6px;
     vertical-align:             bottom;
     text-decoration:            none;
-    font-size:                  0.95em;
-    font-weight:                normal;
+    font-size:                  0.93em;
+    font-weight:                500;
     letter-spacing:             0.01em;
     line-height:                1.35;
     background-color:           var(--bookmark-tile-bg);
+    background-image:           linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.54));
     border-radius:              var(--tile-radius);
-    box-shadow:                 var(--tile-shadow);
+    box-shadow:                 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 10px rgba(0, 0, 0, 0.035), inset 0 1px 0 rgba(255, 255, 255, 0.7);
     border:                     1px solid var(--surface-border);
     box-sizing:                 border-box;
-    width:                      10.5em;
-    height:                     calc(3 * 1.35em + var(--tile-y-pad));
-    padding:                    8px 10px 6px 8px;
+    width:                      auto;
+    max-width:                  var(--bookmark-tile-max-width);
+    min-height:                 var(--bookmark-tile-min-height);
+    padding:                    7px 10px 7px 8px;
     margin:                     3px 5px 5px 3px;
     overflow:                   hidden;
     text-overflow:              ellipsis;
@@ -390,15 +422,19 @@ html.theme-dark .edit #bookmarks h1.section-renaming .section-title-text {
 /* Explicit theme parity for bookmark tile glass surfaces */
 html.theme-light #bookmarks a {
     background-color:           var(--bookmark-tile-bg);
+    background-image:           linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.54));
 }
 
 html.theme-dark #bookmarks a {
     background-color:           var(--bookmark-tile-bg);
+    background-image:           linear-gradient(180deg, rgba(64, 64, 66, 0.72), rgba(46, 46, 48, 0.56));
     border-color:               rgba(255, 255, 255, 0.14);
+    box-shadow:                 0 1px 2px rgba(0, 0, 0, 0.28), 0 8px 16px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 #bookmarks a:hover {
     background-color:           var(--bookmark-tile-hover-bg);
+    background-image:           linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.66));
     transform:                  translateY(-1px);
     box-shadow:                 var(--hover-shadow);
     border-color:               rgba(0, 0, 0, 0.1);
@@ -406,6 +442,7 @@ html.theme-dark #bookmarks a {
 
 html.theme-dark #bookmarks a:hover {
     background-color:           var(--bookmark-tile-hover-bg);
+    background-image:           linear-gradient(180deg, rgba(74, 74, 76, 0.78), rgba(56, 56, 58, 0.66));
     border-color:               rgba(255, 255, 255, 0.12);
     box-shadow:                 var(--hover-shadow);
 }
@@ -422,11 +459,13 @@ html.theme-dark .edit #bookmarks a:hover {
 #bookmarks a > img {
     margin-right:               0px;
     margin-bottom:              0px;
-    width:                      1.15em;
-    height:                     1.15em;
+    width:                      1em;
+    height:                     1em;
     flex:                       0 0 auto;
-    align-self:                 flex-start;
+    align-self:                 center;
     object-fit:                 contain;
+    opacity:                    0.96;
+    filter:                     saturate(0.95) contrast(1.04);
 }
 
 /* Ensure tile drag always starts from the anchor, not child nodes */
@@ -442,17 +481,13 @@ html.theme-dark .edit #bookmarks a:hover {
 }
 
 #bookmarks a > span {
-    display:                    -webkit-box;
-    -webkit-line-clamp:         3;
-    -webkit-box-orient:         vertical;
-    line-clamp:                 3;
+    display:                    block;
     overflow:                   hidden;
     text-overflow:              ellipsis;
-    white-space:                normal;
-    word-break:                 break-word;
+    white-space:                nowrap;
     flex:                       1 1 auto;
     min-width:                  0;
-    height:                     calc(3 * 1.35em);
+    font-weight:                500;
 }
 
 #bookmarks a.removed {
@@ -467,105 +502,87 @@ html.theme-dark .edit #bookmarks a:hover {
     transition: opacity 300ms ease, transform 300ms ease, max-height 300ms 100ms ease, margin 300ms 100ms ease, padding 300ms 100ms ease;
 }
 
-#bookmarks a.add {
-    position:                   absolute;
-    right:                      126px;
-    top:                        6px;
+#bookmarks section { position: relative; }
+
+/* Section action buttons in edit mode: Add / Sort / Delete */
+#bookmarks a.add,
+#bookmarks section > .section-sort,
+#bookmarks section > .section-remove {
+    width:                      64px;
+    height:                     32px;
     display:                    none;
     align-items:                center;
     justify-content:            center;
-    width:                      auto;
-    height:                     26px;
-    border-radius:              8px;
-    border:                     1px solid rgba(46, 125, 50, 0.4);
-    background:                 rgba(46, 125, 50, 0.08);
-    color:                      #2E7D32;
+    border-radius:              9px;
+    border:                     1px solid var(--surface-border);
+    background:                 rgba(255, 255, 255, 0.06);
+    color:                      var(--text-color);
     box-shadow:                 none;
     margin:                     0;
     padding:                    0 8px;
     line-height:                1;
-    font-size:                  0.85rem;
+    font-size:                  12px;
     font-weight:                600;
+    letter-spacing:             0.02em;
+    text-transform:             lowercase;
     cursor:                     pointer;
     box-sizing:                 border-box;
     z-index:                    5;
-    overflow:                   visible;
-    text-overflow:              clip;
-    transition:                 background-color 120ms ease, border-color 120ms ease;
+    transition:                 background-color 100ms ease, border-color 100ms ease, color 100ms ease, box-shadow 120ms ease;
 }
 
-.edit #bookmarks a.add { display: inline-flex; }
+html.theme-dark #bookmarks a.add,
+html.theme-dark #bookmarks section > .section-sort,
+html.theme-dark #bookmarks section > .section-remove {
+    background:                 rgba(255, 255, 255, 0.04);
+}
 
-#bookmarks section { position: relative; }
+#bookmarks a.add:hover,
+#bookmarks section > .section-sort:hover,
+#bookmarks section > .section-remove:hover {
+    background:                 var(--tile-hover-bg);
+    border-color:               rgba(0, 0, 0, 0.12);
+    box-shadow:                 0 3px 10px rgba(0, 0, 0, 0.12);
+    text-decoration:            none;
+}
+
+html.theme-dark #bookmarks a.add:hover,
+html.theme-dark #bookmarks section > .section-sort:hover,
+html.theme-dark #bookmarks section > .section-remove:hover {
+    border-color:               rgba(255, 255, 255, 0.18);
+}
+
+#bookmarks a.add {
+    position:                   absolute;
+    right:                      146px;
+    top:                        6px;
+    overflow:                   visible;
+    text-overflow:              clip;
+}
+
+#bookmarks section > .section-sort {
+    position:                   absolute;
+    right:                      76px;
+    top:                        6px;
+}
 
 #bookmarks section > .section-remove {
     position:                   absolute;
     right:                      6px;
     top:                        6px;
-    width:                      auto;
-    height:                     26px;
-    display:                    none;
-    align-items:                center;
-    justify-content:            center;
-    border-radius:              8px;
-    border:                     1px solid rgba(220, 38, 38, 0.4);
-    background:                 rgba(220, 38, 38, 0.08);
-    color:                      #DC2626;
-    padding:                    0 8px;
-    font-size:                  0.85rem;
-    font-weight:                600;
-    line-height:                1;
-    cursor:                     pointer;
-    box-sizing:                 border-box;
-    transition:                 background-color 120ms ease, border-color 120ms ease;
 }
 
+.edit #bookmarks a.add,
+.edit #bookmarks section > .section-sort,
 .edit #bookmarks section > .section-remove {
     display:                    inline-flex;
 }
 
-#bookmarks section > .section-remove:hover {
-    background:                 rgba(220, 38, 38, 0.18);
-    border-color:               rgba(220, 38, 38, 0.6);
-    color:                      #B91C1C;
-}
-
-html.theme-dark #bookmarks section > .section-remove {
-    border-color:               rgba(248, 113, 113, 0.3);
-    background:                 var(--tile-bg);
-    color:                      #FCA5A5;
-}
-
-html.theme-dark #bookmarks section > .section-remove:hover {
-    background:                 rgba(248, 113, 113, 0.2);
-    border-color:               rgba(248, 113, 113, 0.55);
-    color:                      #FECACA;
-}
-
-#bookmarks a.add:hover {
-    background:                 rgba(46, 125, 50, 0.18);
-    border-color:               rgba(46, 125, 50, 0.6);
-    color:                      #1B5E20;
-}
-
-html.theme-dark #bookmarks a.add {
-    border-color:               rgba(76, 175, 80, 0.35);
-    background:                 rgba(76, 175, 80, 0.1);
-    color:                      #81C784;
-}
-
-html.theme-dark #bookmarks a.add:hover {
-    background:                 rgba(76, 175, 80, 0.2);
-    border-color:               rgba(76, 175, 80, 0.55);
-    color:                      #A5D6A7;
-}
-
 #bookmarks a.add span {
-    display:                    inline-block;
+    display:                    inline;
     flex:                       0 0 auto;
     font-size:                  inherit;
     line-height:                1;
-    height:                     auto;
 }
 
 #bookmarks a.add img { display: none; }
@@ -573,7 +590,7 @@ html.theme-dark #bookmarks a.add:hover {
 #bookmarks a.drop-placeholder {
     display: inline-block;
     width: 10.5em;
-    height: calc(3 * 1.35em + var(--tile-y-pad));
+    height: var(--bookmark-tile-min-height);
     margin: 3px 5px 5px 3px;
     border-radius: var(--tile-radius);
     border: 2px dashed var(--accent-color);
@@ -660,189 +677,238 @@ html.theme-dark #add-section-cta {
     box-shadow:                  none;
 }
 
-#controls {
+#settings-toggle {
     position:                   fixed;
-    top:                        10px;
+    top:                        24px;
     right:                      24px;
-    z-index:                    20;
-    display:                    flex;
+    z-index:                    34;
+    display:                    inline-flex;
     align-items:                center;
-    gap:                        6px;
-    width:                      auto;
-    max-width:                  calc(100vw - 24px);
+    justify-content:            center;
+    gap:                        0;
+    min-width:                  42px;
+    width:                      42px;
+    height:                     42px;
     margin:                     0;
     padding:                    0;
-}
-
-#controls-toggle {
-    display:                    inline-flex;
-    align-items:                center;
-    justify-content:            center;
-    min-width:                  56px;
-    height:                     34px;
-    margin:                     0;
-    padding:                    0 12px;
     border-radius:              999px;
-    color:                      var(--text-color);
-    font-size:                  12px;
-    letter-spacing:             0.06em;
-    text-transform:             lowercase;
-    font-weight:                600;
+    color:                      transparent;
+    font-size:                  0;
+    letter-spacing:             0;
+    text-transform:             none;
+    font-weight:                400;
     line-height:                1;
     background:                 var(--surface-strong);
     border:                     1px solid var(--surface-border);
-    box-shadow:                 0 2px 8px rgba(0,0,0,0.06);
-    -webkit-backdrop-filter:    saturate(120%) blur(12px);
-    backdrop-filter:            saturate(120%) blur(12px);
-}
-
-#edit {
-    display:                    inline-flex;
-    align-items:                center;
-    justify-content:            center;
-    min-width:                  44px;
-    height:                     34px;
-    margin:                     0;
-    padding:                    0 12px;
-    border-radius:              999px;
-    color:                      var(--text-color);
-    font-size:                  12px;
-    letter-spacing:             0.06em;
-    text-transform:             lowercase;
-    font-weight:                600;
-    line-height:                1;
-    background:                 var(--surface-strong);
-    border:                     1px solid var(--surface-border);
-    box-shadow:                 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow:                 0 4px 12px rgba(0,0,0,0.12);
     -webkit-backdrop-filter:    saturate(120%) blur(12px);
     backdrop-filter:            saturate(120%) blur(12px);
     cursor:                     pointer;
-    transition:                 background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+    transition:                 background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
 }
 
-#edit:hover {
-    background:                 var(--tile-hover-bg);
+#settings-toggle::before {
+    content:                    '\2699';
+    font-size:                  18px;
+    line-height:                1;
+    opacity:                    0.95;
+    color:                      var(--text-color);
 }
 
-#edit:focus-visible {
-    outline:                    2px solid var(--focus-ring);
-    outline-offset:             2px;
-}
-
-.edit #edit {
+#settings-toggle[aria-expanded="true"] {
     background:                 var(--accent-color);
-    color:                      #fff;
     border-color:               var(--accent-color);
 }
 
-.edit #edit:hover {
-    opacity:                    0.88;
-}
-
-html.theme-dark #edit {
-    box-shadow:                 0 2px 8px rgba(0,0,0,0.24);
-}
-
-#controls-panel {
-    position:                   absolute;
-    top:                        40px;
-    right:                      0;
-    min-width:                  176px;
-    padding:                    8px;
-    border-radius:              14px;
-    background:                 var(--surface-strong);
-    border:                     1px solid var(--surface-border);
-    box-shadow:                 0 8px 24px rgba(0,0,0,0.12);
-    -webkit-backdrop-filter:    saturate(120%) blur(12px);
-    backdrop-filter:            saturate(120%) blur(12px);
-    display:                    flex;
-    flex-direction:             column;
-    gap:                        3px;
-    opacity:                    0;
-    visibility:                 hidden;
-    transform:                  translateY(-6px) scale(0.97);
-    transform-origin:           top right;
-    transition:                 opacity 120ms ease, visibility 120ms ease, transform 120ms ease;
-    pointer-events:             none;
-}
-
-#controls.expanded #controls-panel {
-    opacity:                    1;
-    visibility:                 visible;
-    transform:                  translateY(0) scale(1);
-    pointer-events:             auto;
-}
-
-#controls-panel .controls-title {
-    font-size:                  11px;
-    letter-spacing:             0.08em;
-    text-transform:             uppercase;
-    color:                      var(--muted-color);
-    padding:                    2px 10px 6px 10px;
-    user-select:                none;
-}
-
-#controls-panel > div,
-#controls-panel > a {
-    display:                    block;
-}
-
-#controls-panel a {
-    display:                    flex;
-    align-items:                center;
-    justify-content:            space-between;
-    min-height:                 34px;
-    font-size:                  15px;
-    font-weight:                500;
-    margin:                     0;
-    padding:                    7px 10px;
-    border-radius:              10px;
-    color:                      var(--text-color);
-    cursor:                     pointer;
-}
-
-#controls-panel a {
-    transition:                 background-color 100ms ease;
+#settings-toggle[aria-expanded="true"]::before {
+    color:                      #ffffff;
     opacity:                    1;
 }
 
-#controls-panel a:hover, #controls-panel a.selected {
-    text-decoration:            none;
-    background-color:           var(--tile-hover-bg);
-    opacity:                    1;
+#settings-toggle:hover {
+    background:                 var(--tile-hover-bg);
 }
 
-#controls-toggle:focus-visible,
-#controls-panel a:focus-visible {
+#settings-toggle:focus-visible,
+#settings-panel a:focus-visible {
     outline:                    2px solid var(--focus-ring);
     outline-offset:             2px;
 }
 
-/* Dropdown controls */
-#controls .dropdown { display: block; position: relative; }
-#controls .dropdown-toggle { padding: 7px 10px; border-radius: 10px; }
-#controls .dropdown-menu {
-    position: static;
-    margin-top: 2px;
-    background: var(--tile-bg);
-    border: 1px solid var(--surface-border);
-    border-radius: 10px;
-    box-shadow: none;
-    display: none;
-    min-width: unset;
-    padding: 4px;
+#settings-backdrop {
+    position:                   fixed;
+    inset:                      0;
+    background:                 rgba(0, 0, 0, 0.18);
+    opacity:                    0;
+    visibility:                 hidden;
+    pointer-events:             none;
+    transition:                 opacity 150ms ease, visibility 150ms ease;
+    z-index:                    31;
 }
-#controls .dropdown-menu a {
-    display: block;
-    min-height:                 30px;
-    font-size:                  13px;
-    font-weight:                500;
-    padding: 6px 8px;
-    border-radius: 6px;
-    justify-content: flex-start;
+
+#settings-panel {
+    position:                   fixed;
+    top:                        0;
+    right:                      0;
+    bottom:                     0;
+    width:                      min(330px, 100vw);
+    max-width:                  100vw;
+    padding:                    12px 12px 16px;
+    box-sizing:                 border-box;
+    background:                 var(--surface-strong);
+    border-left:                1px solid var(--surface-border);
+    box-shadow:                 -14px 0 30px rgba(0, 0, 0, 0.14);
+    -webkit-backdrop-filter:    saturate(125%) blur(14px);
+    backdrop-filter:            saturate(125%) blur(14px);
+    display:                    flex;
+    flex-direction:             column;
+    gap:                        10px;
+    overflow:                   hidden;
+    transform:                  translateX(104%);
+    transition:                 transform 170ms ease;
+    z-index:                    32;
 }
-#controls .dropdown-menu a:hover { background: var(--tile-hover-bg); }
-#controls .dropdown.open .dropdown-menu { display: block; }
+
+html.theme-dark #settings-panel {
+    box-shadow:                 -14px 0 30px rgba(0, 0, 0, 0.42);
+}
+
+html.settings-open #settings-backdrop {
+    opacity:                    1;
+    visibility:                 visible;
+    pointer-events:             auto;
+}
+
+html.settings-open #settings-panel {
+    transform:                  translateX(0);
+}
+
+.settings-header {
+    display:                    flex;
+    align-items:                center;
+    justify-content:            space-between;
+    padding:                    4px 2px 10px;
+    border-bottom:              1px solid var(--surface-border);
+    margin-bottom:              2px;
+}
+
+#settings-title {
+    margin:                     0;
+    font-size:                  17px;
+    letter-spacing:             0.01em;
+    color:                      var(--text-color);
+    font-weight:                600;
+}
+
+#settings-close {
+    display:                    inline-flex;
+    align-items:                center;
+    justify-content:            center;
+    width:                      28px;
+    height:                     28px;
+    border-radius:              8px;
+    color:                      var(--muted-color);
+    font-size:                  18px;
+    line-height:                1;
+}
+
+#settings-close:hover {
+    background:                 var(--tile-hover-bg);
+    color:                      var(--text-color);
+}
+
+.setting-group {
+    display:                    flex;
+    flex-direction:             column;
+    gap:                        7px;
+    padding:                    3px 0;
+}
+
+.setting-label {
+    font-size:                  12px;
+    letter-spacing:             0.03em;
+    color:                      var(--muted-color);
+    font-weight:                600;
+}
+
+.setting-options {
+    display:                    grid;
+    grid-auto-flow:             column;
+    grid-auto-columns:          minmax(0, 1fr);
+    gap:                        6px;
+}
+
+.setting-options a,
+.setting-actions a {
+    display:                    inline-flex;
+    align-items:                center;
+    justify-content:            center;
+    min-height:                 34px;
+    padding:                    0 10px;
+    border-radius:              9px;
+    border:                     1px solid var(--surface-border);
+    background:                 rgba(255, 255, 255, 0.06);
+    color:                      var(--text-color);
+    font-size:                  12px;
+    font-weight:                600;
+    letter-spacing:             0.02em;
+    text-transform:             lowercase;
+    opacity:                    0.88;
+    transition:                 background-color 100ms ease, border-color 100ms ease, color 100ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+html.theme-dark .setting-options a,
+html.theme-dark .setting-actions a {
+    background:                 rgba(255, 255, 255, 0.04);
+}
+
+.setting-options a:hover,
+.setting-actions a:hover {
+    text-decoration:            none;
+    background:                 var(--tile-hover-bg);
+    border-color:               rgba(0, 0, 0, 0.12);
+}
+
+html.theme-dark .setting-options a:hover,
+html.theme-dark .setting-actions a:hover {
+    border-color:               rgba(255, 255, 255, 0.16);
+}
+
+.setting-options a.selected {
+    background:                 linear-gradient(180deg, #4ea95a, #2e7d32);
+    border-color:               #2e7d32;
+    color:                      #ffffff;
+    box-shadow:                 0 0 0 1px rgba(46, 125, 50, 0.34), 0 8px 16px rgba(46, 125, 50, 0.30);
+    text-shadow:                0 1px 0 rgba(0, 0, 0, 0.2);
+    opacity:                    1;
+    transform:                  translateY(-1px);
+}
+
+html.theme-dark .setting-options a.selected {
+    background:                 linear-gradient(180deg, #52b860, #2f8a37);
+    border-color:               #7fe58d;
+    box-shadow:                 0 0 0 1.5px rgba(127, 229, 141, 0.55), 0 12px 22px rgba(0, 0, 0, 0.48);
+}
+
+#settings-panel #edit {
+    width:                      100%;
+}
+
+.edit #settings-panel #edit,
+#settings-panel #edit[aria-pressed="true"] {
+    background:                 var(--accent-color);
+    border-color:               var(--accent-color);
+    color:                      #fff;
+}
+
+.setting-actions {
+    display:                    grid;
+    grid-template-columns:      1fr 1fr;
+    gap:                        6px;
+    margin-top:                 6px;
+    padding-top:                10px;
+    border-top:                 1px solid var(--surface-border);
+}
 
 :-webkit-any(.ui-edit-form,.ui-add-form) > input {
     clear: both;
@@ -1330,31 +1396,26 @@ html.theme-dark .confirmation .actions {
 /* Responsive layout */
 @media (max-width: 760px) {
     body {
-        padding:                0px 14px 20px 14px;
+        padding:                14px 14px 20px 14px;
     }
 
-    #controls {
+    #settings-toggle {
+        top:                    14px;
         right:                  14px;
-        max-width:              calc(100vw - 28px);
     }
 
-    #controls-panel {
-        min-width:              min(176px, calc(100vw - 28px));
-        max-width:              calc(100vw - 28px);
-    }
-
-    #controls-toggle {
-        min-width:              52px;
+    #settings-panel {
+        width:                  min(320px, calc(100vw - 12px));
     }
 
     #bookmarks a {
-        width:                  calc(50% - 8px);
+        max-width:              min(100%, var(--bookmark-tile-max-width));
     }
 }
 
 @media (max-width: 560px) {
     #bookmarks a {
-        width:                  100%;
+        max-width:              min(100%, var(--bookmark-tile-max-width));
     }
 }
 
@@ -1559,51 +1620,17 @@ section[data-section-color] .section-color-dot {
 
 .section-sort {
     position:                   absolute;
-    right:                      70px;
+    right:                      76px;
     top:                        6px;
-    width:                      auto;
-    height:                     26px;
-    display:                    none;
-    align-items:                center;
-    justify-content:            center;
-    border-radius:              8px;
-    border:                     1px solid rgba(49, 96, 211, 0.4);
-    background:                 rgba(49, 96, 211, 0.08);
-    color:                      #3160D3;
-    padding:                    0 8px;
-    font-size:                  0.85rem;
-    font-weight:                600;
-    line-height:                1;
-    cursor:                     pointer;
-    box-sizing:                 border-box;
-    transition:                 background-color 120ms ease, border-color 120ms ease;
 }
 
 .edit .section-sort {
     display:                    inline-flex;
 }
 
-.section-sort:hover {
-    background:                 rgba(49, 96, 211, 0.18);
-    border-color:               rgba(49, 96, 211, 0.6);
-    color:                      #1E40AF;
-}
-
-html.theme-dark .section-sort {
-    border-color:               rgba(96, 165, 250, 0.35);
-    background:                 rgba(96, 165, 250, 0.1);
-    color:                      #93C5FD;
-}
-
-html.theme-dark .section-sort:hover {
-    background:                 rgba(96, 165, 250, 0.2);
-    border-color:               rgba(96, 165, 250, 0.55);
-    color:                      #BFDBFE;
-}
-
 .section-sort-menu {
     position:                   absolute;
-    right:                      70px;
+    right:                      76px;
     top:                        32px;
     z-index:                    200;
     display:                    flex;
