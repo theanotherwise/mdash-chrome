@@ -42,6 +42,12 @@
         
         this.api.getChildren( this.folder.id, function( children )
         {
+            if( window.chrome && chrome.runtime && chrome.runtime.lastError )
+            {
+                _this.folder.children = [];
+                callback( [] );
+                return;
+            }
             var filtered = children.filter( function( b )
             {
                 if( b.title === _this.PLACEHOLDER_NAME ) return false;
@@ -119,6 +125,12 @@
     {
         this.api.getChildren( section.id, function( bookmarks )
         {
+            if( window.chrome && chrome.runtime && chrome.runtime.lastError )
+            {
+                section.children = [];
+                callback( section.children );
+                return;
+            }
             section.children = Array.isArray( bookmarks ) ? bookmarks : [];
             
             callback( section.children );
@@ -1918,7 +1930,7 @@
                                 {
                                     self.api.create( { parentId: newParentId, title: child.title, url: child.url }, function()
                                     {
-                                        if( self._hasApiError( 'Could not restore bookmark in section undo' ) ) return;
+                                        if( self._hasApiError( 'Could not restore bookmark in section undo' ) ) { next(); return; }
                                         next();
                                     } );
                                 }
@@ -1926,7 +1938,7 @@
                                 {
                                     self.api.create( { parentId: newParentId, title: child.title }, function( sub )
                                     {
-                                        if( self._hasApiError( 'Could not restore subfolder in section undo' ) ) return;
+                                        if( self._hasApiError( 'Could not restore subfolder in section undo' ) ) { next(); return; }
                                         if( sub && child.children ) restoreChildren( child.children, sub.id, next );
                                         else next();
                                     } );
@@ -2172,6 +2184,11 @@
             var oldFullTitle = prefix + original + colorSuffix;
             self.api.update( id, { title: prefix + title + colorSuffix }, function()
             {
+                if( self._hasApiError( 'Could not rename section' ) )
+                {
+                    $titleText.text( original );
+                    return;
+                }
                 $titleText.text( title );
                 if( mdash.dashboard && mdash.dashboard.manager )
                 {
@@ -2181,6 +2198,7 @@
                 {
                     self.api.update( id, { title: oldFullTitle }, function()
                     {
+                        if( self._hasApiError( 'Could not undo section rename' ) ) return;
                         $titleText.text( original );
                         if( mdash.dashboard && mdash.dashboard.manager )
                         {
@@ -2261,6 +2279,7 @@
             
             self.api.update( sectionId, { title: newFullTitle }, function()
             {
+                if( self._hasApiError( 'Could not update section color' ) ) return;
                 if( newColor )
                 {
                     $dot.css( 'background-color', newColor ).removeClass( 'section-color-dot-empty' );
@@ -2284,6 +2303,7 @@
                 {
                     self.api.update( sectionId, { title: oldFullTitle }, function()
                     {
+                        if( self._hasApiError( 'Could not undo section color change' ) ) return;
                         if( oldColor )
                         {
                             $dot.css( 'background-color', oldColor ).removeClass( 'section-color-dot-empty' );
@@ -2396,6 +2416,7 @@
                         }
                         self.api.move( originalIds[ restoreIdx ], { parentId: sectionId, index: restoreIdx }, function()
                         {
+                            if( self._hasApiError( 'Could not undo section sort' ) ) return;
                             restoreIdx++;
                             restoreNext();
                         } );
@@ -2405,6 +2426,7 @@
             }
             self.api.move( sortedIds[ moveIdx ], { parentId: sectionId, index: moveIdx }, function()
             {
+                if( self._hasApiError( 'Could not sort section bookmarks' ) ) return;
                 moveIdx++;
                 moveNext();
             } );
@@ -3083,6 +3105,7 @@
     ThemeCtrl.prototype.bindAutoThemeListener = function()
     {
         if( !this._mediaQuery ) return;
+        this.unbindAutoThemeListener();
         if( this._mediaQuery.addEventListener ) this._mediaQuery.addEventListener( 'change', this._boundMediaHandler );
         else if( this._mediaQuery.addListener ) this._mediaQuery.addListener( this._boundMediaHandler );
     };

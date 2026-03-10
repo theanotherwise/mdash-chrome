@@ -191,7 +191,7 @@ Visual direction: clean, airy, Linear/Vercel-inspired. Near-white backgrounds, c
 - Spotlight modal: 14px radius, consistent shadow language
 - Edit-mode hover: soft warm tint (`#FFF3E0` light / `#FFF8E1` dark)
 - Every second section starting from the first (1st/3rd/5th...) has a subtle zebra background tint for row grouping
-- Grid gap: 24px row / 32px column
+image.png- Grid gap: 24px row / 32px column
 - Scrollbars: 6px wide, very low opacity
 - DnD placeholders: pulsing animation for clear visual feedback
 - Controls panel: animated expand/collapse (opacity + scale + transform, 120ms)

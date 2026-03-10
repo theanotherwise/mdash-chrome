@@ -12,13 +12,16 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 - Collapsible top-right controls pill with animated expand/collapse and frosted glass effect
 - Dark-green accent color for focus, action buttons, and highlights
 - Smooth transitions on all interactive elements (hover, focus, drag & drop)
-- Light and dark themes (fully themed dialogs, notifications, and context menus; defaults to system preference when unset)
+- Theme mode selector: auto / light / dark (auto follows OS)
 - Three font sizes: small, medium, large
+- Click-count badge visibility toggle (on/off)
+- Motion preference toggle (full/reduced)
 - Full ARIA accessibility for screen readers
 
 ### Spotlight Search
 - Quick-launch search modal (Option+F on macOS, Ctrl+F on Windows/Linux)
 - Real-time filtering by bookmark title and URL
+- Debounced search with cached in-memory index for faster response on large dashboards
 - Keyboard navigation (arrow keys, Enter, Escape)
 - Highlighted matches in results
 - Middle-click or Cmd/Ctrl+click opens in a background tab without leaving Spotlight
@@ -30,6 +33,7 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 - Drag & drop bookmarks between sections to reorder
 - Drag & drop entire sections between left and right columns
 - Rename sections by clicking the section title
+- Collapse/expand sections via header chevron (persisted)
 - Custom section colors: click the color dot next to a section title to assign a color from a 16-color palette; color is stored in the bookmark folder title as a `#RRGGBB` suffix
 - Sort bookmarks within a section A→Z or Z→A via the sort button (↕) in the section header
 - Add new bookmarks via the `+` tile at the end of each section
