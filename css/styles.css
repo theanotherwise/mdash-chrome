@@ -133,6 +133,8 @@ body.xxl    { font-size:         20px; }
 body.xxxl   { font-size:         21px; }
 body.medium { font-size:         17px; }
 body.small  { font-size:         16px; }
+body.xs     { font-size:         14px; }
+body.xxs    { font-size:         12px; }
 
 a {
     color:                      var(--accent-color);
@@ -959,7 +961,7 @@ html.settings-open #settings-panel {
 }
 
 #fontctrl .setting-options {
-    grid-template-columns:      repeat(3, minmax(0, 1fr));
+    grid-template-columns:      repeat(4, minmax(0, 1fr));
     grid-auto-flow:             row;
 }
 

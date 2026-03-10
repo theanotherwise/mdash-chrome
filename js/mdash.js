@@ -787,9 +787,11 @@
     FontCtrl.prototype.init = function()
     {
         var sizeFromStorage = localStorage.fontSize;
-        var valid = { small: true, medium: true, large: true, xl: true, xxl: true, xxxl: true };
+        var valid = { xxs: true, xs: true, small: true, medium: true, large: true, xl: true, xxl: true, xxxl: true };
 
         var size = valid[sizeFromStorage] ? sizeFromStorage : (function(){
+            if( document.body.classList.contains('xxs') ) return 'xxs';
+            if( document.body.classList.contains('xs') ) return 'xs';
             if( document.body.classList.contains('small') ) return 'small';
             if( document.body.classList.contains('medium') ) return 'medium';
             if( document.body.classList.contains('large') ) return 'large';
@@ -813,7 +815,7 @@
 
     FontCtrl.prototype.applySize = function( size )
     {
-        document.body.classList.remove('small','medium','large','xl','xxl','xxxl');
+        document.body.classList.remove('xxs','xs','small','medium','large','xl','xxl','xxxl');
         document.body.classList.add( size );
     };
     

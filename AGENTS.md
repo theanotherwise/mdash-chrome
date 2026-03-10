@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.63
+**Version**: 1.8.64
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -30,7 +30,7 @@
 - Undo for all destructive/mutating operations (30-second window): bookmark delete, update, create, drag & drop move; section create, delete, rename, column move, color change, sort
 - Spotlight search modal (Option+F on macOS, Ctrl+F on Windows) with debounced input, cached in-memory index, keyboard navigation, highlighted matches, and background-tab open via middle-click / Cmd/Ctrl+click without navigating the current tab
 - Theme mode selector: auto/light/dark (`auto` follows OS preference and reacts to live system theme changes)
-- Font size control: small, medium, large, XL, XXL, XXXL (persisted in localStorage)
+- Font size control: XXS, XS, small, medium, large, XL, XXL, XXXL (persisted in localStorage)
 - Settings-panel typography is fixed and does not scale with dashboard font-size selection
 - XL+ dashboard presets use lighter text weights to avoid a visually over-bold look
 - Improved keyboard accessibility with visible focus rings on interactive controls
@@ -95,7 +95,7 @@ Dashboard (orchestrator)
 | **Manager** | `mdash.Manager` | Wraps `chrome.bookmarks` API. Locates or creates the `[Dashboard]` root folder and its `[MDASH_DO_NOT_DELETE]` placeholder. Fetches sections and their bookmarks. Determines side assignment (`+` → left, `-` → right). Parses optional `#RRGGBB` color suffix from folder titles. |
 | **SectionState** | `mdash.sectionState` | Persists collapsed/expanded section state in `localStorage['mdash:sections:collapsed']`. |
 | **Column** | `mdash.Column` | Renders one column (left or right) by iterating sections and calling `renderSection()` / `renderBookmark()`. Appends an `AddBtn` to each section. Manages column visibility. |
-| **FontCtrl** | `mdash.FontCtrl` | Settings-panel selector for font sizes (`small`, `medium`, `large`, `xl`, `xxl`, `xxxl`). Persists selection in `localStorage.fontSize`. Applies CSS class to `<body>` for dashboard content only. |
+| **FontCtrl** | `mdash.FontCtrl` | Settings-panel selector for font sizes (`xxs`, `xs`, `small`, `medium`, `large`, `xl`, `xxl`, `xxxl`). Persists selection in `localStorage.fontSize`. Applies CSS class to `<body>` for dashboard content only. |
 | **HelpCtrl** | `mdash.HelpCtrl` | Toggles visibility between the help/get-started panel and the bookmarks interface. |
 | **EditCtrl** | `mdash.EditCtrl` | Toggles edit mode (`html.edit` class). In edit mode: click tile to edit (title, URL, section), duplicate from the edit dialog (`DUPLICATE`), Delete key to remove, click section title to rename, click section color dot to open color palette, use sort button to sort bookmarks A→Z/Z→A, use section-header `button.section-remove` to delete a whole section via `chrome.bookmarks.removeTree()`, use bottom `#add-section-cta` to create a new section (with column + color selection), drag & drop tiles between sections, and drag & drop sections between columns. Also controls section collapse toggles and persists collapse state. The bookmark edit dialog uses a custom in-dialog section picker. Provides undo for all operations. |
 | **ThemeCtrl** | `mdash.ThemeCtrl` | Settings-panel selector for `auto` / `light` / `dark` theme. In `auto`, listens to `prefers-color-scheme` changes and applies `theme-light` / `theme-dark` on `<html>`. Persists in `localStorage['mdash:theme']`. |
@@ -151,7 +151,7 @@ Section titles support an optional color suffix: `+Title #RRGGBB` or `-Title #RR
 
 | Key | Storage | Value |
 |---|---|---|
-| `fontSize` | localStorage | `small` / `medium` / `large` / `xl` / `xxl` / `xxxl` |
+| `fontSize` | localStorage | `xxs` / `xs` / `small` / `medium` / `large` / `xl` / `xxl` / `xxxl` |
 | `mdash:theme` | localStorage | `auto` / `light` / `dark` |
 | `mdash:motion` | localStorage | `full` / `reduced` |
 | `mdash:sections:collapsed` | localStorage | JSON object map of collapsed section IDs |

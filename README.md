@@ -15,7 +15,7 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 - Color system: bright neutral background (`#f7f8fa`), subtle dividers (`#eceef2`), blue interactive accent, green success, red danger
 - Smooth transitions on all interactive elements (hover, focus, drag & drop)
 - Theme mode selector: auto / light / dark (auto follows OS)
-- Six font sizes: small, medium, large, XL, XXL, XXXL
+- Eight font sizes: XXS, XS, small, medium, large, XL, XXL, XXXL
 - Font size scaling applies to dashboard content only (settings panel typography stays fixed)
 - Motion preference toggle (full/reduced)
 - Full ARIA accessibility for screen readers
