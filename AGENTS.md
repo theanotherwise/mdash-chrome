@@ -4,17 +4,17 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.51
+**Version**: 1.8.53
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
 
 - Two-column bookmark dashboard (left / right, controlled by `+` / `-` prefix in folder names)
 - Responsive CSS Grid layout for columns (auto-switches to one column on smaller screens)
-- Bookmark tiles use subtle translucency for a soft glass look
+- Bookmark links render as compact, low-noise pills (solid surface, subtle 1px divider border)
 - Bookmark tile titles are rendered on a single line with adaptive tile width up to a 32-character cap; longer titles are truncated with `...`
 - Subtle alternating group background in bookmark columns with phase offset: left starts dark/light, right starts light/dark
-- Top-right quick actions: wrench icon toggles edit mode instantly, gear icon opens the right-side slide-in settings panel
+- Top-right quick actions: 34px circular wrench/gear icons at top-right; wrench toggles edit mode, gear opens the right-side slide-in settings panel
 - Quick-action icons use local SVG assets (`icons/dashboard-edit.svg`, `icons/dashboard-gear.svg`)
 - Edit mode: inline editing, adding, deleting, and renaming sections
 - Sections can be collapsed/expanded via a chevron in each section header; state is persisted
@@ -36,7 +36,7 @@
 - Improved keyboard accessibility with visible focus rings on interactive controls
 - In edit mode, `Escape` closes an open add/edit dialog before leaving edit mode
 - Holding `Option`/`Alt` while already in edit mode no longer exits persistent edit mode on key release
-- Smooth animated transitions: settings panel slide-in/out, bookmark remove, custom select dropdown, drag placeholders with pulse animation
+- Smooth animated transitions: settings panel slide-in/out, compact tag hover lift, bookmark remove, custom select dropdown, drag placeholders with pulse animation
 - Full ARIA support: spotlight search, edit toggle, settings panel, help button, column regions, get-started dialog
 - Custom favicon mapping for known services (ArgoCD, Grafana, Jenkins, etc.) via `icons/icons.json`
 - Favicon caching via Chrome `_favicon` API + `localStorage` — icons are converted to base64 via canvas and served from cache on subsequent visits (including offline); writes are quota-aware, and `refresh icons` always purges `fav:*` cache first, then rebuilds
@@ -171,46 +171,49 @@ Section titles support an optional color suffix: `+Title #RRGGBB` or `-Title #RR
 ./pack.sh   # produces ../mdash-chrome-<version>.zip
 ```
 
-## Design System (v2 — Minimal Elegant)
+## Design System (v3 — Minimal Developer Dashboard)
 
-Visual direction: clean, airy, Linear/Vercel-inspired. Near-white backgrounds, crisp typography, ultra-subtle shadows, generous whitespace. Dark theme uses true grey (not navy).
+Visual direction: clean, intentional, and low-noise (Linear/Raycast/Vercel-like). Whitespace drives hierarchy; tags are compact functional pills; sections avoid heavy card chrome.
 
 ### Design Tokens (CSS Custom Properties)
 
 | Token | Light | Dark | Purpose |
 |---|---|---|---|
-| `--bg-color` | `#F5F5F7` | `#1C1C1E` | Page background |
-| `--bg-accent-*` | soft pastel radial accents | muted dark radial accents | Ambient background gradient layers |
-| `--text-color` | `#1C1C1E` | `#F5F5F7` | Primary text |
-| `--muted-color` | `#8E8E93` | `#A1A1A6` | Secondary/muted text (WCAG AA in dark) |
-| `--accent-color` | `#2E7D32` | `#3E9443` | Links, accents, active states |
-| `--tile-bg` | `#FFFFFF` | `#2C2C2E` | Tile background |
-| `--tile-hover-bg` | `#F2F2F7` | `#3A3A3C` | Tile hover background |
-| `--bookmark-tile-bg` | `rgba(255,255,255,0.62)` | `rgba(44,44,46,0.56)` | Bookmark tile background (glass) |
-| `--bookmark-tile-hover-bg` | `rgba(255,255,255,0.78)` | `rgba(58,58,60,0.74)` | Bookmark tile hover background (glass) |
-| `--tile-shadow` | ultra-subtle `0 1px 3px` | `0 1px 3px` darker | Tile resting shadow |
-| `--tile-radius` | `12px` | `12px` | Tile border-radius |
-| `--bookmark-tile-min-height` | `calc(1.35em + 14px)` | `calc(1.35em + 14px)` | Single-line bookmark tile height baseline |
+| `--bg-color` | `#f7f8fa` | `#0f1115` | Page background |
+| `--text-color` | `#111418` | `#e5e7eb` | Primary text |
+| `--muted-color` | `#6b7280` | `#9ca3af` | Secondary text |
+| `--accent-color` | `#2563eb` | `#60a5fa` | Interactive/link accent |
+| `--success-color` | `#22c55e` | `#22c55e` | Positive actions (`Add`, quick-action icon base) |
+| `--danger-color` | `#ef4444` | `#ef4444` | Destructive actions (`Delete`) |
+| `--tile-bg` | `#ffffff` | `#12161d` | Surface/tag background |
+| `--tile-hover-bg` | `#f9fafb` | `#171c24` | Hovered surface/tag background |
+| `--bookmark-tile-bg` | `#ffffff` | `#12161d` | Bookmark tag background |
+| `--bookmark-tile-hover-bg` | `#f9fafb` | `#171c24` | Bookmark tag hover background |
+| `--tile-shadow` | subtle `0 1px 2px rgba(17,20,24,0.03)` | subtle `0 1px 2px rgba(0,0,0,0.35)` | Resting shadow |
+| `--tile-radius` | `8px` | `8px` | Tag radius |
+| `--bookmark-tile-min-height` | `28px` | `28px` | Compact single-line tag height |
 | `--bookmark-tile-max-width` | `calc(32ch + 1em + 28px)` | `calc(32ch + 1em + 28px)` | Max tile width for one-line, 32-char bookmark labels |
-| `--surface-border` | `rgba(0,0,0,0.06)` | `rgba(255,255,255,0.08)` | Subtle borders |
-| `--surface-strong` | `rgba(255,255,255,0.82)` | `rgba(44,44,46,0.72)` | Glass surfaces |
-| `--hover-shadow` | `0 4px 12px` | `0 4px 12px` darker | Hover elevation |
-| `--section-color` | `#3C3C43` | `#AEAEB2` | Section header text |
-| `--focus-ring` | green 42% | green 48% | Focus indicators |
+| `--surface-border` | `#eceef2` | `rgba(255,255,255,0.10)` | Subtle dividers |
+| `--surface-strong` | `#ffffff` | `#10141a` | Panel/dialog surfaces |
+| `--hover-shadow` | `0 2px 6px rgba(0,0,0,0.05)` | `0 2px 8px rgba(0,0,0,0.25)` | Hover elevation |
+| `--section-color` | `#111418` | `#f3f4f6` | Section header text |
+| `--section-alt-bg` | `rgba(17,20,24,0.03)` | `rgba(255,255,255,0.03)` | Zebra section tint |
+| `--focus-ring` | `rgba(37,99,235,0.35)` | `rgba(96,165,250,0.45)` | Focus indicators |
 
 ### Key Visual Rules
 
-- Background uses `--bg-color` plus subtle radial accent gradients (`--bg-accent-*`) for soft depth
-- Section headers: sentence case (no uppercase), font-weight 600, letter-spacing 0.03em
-- Tiles: 12px radius, adaptive width (content-fit with 32-char max), slightly translucent background, ultra-subtle shadows, gentle hover lift (-1px); icon is aligned to text height and labels stay single-line with ellipsis
+- Background is flat and bright (`--bg-color`) with no decorative gradient noise
+- Section headers are explicit and compact: `14px`, weight `600`, slight letter-spacing, with a 1px divider below
+- Bookmark tags are compact pills (`6px 12px`, `8px` radius), adaptive width (content-fit with 32-char max), single-line ellipsis, 16px icons, and subtle hover lift (`translateY(-1px)`)
 - Left/right columns have no outer frame; only alternating zebra group backgrounds are visible
-- Settings UI: compact top-right quick actions (wrench + gear), where gear opens a right-side slide-in glass panel
-- Quick-action icons are shown as direct SVG assets without extra button background rings
-- Edit-mode section action buttons (`Add` / `Sort` / `Delete`) use unified width/height and high-contrast green accent styling for fast recognition
+- Settings UI: compact top-right quick actions (wrench + gear), where gear opens a right-side slide-in minimal panel
+- Quick-action icons use local SVG assets (`dashboard-edit.svg`, `dashboard-gear.svg`) sized to 34px controls
+- Edit-mode section action buttons (`Add` / `Sort` / `Delete`) are compact (`26px` high), right-aligned in section headers, and color-coded (success / neutral / danger)
 - Spotlight modal: 14px radius, consistent shadow language
-- Edit-mode hover: soft warm tint (`#FFF3E0` light / `#FFF8E1` dark)
+- Edit mode state: sections receive a subtle dashed outline; tag hover brightens to signal editability
 - Zebra phase is offset by column: left tints 1st/3rd/5th... sections, right tints 2nd/4th/6th... sections
-- Grid gap: 24px row / 32px column
+- Compact spacing pass: reduced section and tag vertical gaps to remove empty space between groups
+- Grid gap: 18px row / 28px column
 - Scrollbars: 6px wide, very low opacity
 - DnD placeholders: pulsing animation for clear visual feedback
 - Settings panel: animated slide-in/out from right (with backdrop)
@@ -252,7 +255,7 @@ Version follows **semver** (`MAJOR.MINOR.PATCH`). The version must be updated in
 - **Prototype-based OOP** — constructors with `.prototype` methods.
 - **jQuery 3.7.1** — used for DOM manipulation (loaded from `js/`).
 - **No template engine** — sections and bookmarks are built with direct jQuery DOM construction (safe by default).
-- **CSS custom properties** — design tokens in `:root` for theming (v2 minimal elegant palette).
+- **CSS custom properties** — design tokens in `:root` for theming (v3 minimal developer dashboard palette).
 - **No tests** — no test framework or test files.
 
 ## DnD Architecture
