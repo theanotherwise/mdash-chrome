@@ -742,7 +742,8 @@
             title: displayTitle,
             'aria-label': displayTitle,
             'data-title': displayTitle,
-            'data-raw-title': bookmark.title
+            'data-raw-title': bookmark.title,
+            draggable: 'false'
         } ).append( $img, $( '<span>' ).text( displayTitle ) );
         
         // Attach fallback; if [VPN] in title, skip normalization (use exact host)
@@ -1041,9 +1042,84 @@
     EditCtrl.prototype._cleanupTileDrag = function()
     {
         this._dragging = false;
+        this._dragSourceId = null;
+        this._dragLastPlacement = null;
+        this._dragPlacementActivated = false;
+        this._dragStartClientX = null;
+        this._dragStartClientY = null;
         this.$bookmarks.find( 'a.dragging' ).removeClass( 'dragging' );
-        if( this.$placeholder ) this.$placeholder.removeClass( 'collapsed' ).detach();
+        if( this.$placeholder ) this.$placeholder.removeClass( 'collapsed source-gap' ).detach();
         this.$bookmarks.find( 'section' ).removeClass( 'drop-target' );
+    };
+
+    EditCtrl.prototype._canRepositionOnDragOver = function( e )
+    {
+        if( this._dragPlacementActivated ) return true;
+        if( !e || !e.originalEvent ) return false;
+        var cx = e.originalEvent.clientX;
+        var cy = e.originalEvent.clientY;
+        if( typeof this._dragStartClientX !== 'number' || typeof this._dragStartClientY !== 'number' )
+        {
+            this._dragPlacementActivated = true;
+            return true;
+        }
+        // Require a small pointer move before first reorder, to avoid jump on pickup.
+        if( Math.abs( cx - this._dragStartClientX ) < 4 && Math.abs( cy - this._dragStartClientY ) < 4 )
+        {
+            return false;
+        }
+        this._dragPlacementActivated = true;
+        return true;
+    };
+
+    EditCtrl.prototype._positionPlaceholderForTargetTile = function( $targetTile )
+    {
+        if( !$targetTile || !$targetTile.length ) return;
+        if( !this.$placeholder || !this.$placeholder.length ) return;
+
+        var placeAfter = false;
+        var $targetSection = $targetTile.closest( 'section' );
+        var $src = this._dragSourceId ? $( document.getElementById( this._dragSourceId ) ) : $();
+
+        if( $src.length && $targetSection.length )
+        {
+            var $srcSection = $src.closest( 'section' );
+            if( $srcSection.length && $srcSection[ 0 ] === $targetSection[ 0 ] )
+            {
+                var $items = $targetSection.children( 'a' ).not( '.add,.drop-placeholder' );
+                var srcIdx = $items.index( $src );
+                var tgtIdx = $items.index( $targetTile );
+                if( srcIdx !== -1 && tgtIdx !== -1 )
+                {
+                    placeAfter = tgtIdx > srcIdx;
+                }
+            }
+        }
+
+        var targetId = $targetTile.attr( 'id' ) || '';
+        var placementKey = ( placeAfter ? 'after:' : 'before:' ) + targetId;
+        if( this._dragLastPlacement === placementKey ) return;
+
+        if( placeAfter ) $targetTile.after( this.$placeholder );
+        else $targetTile.before( this.$placeholder );
+
+        this.$placeholder.removeClass( 'collapsed source-gap' );
+        $targetSection.addClass( 'drop-target' );
+        this._dragLastPlacement = placementKey;
+    };
+
+    EditCtrl.prototype._positionPlaceholderAfterTile = function( $targetTile )
+    {
+        if( !$targetTile || !$targetTile.length ) return;
+        if( !this.$placeholder || !this.$placeholder.length ) return;
+        var targetId = $targetTile.attr( 'id' ) || '';
+        var placementKey = 'after:' + targetId;
+        if( this._dragLastPlacement === placementKey ) return;
+        var $targetSection = $targetTile.closest( 'section' );
+        $targetTile.after( this.$placeholder );
+        this.$placeholder.removeClass( 'collapsed source-gap' );
+        $targetSection.addClass( 'drop-target' );
+        this._dragLastPlacement = placementKey;
     };
 
     EditCtrl.prototype._bindTileDnD = function( $tiles )
@@ -1066,7 +1142,12 @@
                 {
                     self._dragging = true;
                     self._handledDrop = false;
+                    self._dragLastPlacement = null;
+                    self._dragPlacementActivated = false;
                     var id = $( this ).attr( 'id' );
+                    self._dragSourceId = id || null;
+                    self._dragStartClientX = e.originalEvent ? e.originalEvent.clientX : null;
+                    self._dragStartClientY = e.originalEvent ? e.originalEvent.clientY : null;
                     var dt = e.originalEvent.dataTransfer;
                     try { dt.setData( 'application/x-mdash-bookmark-id', id ); } catch( _e ) {}
                     try { dt.setData( 'text/plain', '' ); } catch( _e ) {}
@@ -1075,7 +1156,8 @@
                     requestAnimationFrame( function(){ $( el ).addClass( 'dragging' ); } );
 
                     var $cur = $( this );
-                    self.$placeholder.addClass( 'collapsed' );
+                    // Keep visible source placeholder; reorder starts only after hovering another tile.
+                    self.$placeholder.removeClass( 'collapsed source-gap' );
                     $cur.before( self.$placeholder );
                 } )
                 .on( 'dragend.mdash', function()
@@ -1086,13 +1168,11 @@
                 {
                     if( self._sectionDragging ) return;
                     e.preventDefault();
-                    var rect = this.getBoundingClientRect();
-                    var before = ( e.originalEvent.clientX < rect.left + rect.width / 2 );
+                    e.stopPropagation();
                     var $t = $( this );
-                    if( before ) { $t.before( self.$placeholder ); }
-                    else { $t.after( self.$placeholder ); }
-                    self.$placeholder.removeClass( 'collapsed' );
-                    $t.closest( 'section' ).addClass( 'drop-target' );
+                    if( self._dragSourceId && this.id === self._dragSourceId ) return;
+                    if( !self._canRepositionOnDragOver( e ) ) return;
+                    self._positionPlaceholderForTargetTile( $t );
                 } );
         } );
     };
@@ -1111,52 +1191,34 @@
             {
                 if( self._sectionDragging ) return;
                 e.preventDefault();
+                e.stopPropagation();
                 var $section = $( this );
-                $section.addClass( 'drop-target' );
-                // For empty sections, place placeholder before the add button
-                var $tilesInside = $section.children( 'a' ).not( '.add' ).not( '.drop-placeholder' );
-                if( $tilesInside.length === 0 )
+                var clientX = e.originalEvent.clientX, clientY = e.originalEvent.clientY;
+                var elAtPoint = document.elementFromPoint( clientX, clientY );
+                var $tileAtPoint = elAtPoint ? $( elAtPoint ).closest( 'a' ).not( '.add,.drop-placeholder,.dragging' ) : $();
+
+                if( $tileAtPoint.length && $tileAtPoint.closest( 'section' )[0] === $section[0] )
                 {
+                    if( !( self._dragSourceId && $tileAtPoint.attr( 'id' ) === self._dragSourceId ) )
+                    {
+                        if( !self._canRepositionOnDragOver( e ) ) return;
+                        self._positionPlaceholderForTargetTile( $tileAtPoint );
+                    }
+                    return;
+                }
+
+                var $tilesInside = $section.children( 'a' ).not( '.add,.drop-placeholder,.dragging' );
+                if( !$tilesInside.length )
+                {
+                    if( !self._canRepositionOnDragOver( e ) ) return;
                     var $add = $section.find( 'a.add' );
                     if( $add.length ) $add.before( self.$placeholder ); else $section.append( self.$placeholder );
-                    self.$placeholder.removeClass( 'collapsed' );
+                    self.$placeholder.removeClass( 'collapsed source-gap' );
+                    self._dragLastPlacement = null;
+                    $section.addClass( 'drop-target' );
+                    return;
                 }
-                else
-                {
-                    // Row-aware placement: if pointer is vertically inside any row, choose from that row only
-                    var clientX = e.originalEvent.clientX, clientY = e.originalEvent.clientY;
-                    var inRow = [];
-                    $tilesInside.each( function(){ var r = this.getBoundingClientRect(); if( clientY >= r.top && clientY <= r.bottom ) inRow.push({el:this, rect:r}); });
-                    var target = null, rect = null;
-                    if( inRow.length )
-                    {
-                        // Pick nearest by X within the row
-                        var bestDx = Infinity;
-                        inRow.forEach( function( it ){
-                            var midX = it.rect.left + it.rect.width / 2;
-                            var dx = Math.abs( clientX - midX );
-                            if( dx < bestDx ) { bestDx = dx; target = it.el; rect = it.rect; }
-                        } );
-                    }
-                    else
-                    {
-                        // Fallback: choose row by minimal |dy| then by |dx|
-                        var bestScore = Infinity;
-                        $tilesInside.each( function(){
-                            var r = this.getBoundingClientRect();
-                            var dy = Math.abs( clientY - (r.top + r.height/2) );
-                            var dx = Math.abs( clientX - (r.left + r.width/2) );
-                            var score = dy * 1000 + dx;
-                            if( score < bestScore ) { bestScore = score; target = this; rect = r; }
-                        } );
-                    }
-                    if( target )
-                    {
-                        var before = clientX < (rect.left + rect.width / 2);
-                        if( before ) $( target ).before( self.$placeholder ); else $( target ).after( self.$placeholder );
-                        self.$placeholder.removeClass( 'collapsed' );
-                    }
-                }
+                $section.addClass( 'drop-target' );
             } )
             .on( 'dragleave.mdash', function()
             {
@@ -1182,6 +1244,7 @@
                     var el = children[ i ];
                     if( el === self.$placeholder[0] ) break;
                     if( el.classList.contains( 'add' ) ) continue;
+                    if( el.id === id || el.classList.contains( 'dragging' ) ) continue;
                     index++;
                 }
 
@@ -1204,7 +1267,7 @@
 
                     if( $srcSection.length && $srcSection.attr( 'id' ) === $section.attr( 'id' ) )
                     {
-                        if( index === undoIndex || index === undoIndex + 1 )
+                        if( index === undoIndex )
                         {
                             if( self.$placeholder ) self.$placeholder.detach();
                             return;
@@ -1267,53 +1330,34 @@
         {
             if( !self._dragging ) return;
             e.preventDefault();
+            e.stopPropagation();
             var clientX = e.originalEvent.clientX, clientY = e.originalEvent.clientY;
             var el = document.elementFromPoint( clientX, clientY );
             if( !el ) return;
+            var $tileAtPoint = $( el ).closest( 'a' ).not( '.add,.drop-placeholder,.dragging' );
+            if( $tileAtPoint.length )
+            {
+                if( !( self._dragSourceId && $tileAtPoint.attr( 'id' ) === self._dragSourceId ) )
+                {
+                    if( !self._canRepositionOnDragOver( e ) ) return;
+                    self._positionPlaceholderForTargetTile( $tileAtPoint );
+                }
+                return;
+            }
             var $section = $( el ).closest( 'section' );
             if( !$section.length ) return;
 
-            // Decide insertion before/after based on nearest tile center
-            var $tilesInside = $section.children( 'a' ).not( '.add' ).not( '.drop-placeholder' );
+            var $tilesInside = $section.children( 'a' ).not( '.add,.drop-placeholder,.dragging' );
             if( $tilesInside.length === 0 )
             {
+                if( !self._canRepositionOnDragOver( e ) ) return;
                 var $add = $section.find( 'a.add' );
                 if( $add.length ) $add.before( self.$placeholder ); else $section.append( self.$placeholder );
+                self.$placeholder.removeClass( 'collapsed source-gap' );
+                self._dragLastPlacement = null;
+                $section.addClass( 'drop-target' );
+                return;
             }
-            else
-            {
-                // Prefer tiles whose vertical span contains pointer (row under cursor)
-                var candidates = [];
-                $tilesInside.each( function(){ var r = this.getBoundingClientRect(); if( clientY >= r.top && clientY <= r.bottom ) candidates.push({el:this, rect:r}); });
-                var target = null, rect = null;
-                if( candidates.length )
-                {
-                    var bestDx = Infinity;
-                    candidates.forEach( function( it ){
-                        var midX = it.rect.left + it.rect.width / 2;
-                        var dx = Math.abs( clientX - midX );
-                        if( dx < bestDx ) { bestDx = dx; target = it.el; rect = it.rect; }
-                    } );
-                }
-                else
-                {
-                    // Fallback: nearest by weighted Y then X
-                    var bestScore = Infinity;
-                    $tilesInside.each( function(){
-                        var r = this.getBoundingClientRect();
-                        var dy = Math.abs( clientY - (r.top + r.height/2) );
-                        var dx = Math.abs( clientX - (r.left + r.width/2) );
-                        var score = dy * 1000 + dx;
-                        if( score < bestScore ) { bestScore = score; target = this; rect = r; }
-                    } );
-                }
-                if( target )
-                {
-                    var before = clientX < rect.left + rect.width / 2;
-                    if( before ) $( target ).before( self.$placeholder ); else $( target ).after( self.$placeholder );
-                }
-            }
-            self.$placeholder.removeClass( 'collapsed' );
             $section.addClass( 'drop-target' );
         } );
 
@@ -1352,6 +1396,7 @@
                 var el = children[ i ];
                 if( el === self.$placeholder[0] ) break;
                 if( el.classList.contains( 'add' ) ) continue;
+                if( el.id === id || el.classList.contains( 'dragging' ) ) continue;
                 index++;
             }
 
@@ -1402,7 +1447,7 @@
     EditCtrl.prototype.disableDragAndDrop = function()
     {
         var $tiles = this.$bookmarks.find( 'a' ).not( '.add' );
-        $tiles.removeAttr( 'draggable' ).off( '.mdash' ).removeClass( 'dragging' );
+        $tiles.attr( 'draggable', 'false' ).off( '.mdash' ).removeClass( 'dragging' );
         this.$bookmarks.find( 'section' ).off( '.mdash' ).removeClass( 'drop-target' );
         this._dragging = false;
     };
@@ -1661,9 +1706,10 @@
         this.$bookmarks.find( 'a' ).not( '.add,.drop-placeholder' ).each( function( _i, a )
         {
             var $a = $( a );
-            var raw = $a.attr( 'data-raw-title' ) || $a.find( 'span' ).text() || '';
+            var $titleSpan = $a.find( 'span' ).not( '.click-count' ).first();
+            var raw = $a.attr( 'data-raw-title' ) || ( $titleSpan.text() || '' );
             var visible = self.editMode ? raw : mdash.util.stripIconOverride( raw );
-            $a.find( 'span' ).text( visible );
+            if( $titleSpan.length ) $titleSpan.text( visible );
             $a.attr( 'title', visible );
             $a.attr( 'aria-label', visible );
             $a.attr( 'data-title', visible );
@@ -2438,7 +2484,7 @@
         var $form, $title, $url, $section, $dupBtn, $rmBtn, dialog,
             self  = this,
             id    = $b.attr( 'id' ),
-            title = $b.find( 'span' ).text(),
+            title = $b.find( 'span' ).not( '.click-count' ).first().text(),
             rawTitle = $b.attr( 'data-raw-title' ) || title,
             sections = mdash.dashboard.manager.folder.children,
             sectionId = +$b.closest( 'section' ).attr( 'id' );
@@ -2773,7 +2819,6 @@
         {
             if( self._hasApiError( 'Could not load bookmark before delete' ) )
             {
-                callback && callback( false );
                 return;
             }
             var node = nodes && nodes[0];
@@ -2784,7 +2829,6 @@
                 {
                     if( self._hasApiError( 'Could not remove bookmark' ) )
                     {
-                        callback && callback( false );
                         return;
                     }
                     $el.addClass( 'removed' );
@@ -2805,7 +2849,6 @@
             {
                 if( self._hasApiError( 'Could not remove bookmark' ) )
                 {
-                    callback && callback( false );
                     return;
                 }
                 $el.addClass( 'removed' );
@@ -2873,12 +2916,11 @@
     EditCtrl.prototype.update = function( id, props, moveTo, callback )
     {
         var $el    = $( document.getElementById( id ) ),
-            $title = $el.find( 'span' ),
+            $title = $el.find( 'span' ).not( '.click-count' ).first(),
             self   = this;
 
         if( !$el.length )
         {
-            callback && callback( false );
             return;
         }
 
@@ -2973,7 +3015,6 @@
         {
             if( self._hasApiError( 'Could not update bookmark' ) )
             {
-                callback && callback( false );
                 return;
             }
             var newRawTitle = (props.title != null) ? props.title : ( $el.attr('data-raw-title') || $title.text() );
@@ -3016,7 +3057,6 @@
                 {
                     if( self._hasApiError( 'Could not move bookmark to selected section' ) )
                     {
-                        callback && callback( false );
                         return;
                     }
                     $( '#' + id ).remove().appendTo( $( '#' + moveTo ) );
@@ -3133,7 +3173,7 @@
     ThemeCtrl.prototype.onClick = function( e )
     {
         e.preventDefault();
-        var theme = e.target.getAttribute( 'data-theme' );
+        var theme = $( e.currentTarget ).attr( 'data-theme' );
         this.applyTheme( theme );
         this.$dropdown.removeClass('open');
     };
@@ -3195,7 +3235,7 @@
     BadgeCtrl.prototype.onClick = function( e )
     {
         e.preventDefault();
-        var mode = e.target.getAttribute( 'data-badges' ) === 'hide' ? 'hide' : 'show';
+        var mode = $( e.currentTarget ).attr( 'data-badges' ) === 'hide' ? 'hide' : 'show';
         this.applyMode( mode );
         this.$dropdown.removeClass('open');
     };
@@ -3258,7 +3298,7 @@
     MotionCtrl.prototype.onClick = function( e )
     {
         e.preventDefault();
-        var mode = e.target.getAttribute( 'data-motion' ) === 'reduced' ? 'reduced' : 'full';
+        var mode = $( e.currentTarget ).attr( 'data-motion' ) === 'reduced' ? 'reduced' : 'full';
         this.applyMode( mode );
         this.$dropdown.removeClass('open');
     };
@@ -3881,7 +3921,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.7.7';
+    Dashboard.VERSION = '1.8.11';
 
     proto.init = function()
     {
@@ -3954,15 +3994,21 @@
 
     proto.setupClickTracking = function()
     {
-        $( '#bookmarks' ).on( 'click', 'a:not(.add,.drop-placeholder)', function()
+        var selector = 'a:not(.add,.drop-placeholder)';
+        var track = function( e )
         {
+            if( e && e.type === 'auxclick' && e.button !== 1 ) return;
             if( document.documentElement.classList.contains( 'edit' ) ) return;
-            var href = $( this ).attr( 'href' );
+            var href = $( e.currentTarget ).attr( 'href' );
             if( href && href !== '#' && href !== 'about:blank' && mdash.stats )
             {
                 mdash.stats.trackClick( href );
             }
-        } );
+        };
+
+        $( '#bookmarks' )
+            .on( 'click', selector, track )
+            .on( 'auxclick', selector, track );
     };
 
     proto.setupControlsPanel = function()

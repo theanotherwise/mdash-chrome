@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.0
+**Version**: 1.8.10
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -21,11 +21,11 @@
 - Edit bookmark dialog includes `DUPLICATE` action to clone bookmarks into the same or selected section
 - Edit mode bottom CTA (`+`) to create a new section/folder directly from dashboard UI
 - Edit mode section-header remove button (`×`) to delete an entire section/folder (including nested bookmarks) with confirmation
-- Drag & drop reordering of bookmarks between sections
-- Drag & drop sections between columns (left ↔ right); automatically updates `+`/`-` prefix
+- Drag & drop reordering of bookmarks between sections (edit mode only; disabled in normal mode)
+- Drag & drop sections between columns (left ↔ right) in edit mode; automatically updates `+`/`-` prefix
 - Custom section colors: colored dot next to section title, stored as `#RRGGBB` suffix in folder name (e.g. `+Productivity #4CAF50`); editable via color palette popup in edit mode
 - Sort bookmarks within a section (A→Z / Z→A toggle button in edit mode); reorders via Chrome Bookmarks API with full undo support
-- Click statistics: per-bookmark click counter persisted in `localStorage`, subtle badge on tiles, tracks clicks from both dashboard and Spotlight
+- Click statistics: per-bookmark click counter persisted in `localStorage`, subtle badge on tiles, tracks clicks from both dashboard and Spotlight (including middle-click/background-tab opens from dashboard tiles)
 - Controls toggle for click-count badge visibility (on/off)
 - Controls toggle for reduced/full motion preference
 - Undo for all destructive/mutating operations (30-second window): bookmark delete, update, create, drag & drop move; section create, delete, rename, column move, color change, sort
@@ -258,6 +258,8 @@ Two independent drag & drop systems coexist in edit mode:
 | **Section DnD** | `.mdash-section` | `_sectionDragging` | Section `<h1>` titles | `.left` / `.right` columns |
 
 Guards prevent interference: tile handlers check `if( self._sectionDragging ) return;` and section handlers check `if( !self._sectionDragging ) return;`.
+
+Tile DnD hover behavior: dragging start keeps a visible full-size dashed source placeholder (no immediate reorder jump on pickup). Reordering starts only after hovering another tile, then insertion is immediate and directional by relative tile order in the same section (dragging right inserts after hovered tile; dragging left inserts before). Dragover handling now uses a deterministic element-under-cursor approach (no percentage thresholds / nearest-score oscillation), with boundary-only fallback for section/container whitespace. Repeated placements are deduplicated, and drop index calculation excludes the currently dragged tile to avoid off-by-one reorder jitter. The placeholder is visual-only (`pointer-events: none`) so it never blocks hover handoff to the next tile.
 
 When a section is moved between columns:
 1. DOM `<section>` element is repositioned at the placeholder location.

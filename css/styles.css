@@ -575,6 +575,7 @@ html.theme-dark #bookmarks a.add:hover {
     background: transparent;
     box-shadow: none;
     animation: placeholderPulse 1.2s ease-in-out infinite;
+    pointer-events: none;
 }
 
 @keyframes placeholderPulse {
