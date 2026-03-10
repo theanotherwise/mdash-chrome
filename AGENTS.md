@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.50
+**Version**: 1.8.51
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -13,7 +13,7 @@
 - Responsive CSS Grid layout for columns (auto-switches to one column on smaller screens)
 - Bookmark tiles use subtle translucency for a soft glass look
 - Bookmark tile titles are rendered on a single line with adaptive tile width up to a 32-character cap; longer titles are truncated with `...`
-- Subtle alternating group background in bookmark columns (starts from first section: dark/light/dark/light)
+- Subtle alternating group background in bookmark columns with phase offset: left starts dark/light, right starts light/dark
 - Top-right quick actions: wrench icon toggles edit mode instantly, gear icon opens the right-side slide-in settings panel
 - Quick-action icons use local SVG assets (`icons/dashboard-edit.svg`, `icons/dashboard-gear.svg`)
 - Edit mode: inline editing, adding, deleting, and renaming sections
@@ -209,7 +209,7 @@ Visual direction: clean, airy, Linear/Vercel-inspired. Near-white backgrounds, c
 - Edit-mode section action buttons (`Add` / `Sort` / `Delete`) use unified width/height and high-contrast green accent styling for fast recognition
 - Spotlight modal: 14px radius, consistent shadow language
 - Edit-mode hover: soft warm tint (`#FFF3E0` light / `#FFF8E1` dark)
-- Every second section starting from the first (1st/3rd/5th...) has a subtle zebra background tint for row grouping
+- Zebra phase is offset by column: left tints 1st/3rd/5th... sections, right tints 2nd/4th/6th... sections
 - Grid gap: 24px row / 32px column
 - Scrollbars: 6px wide, very low opacity
 - DnD placeholders: pulsing animation for clear visual feedback

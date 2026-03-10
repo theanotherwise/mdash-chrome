@@ -9,7 +9,7 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 - Responsive grid — auto-switches to single column on smaller screens
 - Bookmark tiles are semi-transparent (glass effect) so the background is visible even before hover
 - Bookmark tile labels are one-line with adaptive tile width up to 32 characters, and show `...` when longer
-- Subtle zebra grouping: starts from the first section (dark/light/dark/light)
+- Subtle zebra grouping with column phase offset: left column starts dark/light, right column starts light/dark
 - Top-right quick actions: wrench button for edit mode + `settings` gear for right-side slide-in panel
 - Dark-green accent color for focus, action buttons, and highlights
 - Smooth transitions on all interactive elements (hover, focus, drag & drop)

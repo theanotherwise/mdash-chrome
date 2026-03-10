@@ -278,9 +278,10 @@ html.theme-dark .edit #bookmarks section.drop-target {
     box-shadow:                 inset 0 0 0 1px rgba(129, 199, 132, 0.32);
 }
 
-/* Subtle zebra striping: every second group from the top */
+/* Subtle zebra striping with column phase offset:
+   left starts dark, right starts light. */
 #bookmarks > .left > section:nth-of-type(odd),
-#bookmarks > .right > section:nth-of-type(odd) {
+#bookmarks > .right > section:nth-of-type(even) {
     background:                 var(--section-alt-bg);
     border-radius:              10px;
 }
