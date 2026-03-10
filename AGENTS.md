@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.10
+**Version**: 1.8.32
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -259,7 +259,7 @@ Two independent drag & drop systems coexist in edit mode:
 
 Guards prevent interference: tile handlers check `if( self._sectionDragging ) return;` and section handlers check `if( !self._sectionDragging ) return;`.
 
-Tile DnD hover behavior: dragging start keeps a visible full-size dashed source placeholder (no immediate reorder jump on pickup). Reordering starts only after hovering another tile, then insertion is immediate and directional by relative tile order in the same section (dragging right inserts after hovered tile; dragging left inserts before). Dragover handling now uses a deterministic element-under-cursor approach (no percentage thresholds / nearest-score oscillation), with boundary-only fallback for section/container whitespace. Repeated placements are deduplicated, and drop index calculation excludes the currently dragged tile to avoid off-by-one reorder jitter. The placeholder is visual-only (`pointer-events: none`) so it never blocks hover handoff to the next tile.
+Tile DnD hover behavior keeps the dragged source tile in normal document flow (styled as a dimmed source placeholder) instead of removing it immediately, which avoids hard-disappearance regressions when native drag preview is inconsistent. Drag preview uses native `setDragImage` directly from the source tile with pointer-aligned hotspot (no cloned ghost element), reducing preview mismatches such as oversized icon/text artifacts. To prevent Chromium native child-node dragging artifacts (large icon/text preview with missing placeholder), bookmark child nodes are non-interactive in edit mode (`pointer-events: none`) and favicon images are explicitly `draggable="false"`, forcing drag initiation through the anchor tile handler. When hovering a non-empty target tile, the hovered tile itself gets the visible placeholder styling (`drop-hover-target`) while the internal drop marker is collapsed and used only for index calculation; collapsed marker rendering is disabled (`display:none`) to avoid the tiny side artifact box. Same-section insertion direction is determined by relative source/target order (dragging right inserts after hovered tile; dragging left inserts before), so dropping onto a later tile moves the dragged item into that tile's slot instead of always before it. Reordering starts only after a small pointer-move threshold from drag start (with baseline captured from pointer-down), invalid drag coordinates (for example synthetic `0,0`) are ignored, and placement is blocked while the pointer remains inside original source bounds to prevent snap-away on pickup. Repeated placements are deduplicated and drop index calculation excludes the currently dragged tile to avoid off-by-one reorder jitter. The placeholder marker remains visual-only (`pointer-events: none`) so it never blocks hover handoff to the next tile.
 
 When a section is moved between columns:
 1. DOM `<section>` element is repositioned at the placeholder location.

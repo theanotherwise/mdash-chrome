@@ -429,6 +429,12 @@ html.theme-dark .edit #bookmarks a:hover {
     object-fit:                 contain;
 }
 
+/* Ensure tile drag always starts from the anchor, not child nodes */
+.edit #bookmarks a > img,
+.edit #bookmarks a > span {
+    pointer-events:             none;
+}
+
 /* Broken images keep their box so layout stays stable */
 #bookmarks a > img[src=""],
 #bookmarks a > img:not([src]) {
@@ -585,8 +591,11 @@ html.theme-dark #bookmarks a.add:hover {
 
 /* Collapsed placeholder used at the source position so items shift left */
 #bookmarks a.drop-placeholder.collapsed {
-    width: 0.01px;
+    display: none;
+    width: 0;
+    height: 0;
     margin: 0;
+    padding: 0;
     border: none;
 }
 
@@ -634,13 +643,21 @@ html.theme-dark #add-section-cta {
     margin-top:                 10px;
 }
 
-/* While dragging, hide the original tile so it doesn't look duplicated */
+/* Drag state: keep source in flow, style it as source-placeholder. */
 .edit #bookmarks a.dragging {
-    opacity: 0;
-    box-shadow: none;
-    cursor: grabbing;
-    position: absolute; /* remove from document flow so neighbors shift left */
-    pointer-events: none;
+    box-shadow:                  none;
+    cursor:                      grabbing;
+    pointer-events:              none;
+    opacity:                     0.34;
+    background:                  var(--bookmark-tile-bg);
+    border-color:                var(--surface-border);
+    transform:                   none;
+}
+
+.edit #bookmarks a.drop-hover-target {
+    border:                      2px dashed var(--accent-color);
+    background:                  transparent;
+    box-shadow:                  none;
 }
 
 #controls {

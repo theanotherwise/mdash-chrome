@@ -735,7 +735,7 @@
         var hasOverride = mdash.util.hasIconOverride( bookmark.title );
         var faviconSrc = bookmark.favicon ? bookmark.favicon : (hasOverride ? '' : faviconCandidates[ 0 ]);
 
-        var $img = $( '<img>' ).attr( { src: faviconSrc, alt: displayTitle } );
+        var $img = $( '<img>' ).attr( { src: faviconSrc, alt: displayTitle, draggable: 'false' } );
         var $el = $( '<a>' ).attr( {
             id: bookmark.id,
             href: link.href,
@@ -936,6 +936,14 @@
         this.$activeBookmark = null;
         this.currentEditId = null;
         this._dragging = false;
+        this._dragHasTargetHover = false;
+        this._dragPlacementActivated = false;
+        this._dragStartClientX = null;
+        this._dragStartClientY = null;
+        this._dragGhostEl = null;
+        this._dragPointerDownX = null;
+        this._dragPointerDownY = null;
+        this._dragSourceRect = null;
     };
     
     EditCtrl.prototype.init = function()
@@ -963,6 +971,13 @@
                 
                 self.edit( $el );
             }
+        } );
+
+        // Record pointer-down position for robust drag threshold baseline in Chromium.
+        this.$docEl.on( 'mousedown', '#bookmarks a:not(.add,.drop-placeholder)', function( e )
+        {
+            self._dragPointerDownX = e.clientX;
+            self._dragPointerDownY = e.clientY;
         } );
 
         // Rename section: click on section title while in edit mode
@@ -1044,10 +1059,22 @@
         this._dragging = false;
         this._dragSourceId = null;
         this._dragLastPlacement = null;
+        this._dragHasTargetHover = false;
         this._dragPlacementActivated = false;
         this._dragStartClientX = null;
         this._dragStartClientY = null;
-        this.$bookmarks.find( 'a.dragging' ).removeClass( 'dragging' );
+        if( this._dragGhostEl && this._dragGhostEl.parentNode )
+        {
+            this._dragGhostEl.parentNode.removeChild( this._dragGhostEl );
+        }
+        this._dragGhostEl = null;
+        this._dragPointerDownX = null;
+        this._dragPointerDownY = null;
+        this._dragSourceRect = null;
+        this.$bookmarks.find( 'a.dragging' )
+            .removeClass( 'dragging' )
+            .css( { left: '', top: '', width: '', height: '' } );
+        this.$bookmarks.find( 'a.drop-hover-target' ).removeClass( 'drop-hover-target' );
         if( this.$placeholder ) this.$placeholder.removeClass( 'collapsed source-gap' ).detach();
         this.$bookmarks.find( 'section' ).removeClass( 'drop-target' );
     };
@@ -1058,12 +1085,25 @@
         if( !e || !e.originalEvent ) return false;
         var cx = e.originalEvent.clientX;
         var cy = e.originalEvent.clientY;
+        // Ignore synthetic/invalid coordinates that appear in some dragenter paths.
+        if( ( cx === 0 && cy === 0 ) || !isFinite( cx ) || !isFinite( cy ) ) return false;
+        if( this._dragSourceRect )
+        {
+            var r = this._dragSourceRect;
+            if( cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom )
+            {
+                return false;
+            }
+        }
         if( typeof this._dragStartClientX !== 'number' || typeof this._dragStartClientY !== 'number' )
         {
-            this._dragPlacementActivated = true;
-            return true;
+            // Some Chromium drag paths don't provide reliable dragstart coordinates.
+            // Seed baseline from first dragover and wait for the next movement event.
+            this._dragStartClientX = cx;
+            this._dragStartClientY = cy;
+            return false;
         }
-        // Require a small pointer move before first reorder, to avoid jump on pickup.
+        // Prevent immediate jump on pickup; wait for an intentional pointer move.
         if( Math.abs( cx - this._dragStartClientX ) < 4 && Math.abs( cy - this._dragStartClientY ) < 4 )
         {
             return false;
@@ -1072,15 +1112,14 @@
         return true;
     };
 
-    EditCtrl.prototype._positionPlaceholderForTargetTile = function( $targetTile )
+    EditCtrl.prototype._positionPlaceholderForTargetTile = function( $targetTile, e )
     {
         if( !$targetTile || !$targetTile.length ) return;
         if( !this.$placeholder || !this.$placeholder.length ) return;
 
-        var placeAfter = false;
         var $targetSection = $targetTile.closest( 'section' );
+        var placeAfter = false;
         var $src = this._dragSourceId ? $( document.getElementById( this._dragSourceId ) ) : $();
-
         if( $src.length && $targetSection.length )
         {
             var $srcSection = $src.closest( 'section' );
@@ -1091,19 +1130,27 @@
                 var tgtIdx = $items.index( $targetTile );
                 if( srcIdx !== -1 && tgtIdx !== -1 )
                 {
+                    // Same-section move: dragging right means insert after hovered tile.
                     placeAfter = tgtIdx > srcIdx;
+                }
+                else if( $src[ 0 ] && $targetTile[ 0 ] && $src[ 0 ] !== $targetTile[ 0 ] )
+                {
+                    var rel = $src[ 0 ].compareDocumentPosition( $targetTile[ 0 ] );
+                    if( rel & Node.DOCUMENT_POSITION_FOLLOWING ) placeAfter = true;
+                    else if( rel & Node.DOCUMENT_POSITION_PRECEDING ) placeAfter = false;
                 }
             }
         }
-
         var targetId = $targetTile.attr( 'id' ) || '';
         var placementKey = ( placeAfter ? 'after:' : 'before:' ) + targetId;
         if( this._dragLastPlacement === placementKey ) return;
 
+        this.$bookmarks.find( 'a.drop-hover-target' ).removeClass( 'drop-hover-target' );
+        $targetTile.addClass( 'drop-hover-target' );
         if( placeAfter ) $targetTile.after( this.$placeholder );
         else $targetTile.before( this.$placeholder );
-
-        this.$placeholder.removeClass( 'collapsed source-gap' );
+        // Keep placeholder as logic marker; target tile gets the visible hover state.
+        this.$placeholder.addClass( 'collapsed' ).removeClass( 'source-gap' );
         $targetSection.addClass( 'drop-target' );
         this._dragLastPlacement = placementKey;
     };
@@ -1137,32 +1184,67 @@
             if( $tile.hasClass( 'add' ) || $tile.hasClass( 'drop-placeholder' ) ) return;
 
             $tile.attr( 'draggable', true )
-                .off( 'dragstart.mdash dragend.mdash dragover.mdash' )
+                .off( 'dragstart.mdash dragend.mdash dragenter.mdash dragover.mdash' )
                 .on( 'dragstart.mdash', function( e )
                 {
                     self._dragging = true;
                     self._handledDrop = false;
                     self._dragLastPlacement = null;
+                    self._dragHasTargetHover = false;
                     self._dragPlacementActivated = false;
                     var id = $( this ).attr( 'id' );
                     self._dragSourceId = id || null;
-                    self._dragStartClientX = e.originalEvent ? e.originalEvent.clientX : null;
-                    self._dragStartClientY = e.originalEvent ? e.originalEvent.clientY : null;
+                    var _rect = this.getBoundingClientRect();
+                    self._dragSourceRect = {
+                        left: _rect.left,
+                        right: _rect.right,
+                        top: _rect.top,
+                        bottom: _rect.bottom
+                    };
+                    self._dragStartClientX = ( typeof self._dragPointerDownX === 'number' )
+                        ? self._dragPointerDownX
+                        : ( e.originalEvent ? e.originalEvent.clientX : null );
+                    self._dragStartClientY = ( typeof self._dragPointerDownY === 'number' )
+                        ? self._dragPointerDownY
+                        : ( e.originalEvent ? e.originalEvent.clientY : null );
                     var dt = e.originalEvent.dataTransfer;
                     try { dt.setData( 'application/x-mdash-bookmark-id', id ); } catch( _e ) {}
                     try { dt.setData( 'text/plain', '' ); } catch( _e ) {}
                     dt.effectAllowed = 'move';
-                    var el = this;
-                    requestAnimationFrame( function(){ $( el ).addClass( 'dragging' ); } );
+                    if( self._dragGhostEl && self._dragGhostEl.parentNode )
+                    {
+                        self._dragGhostEl.parentNode.removeChild( self._dragGhostEl );
+                    }
+                    self._dragGhostEl = null;
+                    try
+                    {
+                        if( dt.setDragImage )
+                        {
+                            var pointerX = ( typeof self._dragPointerDownX === 'number' ) ? self._dragPointerDownX : ( _rect.left + this.offsetWidth / 2 );
+                            var pointerY = ( typeof self._dragPointerDownY === 'number' ) ? self._dragPointerDownY : ( _rect.top + this.offsetHeight / 2 );
+                            var hotX = Math.max( 0, Math.min( this.offsetWidth - 1, Math.round( pointerX - _rect.left ) ) );
+                            var hotY = Math.max( 0, Math.min( this.offsetHeight - 1, Math.round( pointerY - _rect.top ) ) );
+                            dt.setDragImage( this, hotX, hotY );
+                        }
+                    }
+                    catch( _e ) {}
 
-                    var $cur = $( this );
-                    // Keep visible source placeholder; reorder starts only after hovering another tile.
-                    self.$placeholder.removeClass( 'collapsed source-gap' );
-                    $cur.before( self.$placeholder );
+                    var el = this;
+                    requestAnimationFrame( function()
+                    {
+                        $( el ).addClass( 'dragging' );
+                    } );
+
                 } )
                 .on( 'dragend.mdash', function()
                 {
                     self._cleanupTileDrag();
+                } )
+                .on( 'dragenter.mdash', function( e )
+                {
+                    if( self._sectionDragging ) return;
+                    e.preventDefault();
+                    e.stopPropagation();
                 } )
                 .on( 'dragover.mdash', function( e )
                 {
@@ -1172,7 +1254,8 @@
                     var $t = $( this );
                     if( self._dragSourceId && this.id === self._dragSourceId ) return;
                     if( !self._canRepositionOnDragOver( e ) ) return;
-                    self._positionPlaceholderForTargetTile( $t );
+                    self._dragHasTargetHover = true;
+                    self._positionPlaceholderForTargetTile( $t, e );
                 } );
         } );
     };
@@ -1202,7 +1285,8 @@
                     if( !( self._dragSourceId && $tileAtPoint.attr( 'id' ) === self._dragSourceId ) )
                     {
                         if( !self._canRepositionOnDragOver( e ) ) return;
-                        self._positionPlaceholderForTargetTile( $tileAtPoint );
+                        self._dragHasTargetHover = true;
+                        self._positionPlaceholderForTargetTile( $tileAtPoint, e );
                     }
                     return;
                 }
@@ -1211,6 +1295,7 @@
                 if( !$tilesInside.length )
                 {
                     if( !self._canRepositionOnDragOver( e ) ) return;
+                    self.$bookmarks.find( 'a.drop-hover-target' ).removeClass( 'drop-hover-target' );
                     var $add = $section.find( 'a.add' );
                     if( $add.length ) $add.before( self.$placeholder ); else $section.append( self.$placeholder );
                     self.$placeholder.removeClass( 'collapsed source-gap' );
@@ -1287,7 +1372,7 @@
                         var $addImmediate  = $section.find( 'a.add' );
                         if( $addImmediate.length ) $addImmediate.before( $tileImmediate ); else $section.append( $tileImmediate );
                     }
-                    $tileImmediate.removeClass( 'dragging' );
+                    $tileImmediate.removeClass( 'dragging' ).css( { left: '', top: '', width: '', height: '' } );
                 }
 
                 self.api.move( id, { parentId: targetSectionId, index: index }, function()
@@ -1340,7 +1425,8 @@
                 if( !( self._dragSourceId && $tileAtPoint.attr( 'id' ) === self._dragSourceId ) )
                 {
                     if( !self._canRepositionOnDragOver( e ) ) return;
-                    self._positionPlaceholderForTargetTile( $tileAtPoint );
+                    self._dragHasTargetHover = true;
+                    self._positionPlaceholderForTargetTile( $tileAtPoint, e );
                 }
                 return;
             }
@@ -1351,6 +1437,7 @@
             if( $tilesInside.length === 0 )
             {
                 if( !self._canRepositionOnDragOver( e ) ) return;
+                self.$bookmarks.find( 'a.drop-hover-target' ).removeClass( 'drop-hover-target' );
                 var $add = $section.find( 'a.add' );
                 if( $add.length ) $add.before( self.$placeholder ); else $section.append( self.$placeholder );
                 self.$placeholder.removeClass( 'collapsed source-gap' );
@@ -1401,11 +1488,16 @@
             }
 
             var targetSectionId = $section.attr( 'id' );
+            if( undoParentId2 && undoParentId2 === targetSectionId && index === undoIndex2 )
+            {
+                if( self.$placeholder ) self.$placeholder.detach();
+                return;
+            }
             var $tileImmediate2 = $( document.getElementById( id ) );
             if( $tileImmediate2.length )
             {
                 self.$placeholder.replaceWith( $tileImmediate2 );
-                $tileImmediate2.removeClass( 'dragging' );
+                $tileImmediate2.removeClass( 'dragging' ).css( { left: '', top: '', width: '', height: '' } );
             }
 
             self.api.move( id, { parentId: targetSectionId, index: index }, function()
@@ -1447,9 +1539,12 @@
     EditCtrl.prototype.disableDragAndDrop = function()
     {
         var $tiles = this.$bookmarks.find( 'a' ).not( '.add' );
-        $tiles.attr( 'draggable', 'false' ).off( '.mdash' ).removeClass( 'dragging' );
+        $tiles.attr( 'draggable', 'false' ).off( '.mdash' )
+            .removeClass( 'dragging' )
+            .css( { left: '', top: '', width: '', height: '' } );
         this.$bookmarks.find( 'section' ).off( '.mdash' ).removeClass( 'drop-target' );
-        this._dragging = false;
+        this.$bookmarks.off( '.mdash' );
+        this._cleanupTileDrag();
     };
     
     EditCtrl.prototype.enableSectionDragAndDrop = function()
@@ -3921,7 +4016,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.8.11';
+    Dashboard.VERSION = '1.8.32';
 
     proto.init = function()
     {
