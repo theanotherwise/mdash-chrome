@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.40
+**Version**: 1.8.47
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -15,6 +15,7 @@
 - Bookmark tile titles are rendered on a single line with adaptive tile width up to a 32-character cap; longer titles are truncated with `...`
 - Subtle alternating group background in bookmark columns (starts from first section: dark/light/dark/light)
 - Top-right quick actions: wrench icon toggles edit mode instantly, gear icon opens the right-side slide-in settings panel
+- Quick-action icons use local SVG assets (`icons/dashboard-edit.svg`, `icons/dashboard-gear.svg`)
 - Edit mode: inline editing, adding, deleting, and renaming sections
 - Sections can be collapsed/expanded via a chevron in each section header; state is persisted
 - Edit bookmark dialog uses a custom-styled section dropdown with full keyboard navigation (arrows + Enter/Space)
@@ -296,6 +297,7 @@ Guards prevent interference: tile handlers check `if( self._sectionDragging ) re
      - `.add` tiles,
      - the dragged tile itself,
      - temporary dragging classes.
+   - For same-parent forward moves, the API index is adjusted (`+1`) before `chrome.bookmarks.move(...)` so persisted bookmark order matches the visual order after refresh.
    - Same-section no-op is short-circuited when computed target index equals original source index.
    - UI commits immediately by replacing marker with the dragged tile, then persists via `chrome.bookmarks.move(...)`.
    - On API failure, DOM is rolled back to original section/index and error reporting is surfaced through existing error handlers.

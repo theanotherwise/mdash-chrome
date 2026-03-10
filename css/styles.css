@@ -716,19 +716,33 @@ html.theme-dark #add-section-cta {
 }
 
 #settings-toggle::before {
-    content:                    '\2699';
-    font-size:                  18px;
-    line-height:                1;
-    opacity:                    0.95;
-    color:                      var(--text-color);
+    content:                    '';
+    display:                    block;
+    width:                      90%;
+    height:                     90%;
+    background-image:           url("../icons/dashboard-gear.svg");
+    background-repeat:          no-repeat;
+    background-position:        center;
+    background-size:            contain;
+    opacity:                    1;
 }
 
 #edit::before {
-    content:                    '\1F527';
-    font-size:                  17px;
-    line-height:                1;
+    content:                    '';
+    display:                    block;
+    width:                      90%;
+    height:                     90%;
+    background-color:           var(--text-color);
+    -webkit-mask-image:         url("../icons/dashboard-edit.svg");
+    -webkit-mask-position:      center;
+    -webkit-mask-repeat:        no-repeat;
+    -webkit-mask-size:          contain;
+    mask-image:                 url("../icons/dashboard-edit.svg");
+    mask-position:              center;
+    mask-repeat:                no-repeat;
+    mask-size:                  contain;
     opacity:                    0.95;
-    color:                      var(--text-color);
+    transform:                  translateY(-0.5px);
 }
 
 #settings-toggle[aria-expanded="true"] {
@@ -737,7 +751,7 @@ html.theme-dark #add-section-cta {
 }
 
 #settings-toggle[aria-expanded="true"]::before {
-    color:                      #ffffff;
+    filter:                     brightness(1.03) saturate(1.05);
     opacity:                    1;
 }
 
@@ -766,7 +780,7 @@ html.theme-dark.edit #edit {
 #edit[aria-pressed="true"]::before,
 html.edit #edit::before {
     opacity:                    1;
-    color:                      #ffffff;
+    background-color:           #ffffff;
 }
 
 #settings-toggle:focus-visible,

@@ -1397,7 +1397,15 @@
                     $tileImmediate.removeClass( 'dragging' ).css( { left: '', top: '', width: '', height: '' } );
                 }
 
-                self.api.move( id, { parentId: targetSectionId, index: index }, function()
+                // Chrome bookmark move index for same-parent forward moves behaves as
+                // "current-list index", so adjust by +1 when moving right.
+                var apiIndex = index;
+                if( undoParentId && undoParentId === targetSectionId && index > undoIndex )
+                {
+                    apiIndex = index + 1;
+                }
+
+                self.api.move( id, { parentId: targetSectionId, index: apiIndex }, function()
                 {
                     if( self._hasApiError( 'Could not move bookmark' ) )
                     {
@@ -1522,7 +1530,13 @@
                 $tileImmediate2.removeClass( 'dragging' ).css( { left: '', top: '', width: '', height: '' } );
             }
 
-            self.api.move( id, { parentId: targetSectionId, index: index }, function()
+            var apiIndex2 = index;
+            if( undoParentId2 && undoParentId2 === targetSectionId && index > undoIndex2 )
+            {
+                apiIndex2 = index + 1;
+            }
+
+            self.api.move( id, { parentId: targetSectionId, index: apiIndex2 }, function()
             {
                 if( self._hasApiError( 'Could not move bookmark' ) )
                 {
@@ -4058,7 +4072,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.8.41';
+    Dashboard.VERSION = '1.8.46';
 
     proto.init = function()
     {
