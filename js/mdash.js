@@ -4072,7 +4072,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.8.46';
+    Dashboard.VERSION = '1.8.50';
 
     proto.init = function()
     {

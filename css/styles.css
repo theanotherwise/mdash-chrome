@@ -20,8 +20,6 @@
     --tile-y-pad:               8px;
     --bookmark-tile-min-height: calc(1.35em + 14px);
     --bookmark-tile-max-width:  calc(32ch + 1em + 28px);
-    --column-surface-bg:        rgba(255, 255, 255, 0.34);
-    --column-surface-border:    rgba(255, 255, 255, 0.56);
     --input-border:             #D1D5DB;
     --surface-border:           rgba(0, 0, 0, 0.06);
     --surface-strong:           rgba(255, 255, 255, 0.82);
@@ -46,8 +44,6 @@ html.theme-dark {
     --bookmark-tile-bg:         rgba(44, 44, 46, 0.56);
     --bookmark-tile-hover-bg:   rgba(58, 58, 60, 0.74);
     --tile-shadow:              0 1px 3px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.12);
-    --column-surface-bg:        rgba(30, 30, 32, 0.52);
-    --column-surface-border:    rgba(255, 255, 255, 0.12);
     --input-border:             #48484A;
     --surface-border:           rgba(255, 255, 255, 0.08);
     --surface-strong:           rgba(44, 44, 46, 0.72);
@@ -78,13 +74,6 @@ html.theme-light {
     --section-color:            #3C3C43;
     --section-alt-bg:           rgba(0, 0, 0, 0.035);
     color-scheme:               light;
-}
-
-html.theme-dark #settings-toggle,
-html.theme-dark #edit {
-    background:                  var(--surface-strong);
-    border-color:                var(--surface-border);
-    box-shadow:                  0 4px 12px rgba(0,0,0,0.30);
 }
 
 html {
@@ -256,22 +245,18 @@ html.theme-dark #getstarted {
 #bookmarks > div {
     width:                      auto;
     margin:                     0;
-    padding:                    10px 12px 14px;
+    padding:                    0;
     min-width:                  0;
-    background:                 var(--column-surface-bg);
-    border:                     1px solid var(--column-surface-border);
-    border-radius:              18px;
-    box-shadow:                 0 10px 28px rgba(0, 0, 0, 0.07);
-    -webkit-backdrop-filter:    blur(14px) saturate(112%);
-    backdrop-filter:            blur(14px) saturate(112%);
+    background:                 transparent;
+    border:                     none;
+    border-radius:              0;
+    box-shadow:                 none;
+    -webkit-backdrop-filter:    none;
+    backdrop-filter:            none;
 }
 
 #bookmarks > .left {            float: none; }
 #bookmarks > .right {           float: none; }
-
-html.theme-dark #bookmarks > div {
-    box-shadow:                 0 12px 30px rgba(0, 0, 0, 0.35);
-}
 
 #bookmarks section {
     clear:                      none;
@@ -577,6 +562,26 @@ html.theme-dark #bookmarks section > .section-remove:hover {
 .edit #bookmarks section > .section-sort,
 .edit #bookmarks section > .section-remove {
     display:                    inline-flex;
+    background:                 linear-gradient(180deg, #4ea95a, #2e7d32);
+    border-color:               #2e7d32;
+    color:                      #ffffff;
+    box-shadow:                 0 0 0 1px rgba(46, 125, 50, 0.34), 0 8px 16px rgba(46, 125, 50, 0.30);
+}
+
+.edit #bookmarks a.add:hover,
+.edit #bookmarks section > .section-sort:hover,
+.edit #bookmarks section > .section-remove:hover {
+    background:                 linear-gradient(180deg, #57b964, #35933d);
+    border-color:               #47a651;
+    box-shadow:                 0 0 0 1px rgba(71, 166, 81, 0.42), 0 10px 18px rgba(46, 125, 50, 0.34);
+}
+
+html.theme-dark.edit #bookmarks a.add,
+html.theme-dark.edit #bookmarks section > .section-sort,
+html.theme-dark.edit #bookmarks section > .section-remove {
+    background:                 linear-gradient(180deg, #52b860, #2f8a37);
+    border-color:               #7fe58d;
+    box-shadow:                 0 0 0 1.5px rgba(127, 229, 141, 0.55), 0 12px 22px rgba(0, 0, 0, 0.48);
 }
 
 #bookmarks a.add span {
@@ -690,6 +695,8 @@ html.theme-dark #add-section-cta {
 
 #settings-toggle,
 #edit {
+    -webkit-appearance:         none;
+    appearance:                 none;
     display:                    inline-flex;
     align-items:                center;
     justify-content:            center;
@@ -706,13 +713,11 @@ html.theme-dark #add-section-cta {
     text-transform:             none;
     font-weight:                400;
     line-height:                1;
-    background:                 var(--surface-strong);
-    border:                     1px solid var(--surface-border);
-    box-shadow:                 0 4px 12px rgba(0,0,0,0.12);
-    -webkit-backdrop-filter:    saturate(120%) blur(12px);
-    backdrop-filter:            saturate(120%) blur(12px);
+    background:                 transparent;
+    border:                     none;
+    box-shadow:                 none;
     cursor:                     pointer;
-    transition:                 background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+    transition:                 transform 120ms ease;
 }
 
 #settings-toggle::before {
@@ -732,55 +737,32 @@ html.theme-dark #add-section-cta {
     display:                    block;
     width:                      90%;
     height:                     90%;
-    background-color:           var(--text-color);
-    -webkit-mask-image:         url("../icons/dashboard-edit.svg");
-    -webkit-mask-position:      center;
-    -webkit-mask-repeat:        no-repeat;
-    -webkit-mask-size:          contain;
-    mask-image:                 url("../icons/dashboard-edit.svg");
-    mask-position:              center;
-    mask-repeat:                no-repeat;
-    mask-size:                  contain;
-    opacity:                    0.95;
+    background-image:           url("../icons/dashboard-edit.svg");
+    background-repeat:          no-repeat;
+    background-position:        center;
+    background-size:            contain;
+    opacity:                    1;
     transform:                  translateY(-0.5px);
 }
 
-#settings-toggle[aria-expanded="true"] {
-    background:                 var(--accent-color);
-    border-color:               var(--accent-color);
-}
-
 #settings-toggle[aria-expanded="true"]::before {
-    filter:                     brightness(1.03) saturate(1.05);
+    filter:                     brightness(1.04) saturate(1.06) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.28));
     opacity:                    1;
 }
 
-#settings-toggle:hover {
-    background:                 var(--tile-hover-bg);
-}
-
-#edit:hover {
-    background:                 var(--tile-hover-bg);
+#settings-toggle:hover::before,
+#edit:hover::before {
+    filter:                     brightness(1.03) drop-shadow(0 2px 5px rgba(0, 0, 0, 0.24));
 }
 
 #edit[aria-pressed="true"],
 html.edit #edit {
-    background:                 linear-gradient(180deg, #4ea95a, #2e7d32);
-    border-color:               #2e7d32;
-    box-shadow:                 0 0 0 1px rgba(46, 125, 50, 0.34), 0 8px 16px rgba(46, 125, 50, 0.30);
-}
-
-html.theme-dark #edit[aria-pressed="true"],
-html.theme-dark.edit #edit {
-    background:                 linear-gradient(180deg, #52b860, #2f8a37);
-    border-color:               #7fe58d;
-    box-shadow:                 0 0 0 1.5px rgba(127, 229, 141, 0.55), 0 12px 22px rgba(0, 0, 0, 0.48);
+    transform:                  translateY(-1px);
 }
 
 #edit[aria-pressed="true"]::before,
 html.edit #edit::before {
-    opacity:                    1;
-    background-color:           #ffffff;
+    filter:                     brightness(1.04) saturate(1.08) drop-shadow(0 3px 7px rgba(0, 0, 0, 0.30));
 }
 
 #settings-toggle:focus-visible,

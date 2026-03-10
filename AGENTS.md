@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.47
+**Version**: 1.8.50
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -192,8 +192,6 @@ Visual direction: clean, airy, Linear/Vercel-inspired. Near-white backgrounds, c
 | `--tile-radius` | `12px` | `12px` | Tile border-radius |
 | `--bookmark-tile-min-height` | `calc(1.35em + 14px)` | `calc(1.35em + 14px)` | Single-line bookmark tile height baseline |
 | `--bookmark-tile-max-width` | `calc(32ch + 1em + 28px)` | `calc(32ch + 1em + 28px)` | Max tile width for one-line, 32-char bookmark labels |
-| `--column-surface-bg` | `rgba(255,255,255,0.34)` | `rgba(30,30,32,0.52)` | Glass panel background for left/right columns |
-| `--column-surface-border` | `rgba(255,255,255,0.56)` | `rgba(255,255,255,0.12)` | Column panel border |
 | `--surface-border` | `rgba(0,0,0,0.06)` | `rgba(255,255,255,0.08)` | Subtle borders |
 | `--surface-strong` | `rgba(255,255,255,0.82)` | `rgba(44,44,46,0.72)` | Glass surfaces |
 | `--hover-shadow` | `0 4px 12px` | `0 4px 12px` darker | Hover elevation |
@@ -205,9 +203,10 @@ Visual direction: clean, airy, Linear/Vercel-inspired. Near-white backgrounds, c
 - Background uses `--bg-color` plus subtle radial accent gradients (`--bg-accent-*`) for soft depth
 - Section headers: sentence case (no uppercase), font-weight 600, letter-spacing 0.03em
 - Tiles: 12px radius, adaptive width (content-fit with 32-char max), slightly translucent background, ultra-subtle shadows, gentle hover lift (-1px); icon is aligned to text height and labels stay single-line with ellipsis
-- Left/right bookmark columns render as rounded glass panels with blur + soft border
+- Left/right columns have no outer frame; only alternating zebra group backgrounds are visible
 - Settings UI: compact top-right quick actions (wrench + gear), where gear opens a right-side slide-in glass panel
-- Edit-mode section action buttons (`Add` / `Sort` / `Delete`) use unified width/height and shared visual style for consistent alignment
+- Quick-action icons are shown as direct SVG assets without extra button background rings
+- Edit-mode section action buttons (`Add` / `Sort` / `Delete`) use unified width/height and high-contrast green accent styling for fast recognition
 - Spotlight modal: 14px radius, consistent shadow language
 - Edit-mode hover: soft warm tint (`#FFF3E0` light / `#FFF8E1` dark)
 - Every second section starting from the first (1st/3rd/5th...) has a subtle zebra background tint for row grouping
