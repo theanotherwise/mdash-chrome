@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.54
+**Version**: 1.8.55
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -101,7 +101,7 @@ Dashboard (orchestrator)
 | **KeyboardManager** | `mdash.KeyboardManager` | Keyboard-driven tile filtering. Guarded by `isEnabled()` check (disabled by default in localStorage). |
 | **AddBtn** | `mdash.AddBtn` | Per-section "+" button rendered as a tile at the end of the section list in edit mode. Opens a confirmation dialog to add a new bookmark. Normalizes URLs (prepends `http://` if needed). |
 | **Spotlight** | `mdash.Spotlight` | Spotlight-style search modal (Option+F / Ctrl+F). Shows a centered overlay with input + results list. Uses a cached in-memory index rebuilt on open, with debounced input handling. Matches by title and URL. Keyboard navigation (↑/↓/Enter/Esc). Results show favicon, title (with highlighted match), URL, and section name. Tracks click statistics on open. Supports opening in a background tab (`chrome.tabs.create` with `active: false`) using middle-click or Cmd/Ctrl+click while keeping the current tab on Spotlight. |
-| **Dashboard** | `mdash.Dashboard` | Main orchestrator. Initializes all modules, preloads the icon map, loads bookmarks into two columns, sets up the UI toolkit, sets up click tracking, handles the right-side slide-in settings panel, and handles the "refresh icons" action. Works with the responsive grid/settings layout defined in CSS. |
+| **Dashboard** | `mdash.Dashboard` | Main orchestrator. Initializes all modules, preloads the icon map, loads bookmarks into two columns, sets up the UI toolkit, handles the right-side slide-in settings panel, and handles the "refresh icons" action. Works with the responsive grid/settings layout defined in CSS. |
 
 ### UI Toolkit (`js/mdash-ui.js`)
 
@@ -195,7 +195,7 @@ Visual direction: clean, intentional, and low-noise (Linear/Raycast/Vercel-like)
 ### Key Visual Rules
 
 - Background is flat and bright (`--bg-color`) with no decorative gradient noise
-- Section headers are explicit and compact: `14px`, weight `600`, slight letter-spacing, with a 1px divider below
+- Section headers are explicit and compact: `14px`, weight `600`, slight letter-spacing, without an underline divider
 - Bookmark tags are compact pills (`6px 12px`, `8px` radius), adaptive width (content-fit with 32-char max), single-line ellipsis, 16px icons, and subtle hover lift (`translateY(-1px)`)
 - Left/right columns have no outer frame; only alternating zebra group backgrounds are visible
 - Settings UI: compact top-right quick actions (wrench + gear), where gear opens a right-side slide-in minimal panel
@@ -204,7 +204,7 @@ Visual direction: clean, intentional, and low-noise (Linear/Raycast/Vercel-like)
 - Spotlight modal: 14px radius, consistent shadow language
 - Edit mode state: sections receive a subtle dashed outline; tag hover brightens to signal editability
 - Zebra phase is offset by column: left tints 1st/3rd/5th... sections, right tints 2nd/4th/6th... sections
-- Compact spacing pass: reduced section and tag vertical gaps to remove empty space between groups
+- Compact spacing pass: section and tag vertical gaps reduced aggressively (~50%) to minimize empty space between groups
 - Grid gap: 18px row / 28px column
 - Scrollbars: 6px wide, very low opacity
 - DnD placeholders: pulsing animation for clear visual feedback

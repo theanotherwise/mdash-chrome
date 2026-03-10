@@ -1828,7 +1828,7 @@
         this.$bookmarks.find( 'a' ).not( '.add,.drop-placeholder' ).each( function( _i, a )
         {
             var $a = $( a );
-            var $titleSpan = $a.find( 'span' ).not( '.click-count' ).first();
+            var $titleSpan = $a.find( 'span' ).first();
             var raw = $a.attr( 'data-raw-title' ) || ( $titleSpan.text() || '' );
             var titleView = mdash.util.buildTitleView( raw, self.editMode );
             if( $titleSpan.length ) $titleSpan.text( titleView.tile );
@@ -2556,8 +2556,8 @@
         
         var sortedTiles = $tiles.toArray().sort( function( a, b )
         {
-            var rawA = $( a ).attr( 'data-raw-title' ) || ( $( a ).find( 'span' ).not( '.click-count' ).first().text() || '' );
-            var rawB = $( b ).attr( 'data-raw-title' ) || ( $( b ).find( 'span' ).not( '.click-count' ).first().text() || '' );
+            var rawA = $( a ).attr( 'data-raw-title' ) || ( $( a ).find( 'span' ).first().text() || '' );
+            var rawB = $( b ).attr( 'data-raw-title' ) || ( $( b ).find( 'span' ).first().text() || '' );
             var titleA = mdash.util.buildTitleView( rawA, self.editMode ).full.toLowerCase();
             var titleB = mdash.util.buildTitleView( rawB, self.editMode ).full.toLowerCase();
             return ascending ? titleA.localeCompare( titleB ) : titleB.localeCompare( titleA );
@@ -2610,7 +2610,7 @@
         var $form, $title, $url, $section, $dupBtn, $rmBtn, dialog,
             self  = this,
             id    = $b.attr( 'id' ),
-            title = $b.find( 'span' ).not( '.click-count' ).first().text(),
+            title = $b.find( 'span' ).first().text(),
             rawTitle = $b.attr( 'data-raw-title' ) || title,
             sections = mdash.dashboard.manager.folder.children,
             sectionId = +$b.closest( 'section' ).attr( 'id' );
@@ -2852,7 +2852,7 @@
 
         var duplicateTitle = ( props && props.title != null )
             ? props.title
-            : ( $source.attr( 'data-raw-title' ) || $source.find( 'span' ).not( '.click-count' ).first().text() || '' );
+            : ( $source.attr( 'data-raw-title' ) || $source.find( 'span' ).first().text() || '' );
         var duplicateUrl = ( props && props.url != null ) ? props.url : $source.attr( 'href' );
 
         if( duplicateUrl && !mdash.util.isSafeUrl( duplicateUrl ) )
@@ -3042,7 +3042,7 @@
     EditCtrl.prototype.update = function( id, props, moveTo, callback )
     {
         var $el    = $( document.getElementById( id ) ),
-            $title = $el.find( 'span' ).not( '.click-count' ).first(),
+            $title = $el.find( 'span' ).first(),
             self   = this;
 
         if( !$el.length )
@@ -3122,7 +3122,7 @@
                     {
                         if( self._hasApiError( 'Could not undo bookmark update' ) ) return;
                         var $cur = $( document.getElementById( id ) );
-                        var $t = $cur.find( 'span' ).not( '.click-count' ).first();
+                        var $t = $cur.find( 'span' ).first();
                         $cur.attr( 'data-raw-title', prev.rawTitle );
                         var displayPrevView = mdash.util.buildTitleView( prev.rawTitle, self.editMode );
                         $t.text( displayPrevView.tile );
@@ -3327,71 +3327,7 @@
 } )( window.mdash || ( window.mdash = {} ) );
 
 
-( function( mdash )
-{
-    'use strict';
-    var KEY = 'mdash:badges';
-
-    var BadgeCtrl = mdash.BadgeCtrl = function( $links )
-    {
-        this.$links = $links;
-        this.$dropdown = this.$links.closest('.dropdown');
-        this.$toggle = this.$dropdown.find('.dropdown-toggle');
-    };
-
-    BadgeCtrl.prototype.init = function()
-    {
-        var saved = localStorage.getItem( KEY );
-        var mode = ( saved === 'hide' ) ? 'hide' : 'show';
-        this.applyMode( mode );
-        this.$links.on( 'click', this.onClick.bind( this ) );
-        if( this.$toggle.length )
-        {
-            this.$toggle.on( 'click', this.toggleOpen.bind( this ) );
-            $( document ).on( 'click', this.closeOnOutsideClick.bind( this ) );
-        }
-    };
-
-    BadgeCtrl.prototype.applyMode = function( mode )
-    {
-        var hide = mode === 'hide';
-        document.documentElement.classList.toggle( 'hide-click-counts', hide );
-        localStorage.setItem( KEY, hide ? 'hide' : 'show' );
-        this.select( hide ? 'hide' : 'show' );
-    };
-
-    BadgeCtrl.prototype.select = function( mode )
-    {
-        this.$links.removeClass( 'selected' );
-        this.$links.filter( '[data-badges="' + mode + '"]' ).addClass( 'selected' );
-        if( this.$toggle.length ) this.$toggle.text( ( mode === 'hide' ? 'badges off' : 'badges on' ) + ' ▾' );
-    };
-
-    BadgeCtrl.prototype.onClick = function( e )
-    {
-        e.preventDefault();
-        var mode = $( e.currentTarget ).attr( 'data-badges' ) === 'hide' ? 'hide' : 'show';
-        this.applyMode( mode );
-        if( this.$dropdown.length ) this.$dropdown.removeClass( 'open' );
-    };
-
-    BadgeCtrl.prototype.toggleOpen = function(e)
-    {
-        if( !this.$dropdown.length ) return;
-        e.preventDefault();
-        e.stopPropagation();
-        this.$dropdown.toggleClass('open');
-    };
-
-    BadgeCtrl.prototype.closeOnOutsideClick = function(e)
-    {
-        if( !this.$dropdown.length ) return;
-        if(!$(e.target).closest(this.$dropdown).length) {
-            this.$dropdown.removeClass('open');
-        }
-    };
-
-} )( window.mdash || ( window.mdash = {} ) );
+/* click-count badge control removed */
 
 
 ( function( mdash )
@@ -3865,7 +3801,7 @@
             if( !href ) return;
             var rawTitle = $el.attr( 'data-raw-title' ) || $el.attr( 'data-title' ) || '';
             var displayTitle = mdash.util ? mdash.util.stripIconOverride( rawTitle ) : ( rawTitle || '' );
-            if( !displayTitle ) displayTitle = $el.find( 'span' ).not( '.click-count' ).first().text() || '';
+            if( !displayTitle ) displayTitle = $el.find( 'span' ).first().text() || '';
             var $section = $el.closest( 'section' );
             var sectionName = $section.find( '.section-title-text' ).first().text() || $section.find( 'h1' ).first().text() || '';
             var imgSrc = '';
@@ -4033,7 +3969,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.8.54';
+    Dashboard.VERSION = '1.8.55';
 
     proto.init = function()
     {
@@ -4107,25 +4043,6 @@
             _this.purgeFaviconCache();
             window.location.reload();
         } );
-    };
-
-    proto.setupClickTracking = function()
-    {
-        var selector = 'a:not(.add,.drop-placeholder)';
-        var track = function( e )
-        {
-            if( e && e.type === 'auxclick' && e.button !== 1 ) return;
-            if( document.documentElement.classList.contains( 'edit' ) ) return;
-            var href = $( e.currentTarget ).attr( 'href' );
-            if( href && href !== '#' && href !== 'about:blank' && mdash.stats )
-            {
-                mdash.stats.trackClick( href );
-            }
-        };
-
-        $( '#bookmarks' )
-            .on( 'click', selector, track )
-            .on( 'auxclick', selector, track );
     };
 
     proto.setupControlsPanel = function()

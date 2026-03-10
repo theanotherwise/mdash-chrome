@@ -263,8 +263,8 @@ html.theme-dark #getstarted {
 
 #bookmarks section {
     clear:                      none;
-    padding:                    6px 8px 8px;
-    margin:                     0 0 14px 0;
+    padding:                    3px 8px 4px;
+    margin:                     0 0 7px 0;
     height:                     auto;
     overflow:                   visible;
     border-radius:              10px;
@@ -273,7 +273,7 @@ html.theme-dark #getstarted {
 .edit #bookmarks section {
     border:                     1px dashed #d1d5db;
     border-radius:              10px;
-    padding:                    6px 8px 8px;
+    padding:                    3px 8px 4px;
 }
 
 html.theme-dark.edit #bookmarks section {
@@ -308,10 +308,10 @@ html.theme-dark .edit #bookmarks section.drop-target {
     display:                    flex;
     align-items:                center;
     gap:                        8px;
-    padding:                    0 2px 6px 2px;
+    padding:                    0 2px 3px 2px;
     letter-spacing:             0.2px;
-    margin:                     0 0 8px 0;
-    border-bottom:              1px solid var(--surface-border);
+    margin:                     0 0 4px 0;
+    border-bottom:              none;
 }
 
 .edit #bookmarks h1 {
@@ -403,7 +403,7 @@ html.theme-dark .edit #bookmarks h1.section-renaming .section-title-text {
     max-width:                  var(--bookmark-tile-max-width);
     min-height:                 var(--bookmark-tile-min-height);
     padding:                    6px 12px;
-    margin:                     0 6px 6px 0;
+    margin:                     0 6px 3px 0;
     overflow:                   hidden;
     text-overflow:              ellipsis;
     transition:                 transform 120ms ease, background-color 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
@@ -620,7 +620,7 @@ html.theme-dark .edit #bookmarks section > .section-sort:hover {
     display: inline-block;
     width: 10.5em;
     height: var(--bookmark-tile-min-height);
-    margin: 0 6px 6px 0;
+    margin: 0 6px 3px 0;
     border-radius: 8px;
     border: 2px dashed var(--accent-color);
     opacity: 0.65;
