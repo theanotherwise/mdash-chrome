@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.67
+**Version**: 1.8.76
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -30,7 +30,7 @@
 - Undo for all destructive/mutating operations (30-second window): bookmark delete, update, create, drag & drop move; section create, delete, rename, column move, color change, sort
 - Spotlight search modal (Option+F on macOS, Ctrl+F on Windows) with debounced input, cached in-memory index, keyboard navigation, highlighted matches, and background-tab open via middle-click / Cmd/Ctrl+click without navigating the current tab
 - Theme mode selector: auto/light/dark (`auto` follows OS preference and reacts to live system theme changes)
-- Font size control: XXS, XS, S, M, L, XL, XXL, XXXL (persisted in localStorage; `S` maps to `small`, `M` maps to `medium`, `L` maps to `large`)
+- Font size control: XXS, XS, S, M, L, XL, XXL, XXXL (persisted in localStorage; `S` maps to `small`, `M` maps to `medium`, `L` maps to `large`; bookmark tiles scale with bounded clamps; XXS/XS are tuned to remain readable)
 - Settings-panel typography is fixed and does not scale with dashboard font-size selection
 - XL+ dashboard presets use lighter text weights to avoid a visually over-bold look
 - Improved keyboard accessibility with visible focus rings on interactive controls
@@ -197,13 +197,13 @@ Visual direction: clean, intentional, and low-noise (Linear/Raycast/Vercel-like)
 ### Key Visual Rules
 
 - Background is flat and bright (`--bg-color`) with no decorative gradient noise
-- Section headers are explicit and compact: `14px`, weight `600`, slight letter-spacing, without an underline divider, with a clearer gap above bookmark tags
+- Section headers are compact and intentionally `+1px` relative to bookmark tag text via clamped sizing (`clamp(14px, calc(0.95em + 1px), 19px)` vs tags `clamp(13px, 0.95em, 18px)`), so the offset persists across all font presets; divider line and light gap above tags remain
 - Bookmark tags are compact pills (`6px 12px`, `8px` radius), adaptive width (content-fit with 32-char max), single-line ellipsis, 16px icons, and subtle hover lift (`translateY(-1px)`)
 - Left/right columns have no outer frame; only alternating zebra group backgrounds are visible
 - Settings UI: compact top-right quick actions (wrench + gear), where gear opens a right-side slide-in minimal panel
 - Quick-action icons use local SVG assets (`dashboard-edit.svg`, `dashboard-gear.svg`) sized to 34px controls
 - Edit-mode section action buttons (`Add` / `Sort` / `Delete`) are compact icon+label pills (`34px` high), right-aligned in section headers, with accent icon/text colors (success / neutral / danger) and consistent horizontal spacing
-- Section action buttons keep fixed widths and fixed pixel font-size across all font presets, preventing `add/sort/delete` overlap at larger dashboard font sizes
+- Section action buttons keep fixed widths (with responsive text sizing) across all font presets, preventing `add/sort/delete` overlap at larger dashboard font sizes
 - Entering/leaving edit mode does not reflow section layout: action-space reservation and border box metrics stay constant between states
 - Spotlight modal: 14px radius, consistent shadow language
 - Edit mode state: sections receive a subtle dashed outline; tag hover brightens to signal editability

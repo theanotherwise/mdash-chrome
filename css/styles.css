@@ -3,7 +3,7 @@
 
 /* Design tokens — v3 minimal developer dashboard */
 :root {
-    --bg-color:                 #f7f8fa;
+    --bg-color:                 #f6f7f9;
     --bg-accent-1:              transparent;
     --bg-accent-2:              transparent;
     --bg-accent-3:              transparent;
@@ -15,19 +15,22 @@
     --focus-ring:               rgba(37, 99, 235, 0.35);
     --tile-bg:                  #FFFFFF;
     --tile-hover-bg:            #f9fafb;
-    --bookmark-tile-bg:         #ffffff;
-    --bookmark-tile-hover-bg:   #f9fafb;
+    --bookmark-tile-bg:         rgba(255, 255, 255, 0.75);
+    --bookmark-tile-hover-bg:   rgba(255, 255, 255, 0.9);
     --tile-shadow:              0 1px 2px rgba(17,20,24,0.03);
     --tile-radius:              8px;
     --tile-y-pad:               8px;
-    --bookmark-tile-min-height: 28px;
+    --bookmark-tile-min-height: 22px;
     --bookmark-tile-max-width:  calc(32ch + 1em + 28px);
     --input-border:             #eceef2;
     --surface-border:           #eceef2;
     --surface-strong:           #ffffff;
     --hover-shadow:             0 2px 6px rgba(0,0,0,0.05);
     --section-color:            #111418;
-    --section-alt-bg:           rgba(17, 20, 24, 0.03);
+    --section-alt-bg:           rgba(17, 20, 24, 0.04);
+    --section-surface-bg:       rgba(255, 255, 255, 0.70);
+    --section-surface-border:   rgba(0, 0, 0, 0.04);
+    --section-surface-shadow:   0 2px 8px rgba(0, 0, 0, 0.03);
     --section-actions-right:    6px;
     --section-actions-gap:      8px;
     --section-action-add-width: 86px;
@@ -51,21 +54,24 @@ html.theme-dark {
     --focus-ring:               rgba(96, 165, 250, 0.45);
     --tile-bg:                  #12161d;
     --tile-hover-bg:            #171c24;
-    --bookmark-tile-bg:         #12161d;
-    --bookmark-tile-hover-bg:   #171c24;
+    --bookmark-tile-bg:         rgba(24, 30, 40, 0.74);
+    --bookmark-tile-hover-bg:   rgba(28, 35, 47, 0.88);
     --tile-shadow:              0 1px 2px rgba(0,0,0,0.35);
     --input-border:             rgba(255, 255, 255, 0.10);
     --surface-border:           rgba(255, 255, 255, 0.10);
     --surface-strong:           #10141a;
     --hover-shadow:             0 2px 8px rgba(0,0,0,0.25);
     --section-color:            #f3f4f6;
-    --section-alt-bg:           rgba(255, 255, 255, 0.03);
+    --section-alt-bg:           rgba(255, 255, 255, 0.08);
+    --section-surface-bg:       rgba(19, 25, 34, 0.72);
+    --section-surface-border:   rgba(255, 255, 255, 0.10);
+    --section-surface-shadow:   0 2px 10px rgba(0, 0, 0, 0.28);
     color-scheme:               dark;
 }
 
 /* Explicit light theme class to override system dark */
 html.theme-light {
-    --bg-color:                 #f7f8fa;
+    --bg-color:                 #f6f7f9;
     --bg-accent-1:              transparent;
     --bg-accent-2:              transparent;
     --bg-accent-3:              transparent;
@@ -77,14 +83,17 @@ html.theme-light {
     --focus-ring:               rgba(37, 99, 235, 0.35);
     --tile-bg:                  #FFFFFF;
     --tile-hover-bg:            #f9fafb;
-    --bookmark-tile-bg:         #ffffff;
-    --bookmark-tile-hover-bg:   #f9fafb;
+    --bookmark-tile-bg:         rgba(255, 255, 255, 0.75);
+    --bookmark-tile-hover-bg:   rgba(255, 255, 255, 0.9);
     --tile-shadow:              0 1px 2px rgba(17,20,24,0.03);
     --surface-border:           #eceef2;
     --surface-strong:           #ffffff;
     --hover-shadow:             0 2px 6px rgba(0,0,0,0.05);
     --section-color:            #111418;
-    --section-alt-bg:           rgba(17, 20, 24, 0.03);
+    --section-alt-bg:           rgba(17, 20, 24, 0.04);
+    --section-surface-bg:       rgba(255, 255, 255, 0.70);
+    --section-surface-border:   rgba(0, 0, 0, 0.04);
+    --section-surface-shadow:   0 2px 8px rgba(0, 0, 0, 0.03);
     color-scheme:               light;
 }
 
@@ -133,8 +142,8 @@ body.xxl    { font-size:         20px; }
 body.xxxl   { font-size:         21px; }
 body.medium { font-size:         17px; }
 body.small  { font-size:         16px; }
-body.xs     { font-size:         14px; }
-body.xxs    { font-size:         12px; }
+body.xs     { font-size:         15px; }
+body.xxs    { font-size:         14px; }
 
 a {
     color:                      var(--accent-color);
@@ -252,7 +261,7 @@ html.theme-dark #getstarted {
     padding-top:                0;
     display:                    grid;
     grid-template-columns:      repeat(auto-fit, minmax(320px, 1fr));
-    gap:                        18px 28px;
+    gap:                        18px 32px;
     align-items:                start;
 }
 
@@ -274,12 +283,16 @@ html.theme-dark #getstarted {
 
 #bookmarks section {
     clear:                      none;
-    padding:                    4px 8px 6px;
-    margin:                     0 0 12px 0;
+    padding:                    3px 6px 5px;
+    margin:                     0 0 28px 0;
     height:                     auto;
     overflow:                   visible;
+    background:                 transparent;
     border-radius:              10px;
     border:                     1px solid transparent;
+    box-shadow:                 none;
+    -webkit-backdrop-filter:    none;
+    backdrop-filter:            none;
     box-sizing:                 border-box;
 }
 
@@ -314,15 +327,15 @@ html.theme-dark .edit #bookmarks section.drop-target {
 
 #bookmarks h1 {
     position:                   relative;
-    font-size:                  1em;
+    font-size:                  clamp(14px, calc(0.95em + 1px), 19px);
     color:                      var(--section-color);
-    font-weight:                600;
+    font-weight:                500;
     display:                    flex;
     align-items:                center;
     gap:                        8px;
-    padding:                    0 var(--section-actions-reserve) 3px 2px;
-    letter-spacing:             0.2px;
-    margin:                     0 0 10px 0;
+    padding:                    0 var(--section-actions-reserve) 5px 2px;
+    letter-spacing:             0.08px;
+    margin:                     0 0 8px 0;
     border-bottom:              none;
 }
 
@@ -341,11 +354,13 @@ html.theme-dark .edit #bookmarks section.drop-target {
     align-items:                center;
     justify-content:            center;
     cursor:                     pointer;
+    opacity:                    0.55;
 }
 
 #bookmarks .section-collapse:hover {
     background:                 var(--tile-hover-bg);
     color:                      var(--text-color);
+    opacity:                    1;
 }
 
 #bookmarks .section-collapse:focus-visible {
@@ -354,7 +369,19 @@ html.theme-dark .edit #bookmarks section.drop-target {
 }
 
 #bookmarks h1::after {
-    display:                    none;
+    content:                    '';
+    position:                   absolute;
+    left:                       2px;
+    right:                      2px;
+    bottom:                     0;
+    height:                     1px;
+    background:                 var(--surface-border);
+    opacity:                    0.9;
+    pointer-events:             none;
+}
+
+html.theme-dark #bookmarks h1::after {
+    opacity:                    0.72;
 }
 
 #bookmarks section.section-collapsed {
@@ -397,7 +424,7 @@ html.theme-dark .edit #bookmarks h1.section-renaming .section-title-text {
     gap:                        6px;
     vertical-align:             bottom;
     text-decoration:            none;
-    font-size:                  0.93em;
+    font-size:                  clamp(13px, 0.95em, 18px);
     font-weight:                500;
     letter-spacing:             0;
     line-height:                1.2;
@@ -405,13 +432,13 @@ html.theme-dark .edit #bookmarks h1.section-renaming .section-title-text {
     background-image:           none;
     border-radius:              8px;
     box-shadow:                 none;
-    border:                     1px solid var(--surface-border);
+    border:                     1px solid rgba(0, 0, 0, 0.06);
     box-sizing:                 border-box;
     width:                      auto;
     max-width:                  var(--bookmark-tile-max-width);
-    min-height:                 var(--bookmark-tile-min-height);
-    padding:                    6px 12px;
-    margin:                     0 6px 3px 0;
+    min-height:                 calc(1.15em + 8px);
+    padding:                    0.24em 0.62em;
+    margin:                     0 6px 4px 0;
     overflow:                   hidden;
     text-overflow:              ellipsis;
     transition:                 transform 120ms ease, background-color 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
@@ -429,7 +456,7 @@ html.theme-light #bookmarks a {
 html.theme-dark #bookmarks a {
     background-color:           var(--bookmark-tile-bg);
     background-image:           none;
-    border-color:               var(--surface-border);
+    border-color:               rgba(255, 255, 255, 0.14);
     box-shadow:                 none;
 }
 
@@ -438,7 +465,7 @@ html.theme-dark #bookmarks a {
     background-image:           none;
     transform:                  translateY(-1px);
     box-shadow:                 var(--hover-shadow);
-    border-color:               #dfe3ea;
+    border-color:               #d7dbe3;
 }
 
 html.theme-dark #bookmarks a:hover {
@@ -467,12 +494,12 @@ html.theme-dark .edit #bookmarks a:hover {
 #bookmarks a > img {
     margin-right:               0px;
     margin-bottom:              0px;
-    width:                      16px;
-    height:                     16px;
+    width:                      clamp(12px, 0.9em, 15px);
+    height:                     clamp(12px, 0.9em, 15px);
     flex:                       0 0 auto;
     align-self:                 center;
     object-fit:                 contain;
-    opacity:                    0.82;
+    opacity:                    0.78;
     filter:                     saturate(0.85);
 }
 
@@ -563,7 +590,7 @@ body.xxxl #bookmarks section > .section-remove {
     margin:                     0;
     padding:                    0 12px;
     line-height:                1;
-    font-size:                  13px;
+    font-size:                  clamp(11px, 0.72em, 15px);
     font-weight:                600;
     letter-spacing:             0.01em;
     text-transform:             lowercase;
@@ -674,7 +701,7 @@ html.theme-dark #bookmarks section > .section-sort {
 #bookmarks a.drop-placeholder {
     display: inline-block;
     width: 10.5em;
-    height: var(--bookmark-tile-min-height);
+    height: calc(1.15em + 8px);
     margin: 0 6px 3px 0;
     border-radius: 8px;
     border: 2px dashed var(--accent-color);
