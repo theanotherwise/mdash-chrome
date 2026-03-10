@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.62
+**Version**: 1.8.63
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -203,6 +203,7 @@ Visual direction: clean, intentional, and low-noise (Linear/Raycast/Vercel-like)
 - Settings UI: compact top-right quick actions (wrench + gear), where gear opens a right-side slide-in minimal panel
 - Quick-action icons use local SVG assets (`dashboard-edit.svg`, `dashboard-gear.svg`) sized to 34px controls
 - Edit-mode section action buttons (`Add` / `Sort` / `Delete`) are compact icon+label pills (`34px` high), right-aligned in section headers, with accent icon/text colors (success / neutral / danger) and consistent horizontal spacing
+- Section action buttons keep fixed widths and fixed pixel font-size across all font presets, preventing `add/sort/delete` overlap at larger dashboard font sizes
 - Entering/leaving edit mode does not reflow section layout: action-space reservation and border box metrics stay constant between states
 - Spotlight modal: 14px radius, consistent shadow language
 - Edit mode state: sections receive a subtle dashed outline; tag hover brightens to signal editability

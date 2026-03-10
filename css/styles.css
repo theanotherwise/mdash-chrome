@@ -28,6 +28,12 @@
     --hover-shadow:             0 2px 6px rgba(0,0,0,0.05);
     --section-color:            #111418;
     --section-alt-bg:           rgba(17, 20, 24, 0.03);
+    --section-actions-right:    6px;
+    --section-actions-gap:      8px;
+    --section-action-add-width: 86px;
+    --section-action-sort-width:86px;
+    --section-action-del-width: 94px;
+    --section-actions-reserve:  296px;
     color-scheme:               light;
 }
 
@@ -312,7 +318,7 @@ html.theme-dark .edit #bookmarks section.drop-target {
     display:                    flex;
     align-items:                center;
     gap:                        8px;
-    padding:                    0 258px 3px 2px;
+    padding:                    0 var(--section-actions-reserve) 3px 2px;
     letter-spacing:             0.2px;
     margin:                     0 0 4px 0;
     border-bottom:              none;
@@ -555,7 +561,7 @@ body.xxxl #bookmarks section > .section-remove {
     margin:                     0;
     padding:                    0 12px;
     line-height:                1;
-    font-size:                  0.86em;
+    font-size:                  13px;
     font-weight:                600;
     letter-spacing:             0.01em;
     text-transform:             lowercase;
@@ -592,9 +598,10 @@ html.theme-dark #bookmarks section > .section-remove:hover {
 
 #bookmarks a.add {
     position:                   absolute;
-    right:                      178px;
+    right:                      calc(var(--section-actions-right) + var(--section-action-del-width) + var(--section-actions-gap) + var(--section-action-sort-width) + var(--section-actions-gap));
     top:                        0;
-    min-width:                  74px;
+    width:                      var(--section-action-add-width);
+    min-width:                  var(--section-action-add-width);
     overflow:                   visible;
     text-overflow:              clip;
     color:                      #22c55e;
@@ -602,17 +609,19 @@ html.theme-dark #bookmarks section > .section-remove:hover {
 
 #bookmarks section > .section-sort {
     position:                   absolute;
-    right:                      94px;
+    right:                      calc(var(--section-actions-right) + var(--section-action-del-width) + var(--section-actions-gap));
     top:                        0;
-    min-width:                  76px;
+    width:                      var(--section-action-sort-width);
+    min-width:                  var(--section-action-sort-width);
     color:                      #8b95a7;
 }
 
 #bookmarks section > .section-remove {
     position:                   absolute;
-    right:                      6px;
+    right:                      var(--section-actions-right);
     top:                        0;
-    min-width:                  80px;
+    width:                      var(--section-action-del-width);
+    min-width:                  var(--section-action-del-width);
     color:                      #ef4444;
 }
 
@@ -1620,7 +1629,7 @@ section[data-section-color] .section-color-dot {
 .section-title-text {
     flex:                       0 1 auto;
     min-width:                  0;
-    max-width:                  calc(100% - 186px);
+    max-width:                  100%;
     overflow:                   hidden;
     text-overflow:              ellipsis;
     white-space:                nowrap;
@@ -1720,7 +1729,7 @@ section[data-section-color] .section-color-dot {
 
 .section-sort {
     position:                   absolute;
-    right:                      94px;
+    right:                      calc(var(--section-actions-right) + var(--section-action-del-width) + var(--section-actions-gap));
     top:                        0;
 }
 
@@ -1730,7 +1739,7 @@ section[data-section-color] .section-color-dot {
 
 .section-sort-menu {
     position:                   absolute;
-    right:                      94px;
+    right:                      calc(var(--section-actions-right) + var(--section-action-del-width) + var(--section-actions-gap));
     top:                        36px;
     z-index:                    200;
     display:                    flex;
