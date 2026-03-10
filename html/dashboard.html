@@ -15,19 +15,15 @@
                 <ul id="spotlight-results" role="listbox" aria-label="Search results"></ul>
             </div>
         </div>
-        <button id="settings-toggle" type="button" aria-expanded="false" aria-controls="settings-panel" aria-label="Open settings"></button>
+        <div id="quick-actions">
+            <button id="edit" type="button" aria-pressed="false" aria-label="Toggle edit mode">off</button>
+            <button id="settings-toggle" type="button" aria-expanded="false" aria-controls="settings-panel" aria-label="Open settings"></button>
+        </div>
         <div id="settings-backdrop" aria-hidden="true"></div>
         <aside id="settings-panel" aria-hidden="true" aria-labelledby="settings-title">
             <div class="settings-header">
                 <h2 id="settings-title">Settings</h2>
                 <a id="settings-close" href="#" role="button" aria-label="Close settings">×</a>
-            </div>
-
-            <div id="editctrl" class="setting-group">
-                <div class="setting-label">Edit mode</div>
-                <div class="setting-options">
-                    <a id="edit" href="#" role="button" aria-pressed="false">off</a>
-                </div>
             </div>
 
             <div id="themectrl" class="setting-group" data-current="auto">
@@ -101,7 +97,7 @@
                 </p>
                 <h2>Features</h2>
                 <ul>
-                    <li><strong>Edit mode</strong>: open <em>settings</em> and switch <em>Edit mode</em> to <em>on</em>. Click a tile to edit its title, URL, or move it to another section.</li>
+                    <li><strong>Edit mode</strong>: click the top-right <em>wrench</em> button to toggle edit mode on/off. Click a tile to edit its title, URL, or move it to another section.</li>
                     <li><strong>Add bookmark</strong>: in edit mode each section shows a <em>+</em> tile — click it to add a new bookmark.</li>
                     <li><strong>Delete bookmark</strong>: click a tile in edit mode, then use the <em>Delete</em> link or press <kbd>Delete</kbd> inside the edit dialog.</li>
                     <li><strong>Rename section</strong>: in edit mode click a section title to rename it inline. Press <kbd>Enter</kbd> to save, <kbd>Esc</kbd> to cancel.</li>

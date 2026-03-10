@@ -10,7 +10,7 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 - Bookmark tiles are semi-transparent (glass effect) so the background is visible even before hover
 - Bookmark tile labels are one-line with adaptive tile width up to 32 characters, and show `...` when longer
 - Subtle zebra grouping: starts from the first section (dark/light/dark/light)
-- Minimal top-right `settings` trigger with a right-side slide-in settings panel
+- Top-right quick actions: wrench button for edit mode + `settings` gear for right-side slide-in panel
 - Dark-green accent color for focus, action buttons, and highlights
 - Smooth transitions on all interactive elements (hover, focus, drag & drop)
 - Theme mode selector: auto / light / dark (auto follows OS)
@@ -28,7 +28,7 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 - Middle-click or Cmd/Ctrl+click opens in a background tab without leaving Spotlight
 
 ### Edit Mode
-- Enable/disable edit mode from the Settings panel (`Edit mode` on/off)
+- Enable/disable edit mode from the top-right wrench button
 - Click any bookmark tile to edit its title, URL, or move it to another section
 - Edit dialog includes a `DUPLICATE` action to clone a bookmark (in the same or selected section)
 - Edit dialog section picker uses a custom styled dropdown with full keyboard navigation (arrows, Enter, Escape)

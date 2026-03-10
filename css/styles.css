@@ -80,7 +80,8 @@ html.theme-light {
     color-scheme:               light;
 }
 
-html.theme-dark #settings-toggle {
+html.theme-dark #settings-toggle,
+html.theme-dark #edit {
     background:                  var(--surface-strong);
     border-color:                var(--surface-border);
     box-shadow:                  0 4px 12px rgba(0,0,0,0.30);
@@ -677,11 +678,18 @@ html.theme-dark #add-section-cta {
     box-shadow:                  none;
 }
 
-#settings-toggle {
+#quick-actions {
     position:                   fixed;
     top:                        24px;
     right:                      24px;
     z-index:                    34;
+    display:                    flex;
+    align-items:                center;
+    gap:                        8px;
+}
+
+#settings-toggle,
+#edit {
     display:                    inline-flex;
     align-items:                center;
     justify-content:            center;
@@ -715,6 +723,14 @@ html.theme-dark #add-section-cta {
     color:                      var(--text-color);
 }
 
+#edit::before {
+    content:                    '\1F527';
+    font-size:                  17px;
+    line-height:                1;
+    opacity:                    0.95;
+    color:                      var(--text-color);
+}
+
 #settings-toggle[aria-expanded="true"] {
     background:                 var(--accent-color);
     border-color:               var(--accent-color);
@@ -729,7 +745,32 @@ html.theme-dark #add-section-cta {
     background:                 var(--tile-hover-bg);
 }
 
+#edit:hover {
+    background:                 var(--tile-hover-bg);
+}
+
+#edit[aria-pressed="true"],
+html.edit #edit {
+    background:                 linear-gradient(180deg, #4ea95a, #2e7d32);
+    border-color:               #2e7d32;
+    box-shadow:                 0 0 0 1px rgba(46, 125, 50, 0.34), 0 8px 16px rgba(46, 125, 50, 0.30);
+}
+
+html.theme-dark #edit[aria-pressed="true"],
+html.theme-dark.edit #edit {
+    background:                 linear-gradient(180deg, #52b860, #2f8a37);
+    border-color:               #7fe58d;
+    box-shadow:                 0 0 0 1.5px rgba(127, 229, 141, 0.55), 0 12px 22px rgba(0, 0, 0, 0.48);
+}
+
+#edit[aria-pressed="true"]::before,
+html.edit #edit::before {
+    opacity:                    1;
+    color:                      #ffffff;
+}
+
 #settings-toggle:focus-visible,
+#edit:focus-visible,
 #settings-panel a:focus-visible {
     outline:                    2px solid var(--focus-ring);
     outline-offset:             2px;
@@ -888,17 +929,6 @@ html.theme-dark .setting-options a.selected {
     background:                 linear-gradient(180deg, #52b860, #2f8a37);
     border-color:               #7fe58d;
     box-shadow:                 0 0 0 1.5px rgba(127, 229, 141, 0.55), 0 12px 22px rgba(0, 0, 0, 0.48);
-}
-
-#settings-panel #edit {
-    width:                      100%;
-}
-
-.edit #settings-panel #edit,
-#settings-panel #edit[aria-pressed="true"] {
-    background:                 var(--accent-color);
-    border-color:               var(--accent-color);
-    color:                      #fff;
 }
 
 .setting-actions {
@@ -1399,7 +1429,7 @@ html.theme-dark .confirmation .actions {
         padding:                14px 14px 20px 14px;
     }
 
-    #settings-toggle {
+    #quick-actions {
         top:                    14px;
         right:                  14px;
     }

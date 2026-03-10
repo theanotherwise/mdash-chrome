@@ -14,7 +14,7 @@
 - Bookmark tiles use subtle translucency for a soft glass look
 - Bookmark tile titles are rendered on a single line with adaptive tile width up to a 32-character cap; longer titles are truncated with `...`
 - Subtle alternating group background in bookmark columns (starts from first section: dark/light/dark/light)
-- Compact top-right settings trigger (gear icon) opens a right-side slide-in settings panel
+- Top-right quick actions: wrench icon toggles edit mode instantly, gear icon opens the right-side slide-in settings panel
 - Edit mode: inline editing, adding, deleting, and renaming sections
 - Sections can be collapsed/expanded via a chevron in each section header; state is persisted
 - Edit bookmark dialog uses a custom-styled section dropdown with full keyboard navigation (arrows + Enter/Space)
@@ -205,7 +205,7 @@ Visual direction: clean, airy, Linear/Vercel-inspired. Near-white backgrounds, c
 - Section headers: sentence case (no uppercase), font-weight 600, letter-spacing 0.03em
 - Tiles: 12px radius, adaptive width (content-fit with 32-char max), slightly translucent background, ultra-subtle shadows, gentle hover lift (-1px); icon is aligned to text height and labels stay single-line with ellipsis
 - Left/right bookmark columns render as rounded glass panels with blur + soft border
-- Settings UI: compact top-right gear trigger with a right-side slide-in glass panel
+- Settings UI: compact top-right quick actions (wrench + gear), where gear opens a right-side slide-in glass panel
 - Edit-mode section action buttons (`Add` / `Sort` / `Delete`) use unified width/height and shared visual style for consistent alignment
 - Spotlight modal: 14px radius, consistent shadow language
 - Edit-mode hover: soft warm tint (`#FFF3E0` light / `#FFF8E1` dark)
@@ -330,7 +330,7 @@ When a section is moved between columns:
 - **Refresh behavior fix**: `refresh icons` now always purges favicon cache (`localStorage` `fav:*` + memory). Normal click purges then reloads page (full rebuild); `Alt+click` purges then rebuilds favicons in place with full title/override/VPN-aware resolution logic.
 - **Local dev favicon correctness fix**: cache key now uses full page origin (protocol + host + port), preventing collisions across `127.0.0.1:*` / `localhost:*`; host normalization for S2 fallback is skipped for IP/localhost hosts so `127.0.0.1` is never collapsed to invalid roots (e.g. `0.1`).
 - **Cache resilience/performance fix**: `_saveFaviconToLocalStorage()` handles `QuotaExceededError` by evicting a controlled fraction of `fav:*` entries (~20%) and retrying once; in-place refresh uses a concurrency guard and batched processing; background favicon loaders clean up handlers on `load`/`error`.
-- **Top-gap layout fix**: settings trigger is a compact, fixed top-right gear; right-column-only offset was removed so left/right columns start aligned.
+- **Top-gap layout fix**: quick actions (wrench + gear) are compact and fixed top-right; right-column-only offset was removed so left/right columns start aligned.
 
 ## UI Polish (v1.5.0)
 

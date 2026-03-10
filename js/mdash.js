@@ -4058,7 +4058,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.8.40';
+    Dashboard.VERSION = '1.8.41';
 
     proto.init = function()
     {
@@ -4200,7 +4200,7 @@
         $( document ).on( 'click', function( e )
         {
             if( !document.documentElement.classList.contains( 'settings-open' ) ) return;
-            if( $( e.target ).closest( '#settings-panel, #settings-toggle' ).length ) return;
+            if( $( e.target ).closest( '#settings-panel, #quick-actions' ).length ) return;
             closePanel();
         } );
 
