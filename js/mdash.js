@@ -3974,7 +3974,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.8.79';
+    Dashboard.VERSION = '1.8.80';
 
     proto.init = function()
     {
