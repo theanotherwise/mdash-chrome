@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.79
+**Version**: 1.8.80
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -198,7 +198,7 @@ Visual direction: clean, intentional, and low-noise (Linear/Raycast/Vercel-like)
 
 - Background is flat and bright (`--bg-color`) with no decorative gradient noise
 - Section headers use a clearer hierarchy (`13px` min / `19px` max clamp with `+1px` offset vs tags, weight `600`) with thin divider line and increased gap above bookmark tags
-- Bookmark tags are premium soft chips (`#F1F5F9` surface, subtle border, lightweight depth), adaptive width (content-fit with 32-char max), single-line ellipsis, and subtle hover lift (`translateY(-1px)`)
+- Bookmark tags are premium soft chips with stronger light-mode separation (white chip surface with clearer border/shadow contrast against zebra backgrounds), adaptive width (content-fit with 32-char max), single-line ellipsis, and subtle hover lift (`translateY(-1px)`)
 - Left/right columns keep no outer frame and no nested section card frame; sections alternate zebra tint (`#EEF1F5`) with transparent gaps (`dark / empty`), phase-offset by column
 - Settings UI: compact top-right quick actions (wrench + gear), where gear opens a right-side slide-in minimal panel
 - Quick-action icons use local SVG assets (`dashboard-edit.svg`, `dashboard-gear.svg`) sized to 34px controls
