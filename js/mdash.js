@@ -1130,6 +1130,23 @@
         return true;
     };
 
+    EditCtrl.prototype._isPointerInsideSourceRect = function( e )
+    {
+        if( !e || !e.originalEvent || !this._dragSourceRect ) return false;
+        var cx = e.originalEvent.clientX;
+        var cy = e.originalEvent.clientY;
+        if( ( cx === 0 && cy === 0 ) || !isFinite( cx ) || !isFinite( cy ) ) return false;
+        var r = this._dragSourceRect;
+        return ( cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom );
+    };
+
+    EditCtrl.prototype._shouldResetPlacementToSource = function( e )
+    {
+        // Reset only after target hover happened at least once, otherwise initial pickup
+        // keeps existing behavior.
+        return !!( this._dragHasTargetHover && this._isPointerInsideSourceRect( e ) );
+    };
+
     EditCtrl.prototype._positionPlaceholderForTargetTile = function( $targetTile, e )
     {
         if( !$targetTile || !$targetTile.length ) return;
@@ -1289,6 +1306,11 @@
                     e.preventDefault();
                     e.stopPropagation();
                     var $t = $( this );
+                    if( self._shouldResetPlacementToSource( e ) )
+                    {
+                        self._positionPlaceholderAtSource();
+                        return;
+                    }
                     if( self._dragSourceId && this.id === self._dragSourceId )
                     {
                         self._positionPlaceholderAtSource();
@@ -1317,6 +1339,11 @@
                 e.preventDefault();
                 e.stopPropagation();
                 var $section = $( this );
+                if( self._shouldResetPlacementToSource( e ) )
+                {
+                    self._positionPlaceholderAtSource();
+                    return;
+                }
                 var clientX = e.originalEvent.clientX, clientY = e.originalEvent.clientY;
                 var elAtPoint = document.elementFromPoint( clientX, clientY );
                 var $tileAtPoint = elAtPoint ? $( elAtPoint ).closest( 'a' ).not( '.add,.drop-placeholder,.dragging' ) : $();
@@ -1469,6 +1496,11 @@
             if( !self._dragging ) return;
             e.preventDefault();
             e.stopPropagation();
+            if( self._shouldResetPlacementToSource( e ) )
+            {
+                self._positionPlaceholderAtSource();
+                return;
+            }
             var clientX = e.originalEvent.clientX, clientY = e.originalEvent.clientY;
             var el = document.elementFromPoint( clientX, clientY );
             if( !el ) return;
