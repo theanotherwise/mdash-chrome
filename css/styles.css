@@ -804,9 +804,18 @@ html.theme-dark #add-section-cta {
 }
 
 .edit #bookmarks a.drop-hover-target {
-    border:                      1px dashed #2563eb;
-    background:                  #e6f0ff;
-    box-shadow:                  0 0 0 2px rgba(37, 99, 235, 0.18);
+    border:                      1px dashed #1d4ed8;
+    background:                  #dbeafe;
+    box-shadow:                  0 0 0 2px rgba(29, 78, 216, 0.30),
+                                 0 2px 6px rgba(29, 78, 216, 0.16);
+}
+
+html.theme-light.edit #bookmarks a.drop-hover-target {
+    border-color:                #1e40af;
+    background:                  #dbeafe;
+    box-shadow:                  0 0 0 2px rgba(30, 64, 175, 0.38),
+                                 0 2px 8px rgba(30, 64, 175, 0.20),
+                                 inset 0 0 0 1px rgba(255, 255, 255, 0.72);
 }
 
 html.theme-dark.edit #bookmarks a.drop-hover-target {
