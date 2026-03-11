@@ -3,37 +3,34 @@
 
 /* Design tokens — v3 minimal developer dashboard */
 :root {
-    --bg-color:                 #ECEFF3;
+    --bg-color:                 #F5F7FA;
     --bg-accent-1:              transparent;
     --bg-accent-2:              transparent;
     --bg-accent-3:              transparent;
-    --text-color:               #2E3440;
+    --text-color:               #1F2937;
     --muted-color:              #6B7280;
     --accent-color:             #3B82F6;
     --success-color:            #22c55e;
     --danger-color:             #ef4444;
     --focus-ring:               rgba(37, 99, 235, 0.35);
     --tile-bg:                  #FFFFFF;
-    --tile-hover-bg:            #F3F5F8;
-    --bookmark-tile-bg:         #FFFFFF;
-    --bookmark-tile-hover-bg:   #F3F5F8;
+    --tile-hover-bg:            #F8FAFC;
+    --bookmark-tile-bg:         #F1F5F9;
+    --bookmark-tile-hover-bg:   #E2E8F0;
     --tile-shadow:              0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
     --tile-radius:              8px;
     --tile-y-pad:               8px;
     --bookmark-tile-min-height: 22px;
     --bookmark-tile-max-width:  calc(32ch + 1em + 28px);
-    --input-border:             #D6D9DF;
-    --surface-border:           rgba(0, 0, 0, 0.05);
+    --input-border:             #E6E9EF;
+    --surface-border:           #E6E9EF;
     --surface-strong:           #ffffff;
     --hover-shadow:             0 2px 8px rgba(15, 23, 42, 0.08);
-    --section-color:            #2B3138;
-    --section-alt-bg:           #22272E;
-    --section-alt-border:       rgba(255, 255, 255, 0.04);
-    --section-alt-shadow:       inset 0 1px 0 rgba(255, 255, 255, 0.05),
-                                inset 0 -1px 0 rgba(0, 0, 0, 0.18);
-    --section-surface-bg:       #F7F8FA;
-    --section-surface-border:   rgba(0, 0, 0, 0.05);
-    --section-surface-shadow:   inset 0 -1px 0 rgba(0, 0, 0, 0.03);
+    --section-color:            #374151;
+    --section-alt-bg:           #EEF1F5;
+    --section-surface-bg:       #FFFFFF;
+    --section-surface-border:   #E6E9EF;
+    --section-surface-shadow:   0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
     --section-actions-right:    6px;
     --section-actions-gap:      8px;
     --section-action-add-width: 86px;
@@ -66,42 +63,37 @@ html.theme-dark {
     --hover-shadow:             0 2px 8px rgba(0,0,0,0.25);
     --section-color:            #f3f4f6;
     --section-alt-bg:           rgba(255, 255, 255, 0.08);
-    --section-alt-border:       rgba(255, 255, 255, 0.10);
-    --section-alt-shadow:       inset 0 1px 0 rgba(255, 255, 255, 0.04);
     --section-surface-bg:       rgba(19, 25, 34, 0.72);
     --section-surface-border:   rgba(255, 255, 255, 0.10);
-    --section-surface-shadow:   inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    --section-surface-shadow:   0 2px 10px rgba(0, 0, 0, 0.28);
     color-scheme:               dark;
 }
 
 /* Explicit light theme class to override system dark */
 html.theme-light {
-    --bg-color:                 #ECEFF3;
+    --bg-color:                 #F5F7FA;
     --bg-accent-1:              transparent;
     --bg-accent-2:              transparent;
     --bg-accent-3:              transparent;
-    --text-color:               #2E3440;
+    --text-color:               #1F2937;
     --muted-color:              #6B7280;
     --accent-color:             #3B82F6;
     --success-color:            #22c55e;
     --danger-color:             #ef4444;
     --focus-ring:               rgba(37, 99, 235, 0.35);
     --tile-bg:                  #FFFFFF;
-    --tile-hover-bg:            #F3F5F8;
-    --bookmark-tile-bg:         #FFFFFF;
-    --bookmark-tile-hover-bg:   #F3F5F8;
+    --tile-hover-bg:            #F8FAFC;
+    --bookmark-tile-bg:         #F1F5F9;
+    --bookmark-tile-hover-bg:   #E2E8F0;
     --tile-shadow:              0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
-    --surface-border:           rgba(0, 0, 0, 0.05);
+    --surface-border:           #E6E9EF;
     --surface-strong:           #ffffff;
     --hover-shadow:             0 2px 8px rgba(15, 23, 42, 0.08);
-    --section-color:            #2B3138;
-    --section-alt-bg:           #22272E;
-    --section-alt-border:       rgba(255, 255, 255, 0.04);
-    --section-alt-shadow:       inset 0 1px 0 rgba(255, 255, 255, 0.05),
-                                inset 0 -1px 0 rgba(0, 0, 0, 0.18);
-    --section-surface-bg:       #F7F8FA;
-    --section-surface-border:   rgba(0, 0, 0, 0.05);
-    --section-surface-shadow:   inset 0 -1px 0 rgba(0, 0, 0, 0.03);
+    --section-color:            #374151;
+    --section-alt-bg:           #EEF1F5;
+    --section-surface-bg:       #FFFFFF;
+    --section-surface-border:   #E6E9EF;
+    --section-surface-shadow:   0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
     color-scheme:               light;
 }
 
