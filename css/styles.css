@@ -322,14 +322,7 @@ html.theme-dark .edit #bookmarks section.drop-target {
 #bookmarks > .left > section:nth-of-type(odd),
 #bookmarks > .right > section:nth-of-type(even) {
     background:                 var(--section-alt-bg);
-    border-color:               var(--section-alt-border);
-    box-shadow:                 var(--section-alt-shadow);
     border-radius:              10px;
-}
-
-html.theme-light #bookmarks > .left > section:nth-of-type(odd) > h1,
-html.theme-light #bookmarks > .right > section:nth-of-type(even) > h1 {
-    color:                      #D0D6DD;
 }
 
 #bookmarks h1 {
@@ -383,19 +376,13 @@ html.theme-light #bookmarks > .right > section:nth-of-type(even) > h1 {
     right:                      2px;
     bottom:                     0;
     height:                     1px;
-    background:                 rgba(0, 0, 0, 0.05);
+    background:                 var(--surface-border);
     opacity:                    1;
     pointer-events:             none;
 }
 
 html.theme-dark #bookmarks h1::after {
     opacity:                    0.72;
-}
-
-html.theme-light #bookmarks > .left > section:nth-of-type(odd) > h1::after,
-html.theme-light #bookmarks > .right > section:nth-of-type(even) > h1::after {
-    background:                 rgba(255, 255, 255, 0.04);
-    opacity:                    1;
 }
 
 #bookmarks section.section-collapsed {
