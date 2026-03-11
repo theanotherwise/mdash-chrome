@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.87
+**Version**: 1.8.88
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -24,6 +24,7 @@
 - Edit mode section-header remove button (`×`) to delete an entire section/folder (including nested bookmarks) with confirmation
 - Drag & drop reordering of bookmarks between sections (edit mode only; disabled in normal mode)
 - Drag & drop sections between columns (left ↔ right) in edit mode; automatically updates `+`/`-` prefix
+- Drag & drop target highlighting is intentionally high-contrast in both themes; returning pointer to source area resets placement to original position
 - Custom section colors: colored dot next to section title, stored as `#RRGGBB` suffix in folder name (e.g. `+Productivity #4CAF50`); editable via color palette popup in edit mode
 - Sort bookmarks within a section (A→Z / Z→A toggle button in edit mode); reorders via Chrome Bookmarks API with full undo support
 - Settings toggle for reduced/full motion preference
@@ -191,15 +192,15 @@ Visual direction: clean, intentional, and low-noise (Linear/Raycast/Vercel-like)
 | `--surface-strong` | `#ffffff` | `#10141a` | Panel/dialog surfaces |
 | `--hover-shadow` | `0 2px 8px rgba(15,23,42,0.08)` | `0 2px 8px rgba(0,0,0,0.25)` | Hover elevation |
 | `--section-color` | `#374151` | `#f3f4f6` | Section header text |
-| `--section-alt-bg` | `#EEF1F5` | `rgba(255,255,255,0.03)` | Reserved zebra tint token (disabled in current light layout) |
+| `--section-alt-bg` | `#EEF1F5` | `rgba(255,255,255,0.03)` | Reserved zebra tint token (disabled in current baseline) |
 | `--focus-ring` | `rgba(37,99,235,0.35)` | `rgba(96,165,250,0.45)` | Focus indicators |
 
 ### Key Visual Rules
 
 - Background is flat and bright (`--bg-color`) with no decorative gradient noise
 - Section headers use a clearer hierarchy (`13px` min / `19px` max clamp with `+1px` offset vs tags, weight `600`) with thin divider line and increased gap above bookmark tags
-- Bookmark tags are premium soft chips with stronger light-mode separation (white chip surface with clearer border/shadow contrast against zebra backgrounds), adaptive width (content-fit with 32-char max), single-line ellipsis, and subtle hover lift (`translateY(-1px)`)
-- Left/right columns keep no outer frame and no nested section card frame; sections use a uniform white surface (gray zebra layer disabled)
+- Bookmark tags are premium soft chips with stronger light-mode separation (explicit white chip surface and clearer border/shadow contrast), adaptive width (content-fit with 32-char max), single-line ellipsis, and subtle hover lift (`translateY(-1px)`)
+- Left/right columns keep no outer frame and no nested section card frame; sections use a uniform surface layer (no alternating zebra tint in the current baseline)
 - Settings UI: compact top-right quick actions (wrench + gear), where gear opens a right-side slide-in minimal panel
 - Quick-action icons use local SVG assets (`dashboard-edit.svg`, `dashboard-gear.svg`) sized to 34px controls
 - Edit-mode section action buttons (`Add` / `Sort` / `Delete`) are compact icon+label pills (`34px` high), right-aligned in section headers, with accent icon/text colors (success / neutral / danger) and consistent horizontal spacing
@@ -280,7 +281,7 @@ Guards prevent interference: tile handlers check `if( self._sectionDragging ) re
      - requires an initial movement threshold (~4px) from drag start,
      - blocks reposition while pointer is still inside source tile bounds.
    - For non-empty sections, the hovered target tile receives `drop-hover-target` (visible dashed highlight on the tile itself).
-   - If the pointer returns to the original source area during drag (including source-rect whitespace where no concrete tile is hit), the placement marker is reset back to source immediately so UI clearly shows "return to original position" instead of keeping the last external hover target.
+   - If the pointer returns to the original source area during drag (including source-rect whitespace where no concrete tile is hit), placement resets back to source immediately (`_positionPlaceholderAtSource`) so UI clearly shows "return to original position" instead of keeping the last external hover target.
    - Internal insertion marker is still `a.drop-placeholder`, but when targeting a tile it is collapsed (`display:none`) and used only as a logical index marker.
    - For empty sections, `drop-placeholder` is rendered visibly (before `a.add` when present, otherwise appended).
 
@@ -311,6 +312,25 @@ Guards prevent interference: tile handlers check `if( self._sectionDragging ) re
      - tile handlers return early when `_sectionDragging` is active,
      - section handlers run only for section drag namespace (`.mdash-section`).
    - Global container-level `dragover`/`drop` handlers cover whitespace drops and keep insertion behavior deterministic across tile gaps.
+
+### DnD Visual Baseline (locked)
+
+These values are intentionally tuned for visibility without geometry shifts:
+
+- `a.dragging`: reduced opacity (`~0.34`) and no transform (keeps flow stable while dragging).
+- `a.drop-hover-target` (light): 1px dashed blue border, blue-tint background, and multi-layer ring/shadow for strong contrast.
+- `a.drop-hover-target` (dark): stronger blue alpha border/background + ring for parity with light mode visibility.
+- `a.dragging.drop-hover-target`: elevated opacity (`~0.78`) so "return to source" is clearly visible.
+- `a.drop-placeholder`: visible only for empty-section placement or non-collapsed paths; collapsed (`display:none`) when tile-hover highlighting is active.
+- No drop-target style is allowed to change element dimensions (border widths remain geometry-safe).
+
+### Interaction Regression Checklist (must stay true)
+
+- Dragging over another tile always highlights that tile as target.
+- Returning pointer to source area after hovering other targets resets marker to original position.
+- Same-parent forward move persists correctly after refresh (API index adjusted by `+1`).
+- Entering/leaving edit mode does not cause column/section vertical shifts.
+- Light and dark modes both show equally clear drop-target feedback.
 
 When a section is moved between columns:
 1. DOM `<section>` element is repositioned at the placeholder location.
