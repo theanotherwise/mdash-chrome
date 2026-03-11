@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.80
+**Version**: 1.8.81
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -13,7 +13,7 @@
 - Responsive CSS Grid layout for columns (auto-switches to one column on smaller screens)
 - Bookmark links render as compact, low-noise pills (solid surface, subtle 1px divider border)
 - Bookmark tile titles are rendered on a single line with adaptive tile width up to a 32-character cap; longer titles are truncated with `...`
-- Subtle alternating group background in bookmark columns with phase offset: left starts dark/light, right starts light/dark
+- Uniform section surface styling (no alternating zebra tint) for a cleaner single-layer look
 - Top-right quick actions: 34px circular wrench/gear icons at top-right; wrench toggles edit mode, gear opens the right-side slide-in settings panel
 - Quick-action icons use local SVG assets (`icons/dashboard-edit.svg`, `icons/dashboard-gear.svg`)
 - Edit mode: inline editing, adding, deleting, and renaming sections
@@ -191,7 +191,7 @@ Visual direction: clean, intentional, and low-noise (Linear/Raycast/Vercel-like)
 | `--surface-strong` | `#ffffff` | `#10141a` | Panel/dialog surfaces |
 | `--hover-shadow` | `0 2px 8px rgba(15,23,42,0.08)` | `0 2px 8px rgba(0,0,0,0.25)` | Hover elevation |
 | `--section-color` | `#374151` | `#f3f4f6` | Section header text |
-| `--section-alt-bg` | `#EEF1F5` | `rgba(255,255,255,0.03)` | Zebra section tint |
+| `--section-alt-bg` | `#EEF1F5` | `rgba(255,255,255,0.03)` | Reserved zebra tint token (disabled in current light layout) |
 | `--focus-ring` | `rgba(37,99,235,0.35)` | `rgba(96,165,250,0.45)` | Focus indicators |
 
 ### Key Visual Rules
@@ -199,7 +199,7 @@ Visual direction: clean, intentional, and low-noise (Linear/Raycast/Vercel-like)
 - Background is flat and bright (`--bg-color`) with no decorative gradient noise
 - Section headers use a clearer hierarchy (`13px` min / `19px` max clamp with `+1px` offset vs tags, weight `600`) with thin divider line and increased gap above bookmark tags
 - Bookmark tags are premium soft chips with stronger light-mode separation (white chip surface with clearer border/shadow contrast against zebra backgrounds), adaptive width (content-fit with 32-char max), single-line ellipsis, and subtle hover lift (`translateY(-1px)`)
-- Left/right columns keep no outer frame and no nested section card frame; sections alternate zebra tint (`#EEF1F5`) with transparent gaps (`dark / empty`), phase-offset by column
+- Left/right columns keep no outer frame and no nested section card frame; sections use a uniform white surface (gray zebra layer disabled)
 - Settings UI: compact top-right quick actions (wrench + gear), where gear opens a right-side slide-in minimal panel
 - Quick-action icons use local SVG assets (`dashboard-edit.svg`, `dashboard-gear.svg`) sized to 34px controls
 - Edit-mode section action buttons (`Add` / `Sort` / `Delete`) are compact icon+label pills (`34px` high), right-aligned in section headers, with accent icon/text colors (success / neutral / danger) and consistent horizontal spacing
@@ -207,7 +207,6 @@ Visual direction: clean, intentional, and low-noise (Linear/Raycast/Vercel-like)
 - Entering/leaving edit mode does not reflow section layout: action-space reservation and border box metrics stay constant between states
 - Spotlight modal: 14px radius, consistent shadow language
 - Edit mode state: sections receive a subtle dashed outline; tag hover brightens to signal editability
-- Zebra phase is offset by column: left tints 1st/3rd/5th... sections, right tints 2nd/4th/6th... sections
 - Balanced spacing pass: section-to-section gaps were increased from the ultra-compact mode for better visual separation
 - Grid gap: 16px row / 32px column
 - Scrollbars: 6px wide, very low opacity
