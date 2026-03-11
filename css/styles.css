@@ -287,10 +287,10 @@ html.theme-dark #getstarted {
     margin:                     0 0 18px 0;
     height:                     auto;
     overflow:                   visible;
-    background:                 var(--section-surface-bg);
+    background:                 transparent;
     border-radius:              10px;
-    border:                     1px solid var(--section-surface-border);
-    box-shadow:                 var(--section-surface-shadow);
+    border:                     1px solid transparent;
+    box-shadow:                 none;
     -webkit-backdrop-filter:    none;
     backdrop-filter:            none;
     box-sizing:                 border-box;
@@ -321,7 +321,7 @@ html.theme-dark .edit #bookmarks section.drop-target {
    left starts dark, right starts light. */
 #bookmarks > .left > section:nth-of-type(odd),
 #bookmarks > .right > section:nth-of-type(even) {
-    background:                 var(--section-alt-bg);
+    background:                 transparent;
     border-radius:              10px;
 }
 
