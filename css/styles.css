@@ -804,14 +804,15 @@ html.theme-dark #add-section-cta {
 }
 
 .edit #bookmarks a.drop-hover-target {
-    border:                      1px dashed #c7d2fe;
-    background:                  #eef2ff;
-    box-shadow:                  none;
+    border:                      2px dashed #2563eb;
+    background:                  #e6f0ff;
+    box-shadow:                  0 0 0 2px rgba(37, 99, 235, 0.18);
 }
 
 html.theme-dark .edit #bookmarks a.drop-hover-target {
-    border-color:                rgba(147, 197, 253, 0.7);
-    background:                  rgba(37, 99, 235, 0.22);
+    border-color:                rgba(147, 197, 253, 0.92);
+    background:                  rgba(37, 99, 235, 0.34);
+    box-shadow:                  0 0 0 2px rgba(96, 165, 250, 0.22);
 }
 
 #quick-actions {
