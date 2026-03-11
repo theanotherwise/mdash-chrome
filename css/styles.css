@@ -824,6 +824,11 @@ html.theme-dark.edit #bookmarks a.drop-hover-target {
     box-shadow:                  0 0 0 2px rgba(96, 165, 250, 0.22);
 }
 
+/* When pointer returns over the dragged source tile, make "return to origin" visible. */
+.edit #bookmarks a.dragging.drop-hover-target {
+    opacity:                     0.78;
+}
+
 #quick-actions {
     position:                   fixed;
     top:                        40px;

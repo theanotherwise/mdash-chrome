@@ -1173,6 +1173,25 @@
         this._dragLastPlacement = placementKey;
     };
 
+    EditCtrl.prototype._positionPlaceholderAtSource = function()
+    {
+        if( !this.$placeholder || !this.$placeholder.length ) return;
+        if( !this._dragSourceId ) return;
+        var $src = $( document.getElementById( this._dragSourceId ) );
+        if( !$src.length ) return;
+        var placementKey = 'source:' + this._dragSourceId;
+        if( this._dragLastPlacement === placementKey ) return;
+
+        this.$bookmarks.find( 'a.drop-hover-target' ).removeClass( 'drop-hover-target' );
+        this.$bookmarks.find( 'section.drop-target' ).removeClass( 'drop-target' );
+        $src.addClass( 'drop-hover-target' );
+        $src.before( this.$placeholder );
+        this.$placeholder.addClass( 'collapsed' ).removeClass( 'source-gap' );
+        $src.closest( 'section' ).addClass( 'drop-target' );
+        this._dragHasTargetHover = false;
+        this._dragLastPlacement = placementKey;
+    };
+
     EditCtrl.prototype._positionPlaceholderAfterTile = function( $targetTile )
     {
         if( !$targetTile || !$targetTile.length ) return;
@@ -1270,7 +1289,11 @@
                     e.preventDefault();
                     e.stopPropagation();
                     var $t = $( this );
-                    if( self._dragSourceId && this.id === self._dragSourceId ) return;
+                    if( self._dragSourceId && this.id === self._dragSourceId )
+                    {
+                        self._positionPlaceholderAtSource();
+                        return;
+                    }
                     if( !self._canRepositionOnDragOver( e ) ) return;
                     self._dragHasTargetHover = true;
                     self._positionPlaceholderForTargetTile( $t, e );
@@ -1300,7 +1323,11 @@
 
                 if( $tileAtPoint.length && $tileAtPoint.closest( 'section' )[0] === $section[0] )
                 {
-                    if( !( self._dragSourceId && $tileAtPoint.attr( 'id' ) === self._dragSourceId ) )
+                    if( self._dragSourceId && $tileAtPoint.attr( 'id' ) === self._dragSourceId )
+                    {
+                        self._positionPlaceholderAtSource();
+                    }
+                    else
                     {
                         if( !self._canRepositionOnDragOver( e ) ) return;
                         self._dragHasTargetHover = true;
@@ -1448,7 +1475,11 @@
             var $tileAtPoint = $( el ).closest( 'a' ).not( '.add,.drop-placeholder,.dragging' );
             if( $tileAtPoint.length )
             {
-                if( !( self._dragSourceId && $tileAtPoint.attr( 'id' ) === self._dragSourceId ) )
+                if( self._dragSourceId && $tileAtPoint.attr( 'id' ) === self._dragSourceId )
+                {
+                    self._positionPlaceholderAtSource();
+                }
+                else
                 {
                     if( !self._canRepositionOnDragOver( e ) ) return;
                     self._dragHasTargetHover = true;
@@ -3974,7 +4005,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.8.84';
+    Dashboard.VERSION = '1.8.86';
 
     proto.init = function()
     {

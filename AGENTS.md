@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.85
+**Version**: 1.8.86
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -280,6 +280,7 @@ Guards prevent interference: tile handlers check `if( self._sectionDragging ) re
      - requires an initial movement threshold (~4px) from drag start,
      - blocks reposition while pointer is still inside source tile bounds.
    - For non-empty sections, the hovered target tile receives `drop-hover-target` (visible dashed highlight on the tile itself).
+   - If the pointer returns to the original source tile during drag, the placement marker is reset back to source immediately so UI clearly shows "return to original position" instead of keeping the last external hover target.
    - Internal insertion marker is still `a.drop-placeholder`, but when targeting a tile it is collapsed (`display:none`) and used only as a logical index marker.
    - For empty sections, `drop-placeholder` is rendered visibly (before `a.add` when present, otherwise appended).
 
