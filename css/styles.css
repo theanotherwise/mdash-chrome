@@ -449,9 +449,12 @@ html.theme-dark .edit #bookmarks h1.section-renaming .section-title-text {
 }
 
 /* Explicit theme parity for bookmark tag surfaces */
-html.theme-light #bookmarks a {
-    background-color:           var(--bookmark-tile-bg);
+html.theme-light #bookmarks a:not(.add):not(.drop-placeholder) {
+    background-color:           #FFFFFF;
     background-image:           none;
+    border-color:               #D3DCE8;
+    box-shadow:                 0 1px 2px rgba(15, 23, 42, 0.06);
+    color:                      #334155;
 }
 
 html.theme-dark #bookmarks a {
@@ -470,6 +473,12 @@ html.theme-dark #bookmarks a {
     border-color:               rgba(0, 0, 0, 0.07);
 }
 
+html.theme-light #bookmarks a:not(.add):not(.drop-placeholder):hover {
+    background-color:           #F7FAFF;
+    border-color:               #C6D2E2;
+    box-shadow:                 0 2px 8px rgba(15, 23, 42, 0.10);
+}
+
 html.theme-dark #bookmarks a:hover {
     background-color:           var(--bookmark-tile-hover-bg);
     background-image:           none;
@@ -482,6 +491,11 @@ html.theme-dark #bookmarks a:hover {
     border-color:               rgba(0, 0, 0, 0.08);
 }
 
+html.theme-light .edit #bookmarks a:not(.add):not(.drop-placeholder):hover {
+    background-color:           #EEF4FB;
+    border-color:               #BECDE1;
+}
+
 html.theme-dark .edit #bookmarks a:hover {
     background-color:           #1c2430;
     border-color:               rgba(255, 255, 255, 0.22);
@@ -491,6 +505,11 @@ html.theme-dark .edit #bookmarks a:hover {
 #bookmarks a:active {
     background:                 #dbe7f4;
     border-color:               #cbd5e1;
+}
+
+html.theme-light #bookmarks a:not(.add):not(.drop-placeholder):active {
+    background:                 #E7EEF8;
+    border-color:               #B7C7DD;
 }
 
 #bookmarks a > img {
