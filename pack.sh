@@ -15,7 +15,6 @@ zip -r "$OUT" * \
     -x "**/node_modules/**" \
     -x "pack.sh" \
     -x "icons/*.png" \
-    -x "icons/*.svg" \
     -x "AGENTS.md" \
     -x "README.md" \
     -x ".gitignore"
