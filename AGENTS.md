@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.76
+**Version**: 1.8.79
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -30,7 +30,7 @@
 - Undo for all destructive/mutating operations (30-second window): bookmark delete, update, create, drag & drop move; section create, delete, rename, column move, color change, sort
 - Spotlight search modal (Option+F on macOS, Ctrl+F on Windows) with debounced input, cached in-memory index, keyboard navigation, highlighted matches, and background-tab open via middle-click / Cmd/Ctrl+click without navigating the current tab
 - Theme mode selector: auto/light/dark (`auto` follows OS preference and reacts to live system theme changes)
-- Font size control: XXS, XS, S, M, L, XL, XXL, XXXL (persisted in localStorage; `S` maps to `small`, `M` maps to `medium`, `L` maps to `large`; bookmark tiles scale with bounded clamps; XXS/XS are tuned to remain readable)
+- Font size control: XXS, XS, S, M, L, XL, XXL, XXXL (persisted in localStorage; `S` maps to `small`, `M` maps to `medium`, `L` maps to `large`; bookmark tiles scale with bounded clamps and distinct low-end steps; XXS/XS remain readable)
 - Settings-panel typography is fixed and does not scale with dashboard font-size selection
 - XL+ dashboard presets use lighter text weights to avoid a visually over-bold look
 - Improved keyboard accessibility with visible focus rings on interactive controls
@@ -173,33 +173,33 @@ Visual direction: clean, intentional, and low-noise (Linear/Raycast/Vercel-like)
 
 | Token | Light | Dark | Purpose |
 |---|---|---|---|
-| `--bg-color` | `#f7f8fa` | `#0f1115` | Page background |
-| `--text-color` | `#111418` | `#e5e7eb` | Primary text |
+| `--bg-color` | `#F5F7FA` | `#0f1115` | Page background |
+| `--text-color` | `#1F2937` | `#e5e7eb` | Primary text |
 | `--muted-color` | `#6b7280` | `#9ca3af` | Secondary text |
-| `--accent-color` | `#2563eb` | `#60a5fa` | Interactive/link accent |
+| `--accent-color` | `#3B82F6` | `#60a5fa` | Interactive/link accent |
 | `--success-color` | `#22c55e` | `#22c55e` | Positive actions (`Add`, quick-action icon base) |
 | `--danger-color` | `#ef4444` | `#ef4444` | Destructive actions (`Delete`) |
 | `--tile-bg` | `#ffffff` | `#12161d` | Surface/tag background |
-| `--tile-hover-bg` | `#f9fafb` | `#171c24` | Hovered surface/tag background |
-| `--bookmark-tile-bg` | `#ffffff` | `#12161d` | Bookmark tag background |
-| `--bookmark-tile-hover-bg` | `#f9fafb` | `#171c24` | Bookmark tag hover background |
-| `--tile-shadow` | subtle `0 1px 2px rgba(17,20,24,0.03)` | subtle `0 1px 2px rgba(0,0,0,0.35)` | Resting shadow |
+| `--tile-hover-bg` | `#F8FAFC` | `#171c24` | Hovered surface/tag background |
+| `--bookmark-tile-bg` | `#F1F5F9` | `#12161d` | Bookmark tag background |
+| `--bookmark-tile-hover-bg` | `#E2E8F0` | `#171c24` | Bookmark tag hover background |
+| `--tile-shadow` | `0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)` | subtle `0 1px 2px rgba(0,0,0,0.35)` | Resting shadow |
 | `--tile-radius` | `8px` | `8px` | Tag radius |
 | `--bookmark-tile-min-height` | `28px` | `28px` | Compact single-line tag height |
 | `--bookmark-tile-max-width` | `calc(32ch + 1em + 28px)` | `calc(32ch + 1em + 28px)` | Max tile width for one-line, 32-char bookmark labels |
-| `--surface-border` | `#eceef2` | `rgba(255,255,255,0.10)` | Subtle dividers |
+| `--surface-border` | `#E6E9EF` | `rgba(255,255,255,0.10)` | Subtle dividers |
 | `--surface-strong` | `#ffffff` | `#10141a` | Panel/dialog surfaces |
-| `--hover-shadow` | `0 2px 6px rgba(0,0,0,0.05)` | `0 2px 8px rgba(0,0,0,0.25)` | Hover elevation |
-| `--section-color` | `#111418` | `#f3f4f6` | Section header text |
-| `--section-alt-bg` | `rgba(17,20,24,0.03)` | `rgba(255,255,255,0.03)` | Zebra section tint |
+| `--hover-shadow` | `0 2px 8px rgba(15,23,42,0.08)` | `0 2px 8px rgba(0,0,0,0.25)` | Hover elevation |
+| `--section-color` | `#374151` | `#f3f4f6` | Section header text |
+| `--section-alt-bg` | `#EEF1F5` | `rgba(255,255,255,0.03)` | Zebra section tint |
 | `--focus-ring` | `rgba(37,99,235,0.35)` | `rgba(96,165,250,0.45)` | Focus indicators |
 
 ### Key Visual Rules
 
 - Background is flat and bright (`--bg-color`) with no decorative gradient noise
-- Section headers are compact and intentionally `+1px` relative to bookmark tag text via clamped sizing (`clamp(14px, calc(0.95em + 1px), 19px)` vs tags `clamp(13px, 0.95em, 18px)`), so the offset persists across all font presets; divider line and light gap above tags remain
-- Bookmark tags are compact pills (`6px 12px`, `8px` radius), adaptive width (content-fit with 32-char max), single-line ellipsis, 16px icons, and subtle hover lift (`translateY(-1px)`)
-- Left/right columns have no outer frame; only alternating zebra group backgrounds are visible
+- Section headers use a clearer hierarchy (`13px` min / `19px` max clamp with `+1px` offset vs tags, weight `600`) with thin divider line and increased gap above bookmark tags
+- Bookmark tags are premium soft chips (`#F1F5F9` surface, subtle border, lightweight depth), adaptive width (content-fit with 32-char max), single-line ellipsis, and subtle hover lift (`translateY(-1px)`)
+- Left/right columns keep no outer frame and no nested section card frame; sections alternate zebra tint (`#EEF1F5`) with transparent gaps (`dark / empty`), phase-offset by column
 - Settings UI: compact top-right quick actions (wrench + gear), where gear opens a right-side slide-in minimal panel
 - Quick-action icons use local SVG assets (`dashboard-edit.svg`, `dashboard-gear.svg`) sized to 34px controls
 - Edit-mode section action buttons (`Add` / `Sort` / `Delete`) are compact icon+label pills (`34px` high), right-aligned in section headers, with accent icon/text colors (success / neutral / danger) and consistent horizontal spacing
@@ -209,7 +209,7 @@ Visual direction: clean, intentional, and low-noise (Linear/Raycast/Vercel-like)
 - Edit mode state: sections receive a subtle dashed outline; tag hover brightens to signal editability
 - Zebra phase is offset by column: left tints 1st/3rd/5th... sections, right tints 2nd/4th/6th... sections
 - Balanced spacing pass: section-to-section gaps were increased from the ultra-compact mode for better visual separation
-- Grid gap: 18px row / 28px column
+- Grid gap: 16px row / 32px column
 - Scrollbars: 6px wide, very low opacity
 - DnD placeholders: pulsing animation for clear visual feedback
 - Settings panel: animated slide-in/out from right (with backdrop)

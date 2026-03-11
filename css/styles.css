@@ -3,34 +3,34 @@
 
 /* Design tokens — v3 minimal developer dashboard */
 :root {
-    --bg-color:                 #f6f7f9;
+    --bg-color:                 #F5F7FA;
     --bg-accent-1:              transparent;
     --bg-accent-2:              transparent;
     --bg-accent-3:              transparent;
-    --text-color:               #111418;
-    --muted-color:              #6b7280;
-    --accent-color:             #2563eb;
+    --text-color:               #1F2937;
+    --muted-color:              #6B7280;
+    --accent-color:             #3B82F6;
     --success-color:            #22c55e;
     --danger-color:             #ef4444;
     --focus-ring:               rgba(37, 99, 235, 0.35);
     --tile-bg:                  #FFFFFF;
-    --tile-hover-bg:            #f9fafb;
-    --bookmark-tile-bg:         rgba(255, 255, 255, 0.75);
-    --bookmark-tile-hover-bg:   rgba(255, 255, 255, 0.9);
-    --tile-shadow:              0 1px 2px rgba(17,20,24,0.03);
+    --tile-hover-bg:            #F8FAFC;
+    --bookmark-tile-bg:         #F1F5F9;
+    --bookmark-tile-hover-bg:   #E2E8F0;
+    --tile-shadow:              0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
     --tile-radius:              8px;
     --tile-y-pad:               8px;
     --bookmark-tile-min-height: 22px;
     --bookmark-tile-max-width:  calc(32ch + 1em + 28px);
-    --input-border:             #eceef2;
-    --surface-border:           #eceef2;
+    --input-border:             #E6E9EF;
+    --surface-border:           #E6E9EF;
     --surface-strong:           #ffffff;
-    --hover-shadow:             0 2px 6px rgba(0,0,0,0.05);
-    --section-color:            #111418;
-    --section-alt-bg:           rgba(17, 20, 24, 0.04);
-    --section-surface-bg:       rgba(255, 255, 255, 0.70);
-    --section-surface-border:   rgba(0, 0, 0, 0.04);
-    --section-surface-shadow:   0 2px 8px rgba(0, 0, 0, 0.03);
+    --hover-shadow:             0 2px 8px rgba(15, 23, 42, 0.08);
+    --section-color:            #374151;
+    --section-alt-bg:           #EEF1F5;
+    --section-surface-bg:       #FFFFFF;
+    --section-surface-border:   #E6E9EF;
+    --section-surface-shadow:   0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
     --section-actions-right:    6px;
     --section-actions-gap:      8px;
     --section-action-add-width: 86px;
@@ -71,29 +71,29 @@ html.theme-dark {
 
 /* Explicit light theme class to override system dark */
 html.theme-light {
-    --bg-color:                 #f6f7f9;
+    --bg-color:                 #F5F7FA;
     --bg-accent-1:              transparent;
     --bg-accent-2:              transparent;
     --bg-accent-3:              transparent;
-    --text-color:               #111418;
-    --muted-color:              #6b7280;
-    --accent-color:             #2563eb;
+    --text-color:               #1F2937;
+    --muted-color:              #6B7280;
+    --accent-color:             #3B82F6;
     --success-color:            #22c55e;
     --danger-color:             #ef4444;
     --focus-ring:               rgba(37, 99, 235, 0.35);
     --tile-bg:                  #FFFFFF;
-    --tile-hover-bg:            #f9fafb;
-    --bookmark-tile-bg:         rgba(255, 255, 255, 0.75);
-    --bookmark-tile-hover-bg:   rgba(255, 255, 255, 0.9);
-    --tile-shadow:              0 1px 2px rgba(17,20,24,0.03);
-    --surface-border:           #eceef2;
+    --tile-hover-bg:            #F8FAFC;
+    --bookmark-tile-bg:         #F1F5F9;
+    --bookmark-tile-hover-bg:   #E2E8F0;
+    --tile-shadow:              0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+    --surface-border:           #E6E9EF;
     --surface-strong:           #ffffff;
-    --hover-shadow:             0 2px 6px rgba(0,0,0,0.05);
-    --section-color:            #111418;
-    --section-alt-bg:           rgba(17, 20, 24, 0.04);
-    --section-surface-bg:       rgba(255, 255, 255, 0.70);
-    --section-surface-border:   rgba(0, 0, 0, 0.04);
-    --section-surface-shadow:   0 2px 8px rgba(0, 0, 0, 0.03);
+    --hover-shadow:             0 2px 8px rgba(15, 23, 42, 0.08);
+    --section-color:            #374151;
+    --section-alt-bg:           #EEF1F5;
+    --section-surface-bg:       #FFFFFF;
+    --section-surface-border:   #E6E9EF;
+    --section-surface-shadow:   0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
     color-scheme:               light;
 }
 
@@ -261,7 +261,7 @@ html.theme-dark #getstarted {
     padding-top:                0;
     display:                    grid;
     grid-template-columns:      repeat(auto-fit, minmax(320px, 1fr));
-    gap:                        18px 32px;
+    gap:                        16px 32px;
     align-items:                start;
 }
 
@@ -283,8 +283,8 @@ html.theme-dark #getstarted {
 
 #bookmarks section {
     clear:                      none;
-    padding:                    3px 6px 5px;
-    margin:                     0 0 28px 0;
+    padding:                    6px 8px 7px;
+    margin:                     0 0 18px 0;
     height:                     auto;
     overflow:                   visible;
     background:                 transparent;
@@ -327,15 +327,16 @@ html.theme-dark .edit #bookmarks section.drop-target {
 
 #bookmarks h1 {
     position:                   relative;
-    font-size:                  clamp(14px, calc(0.95em + 1px), 19px);
+    font-size:                  clamp(13px, calc(0.85em + 1px), 19px);
     color:                      var(--section-color);
-    font-weight:                500;
+    font-weight:                600;
     display:                    flex;
     align-items:                center;
     gap:                        8px;
-    padding:                    0 var(--section-actions-reserve) 5px 2px;
-    letter-spacing:             0.08px;
-    margin:                     0 0 8px 0;
+    padding:                    0 var(--section-actions-reserve) 7px 2px;
+    letter-spacing:             0.2px;
+    margin:                     0 0 14px 0;
+    line-height:                1.25;
     border-bottom:              none;
 }
 
@@ -376,7 +377,7 @@ html.theme-dark .edit #bookmarks section.drop-target {
     bottom:                     0;
     height:                     1px;
     background:                 var(--surface-border);
-    opacity:                    0.9;
+    opacity:                    1;
     pointer-events:             none;
 }
 
@@ -424,25 +425,25 @@ html.theme-dark .edit #bookmarks h1.section-renaming .section-title-text {
     gap:                        6px;
     vertical-align:             bottom;
     text-decoration:            none;
-    font-size:                  clamp(13px, 0.95em, 18px);
+    font-size:                  clamp(12px, 0.85em, 18px);
     font-weight:                500;
     letter-spacing:             0;
     line-height:                1.2;
     background-color:           var(--bookmark-tile-bg);
     background-image:           none;
     border-radius:              8px;
-    box-shadow:                 none;
-    border:                     1px solid rgba(0, 0, 0, 0.06);
+    box-shadow:                 0 1px 2px rgba(0, 0, 0, 0.04);
+    border:                     1px solid rgba(0, 0, 0, 0.04);
     box-sizing:                 border-box;
     width:                      auto;
     max-width:                  var(--bookmark-tile-max-width);
-    min-height:                 calc(1.15em + 8px);
-    padding:                    0.24em 0.62em;
-    margin:                     0 6px 4px 0;
+    min-height:                 calc(1.2em + 10px);
+    padding:                    0.28em 0.72em;
+    margin:                     0 8px 8px 0;
     overflow:                   hidden;
     text-overflow:              ellipsis;
     transition:                 transform 120ms ease, background-color 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
-    color:                      var(--text-color);
+    color:                      #334155;
     -webkit-backdrop-filter:    none;
     backdrop-filter:            none;
 }
@@ -458,6 +459,7 @@ html.theme-dark #bookmarks a {
     background-image:           none;
     border-color:               rgba(255, 255, 255, 0.14);
     box-shadow:                 none;
+    color:                      var(--text-color);
 }
 
 #bookmarks a:hover {
@@ -465,7 +467,7 @@ html.theme-dark #bookmarks a {
     background-image:           none;
     transform:                  translateY(-1px);
     box-shadow:                 var(--hover-shadow);
-    border-color:               #d7dbe3;
+    border-color:               rgba(0, 0, 0, 0.07);
 }
 
 html.theme-dark #bookmarks a:hover {
@@ -476,8 +478,8 @@ html.theme-dark #bookmarks a:hover {
 }
 
 .edit #bookmarks a:hover {
-    background-color:           #f3f4f6;
-    border-color:               #d1d5db;
+    background-color:           #e9eff6;
+    border-color:               rgba(0, 0, 0, 0.08);
 }
 
 html.theme-dark .edit #bookmarks a:hover {
@@ -487,8 +489,8 @@ html.theme-dark .edit #bookmarks a:hover {
 }
 
 #bookmarks a:active {
-    background:                 #eef2ff;
-    border-color:               #c7d2fe;
+    background:                 #dbe7f4;
+    border-color:               #cbd5e1;
 }
 
 #bookmarks a > img {
@@ -499,8 +501,8 @@ html.theme-dark .edit #bookmarks a:hover {
     flex:                       0 0 auto;
     align-self:                 center;
     object-fit:                 contain;
-    opacity:                    0.78;
-    filter:                     saturate(0.85);
+    opacity:                    0.74;
+    filter:                     saturate(0.65);
 }
 
 /* Ensure tile drag always starts from the anchor, not child nodes */
@@ -590,7 +592,7 @@ body.xxxl #bookmarks section > .section-remove {
     margin:                     0;
     padding:                    0 12px;
     line-height:                1;
-    font-size:                  clamp(11px, 0.72em, 15px);
+    font-size:                  clamp(10px, 0.7em, 15px);
     font-weight:                600;
     letter-spacing:             0.01em;
     text-transform:             lowercase;
@@ -702,7 +704,7 @@ html.theme-dark #bookmarks section > .section-sort {
     display: inline-block;
     width: 10.5em;
     height: calc(1.15em + 8px);
-    margin: 0 6px 3px 0;
+    margin: 0 8px 8px 0;
     border-radius: 8px;
     border: 2px dashed var(--accent-color);
     opacity: 0.65;
@@ -856,13 +858,13 @@ html.theme-dark .edit #bookmarks a.drop-hover-target {
 }
 
 #settings-toggle[aria-expanded="true"]::before {
-    filter:                     brightness(0.96) saturate(1.08) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.20));
+    filter:                     brightness(0.96) saturate(0.95) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.20));
     opacity:                    1;
 }
 
 #settings-toggle:hover::before,
 #edit:hover::before {
-    filter:                     brightness(0.94) saturate(1.08) drop-shadow(0 1px 3px rgba(0, 0, 0, 0.18));
+    filter:                     brightness(0.95) saturate(0.92) drop-shadow(0 1px 3px rgba(0, 0, 0, 0.18));
 }
 
 #edit[aria-pressed="true"],
@@ -872,7 +874,7 @@ html.edit #edit {
 
 #edit[aria-pressed="true"]::before,
 html.edit #edit::before {
-    filter:                     brightness(0.94) saturate(1.12) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.22));
+    filter:                     brightness(0.95) saturate(1.0) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.22));
 }
 
 #settings-toggle:focus-visible,
@@ -885,7 +887,7 @@ html.edit #edit::before {
 #settings-backdrop {
     position:                   fixed;
     inset:                      0;
-    background:                 rgba(17, 20, 24, 0.24);
+    background:                 rgba(17, 20, 24, 0.18);
     opacity:                    0;
     visibility:                 hidden;
     pointer-events:             none;
@@ -900,11 +902,11 @@ html.edit #edit::before {
     bottom:                     0;
     width:                      min(330px, 100vw);
     max-width:                  100vw;
-    padding:                    18px 18px 20px;
+    padding:                    20px 20px 22px;
     box-sizing:                 border-box;
     background:                 var(--surface-strong);
     border-left:                1px solid var(--surface-border);
-    box-shadow:                 -8px 0 24px rgba(0, 0, 0, 0.10);
+    box-shadow:                 -1px 0 2px rgba(0,0,0,0.04), -8px 0 20px rgba(0,0,0,0.08);
     -webkit-backdrop-filter:    none;
     backdrop-filter:            none;
     display:                    flex;
@@ -919,7 +921,11 @@ html.edit #edit::before {
 }
 
 html.theme-dark #settings-panel {
-    box-shadow:                 -8px 0 28px rgba(0, 0, 0, 0.35);
+    box-shadow:                 -8px 0 26px rgba(0, 0, 0, 0.32);
+}
+
+html.theme-dark #settings-title {
+    color:                      var(--text-color);
 }
 
 html.settings-open #settings-backdrop {
@@ -943,9 +949,9 @@ html.settings-open #settings-panel {
 
 #settings-title {
     margin:                     0;
-    font-size:                  1em;
+    font-size:                  18px;
     letter-spacing:             0.2px;
-    color:                      var(--text-color);
+    color:                      #1F2937;
     font-weight:                600;
 }
 
@@ -969,15 +975,19 @@ html.settings-open #settings-panel {
 .setting-group {
     display:                    flex;
     flex-direction:             column;
-    gap:                        8px;
-    padding:                    4px 0;
+    gap:                        10px;
+    padding:                    6px 0;
 }
 
 .setting-label {
-    font-size:                  0.86em;
+    font-size:                  14px;
     letter-spacing:             0.2px;
-    color:                      var(--muted-color);
+    color:                      #374151;
     font-weight:                600;
+}
+
+html.theme-dark .setting-label {
+    color:                      #cbd5e1;
 }
 
 .setting-options {
@@ -997,14 +1007,14 @@ html.settings-open #settings-panel {
     display:                    inline-flex;
     align-items:                center;
     justify-content:            center;
-    min-height:                 30px;
+    min-height:                 32px;
     padding:                    0 10px;
     border-radius:              6px;
     border:                     1px solid var(--surface-border);
-    background:                 var(--tile-bg);
-    color:                      var(--text-color);
-    font-size:                  0.86em;
-    font-weight:                600;
+    background:                 #FFFFFF;
+    color:                      #4B5563;
+    font-size:                  13px;
+    font-weight:                500;
     letter-spacing:             0.01em;
     text-transform:             none;
     opacity:                    1;
@@ -1014,13 +1024,15 @@ html.settings-open #settings-panel {
 html.theme-dark .setting-options a,
 html.theme-dark .setting-actions a {
     background:                 #12161d;
+    color:                      #cbd5e1;
+    border-color:               rgba(255, 255, 255, 0.14);
 }
 
 .setting-options a:hover,
 .setting-actions a:hover {
     text-decoration:            none;
-    background:                 var(--tile-hover-bg);
-    border-color:               #dfe3ea;
+    background:                 #F1F5F9;
+    border-color:               #D7DEE8;
 }
 
 html.theme-dark .setting-options a:hover,
@@ -1029,9 +1041,9 @@ html.theme-dark .setting-actions a:hover {
 }
 
 .setting-options a.selected {
-    background:                 #eef2ff;
-    border-color:               #c7d2fe;
-    color:                      #1d4ed8;
+    background:                 #EAF1FF;
+    border-color:               #C6D5F7;
+    color:                      #2563EB;
     box-shadow:                 none;
     opacity:                    1;
     transform:                  translateY(-1px);
@@ -1047,8 +1059,8 @@ html.theme-dark .setting-options a.selected {
     display:                    grid;
     grid-template-columns:      1fr 1fr;
     gap:                        8px;
-    margin-top:                 8px;
-    padding-top:                12px;
+    margin-top:                 10px;
+    padding-top:                14px;
     border-top:                 1px solid var(--surface-border);
 }
 
