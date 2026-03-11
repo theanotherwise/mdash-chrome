@@ -4,7 +4,7 @@
 
 **mdash-chrome** is a Chrome extension (Manifest V3) that replaces the browser's "New Tab" page with a minimal, tile-based bookmark dashboard. Bookmarks are organized into sections (folders) displayed in a two-column layout. The extension syncs directly with the Chrome Bookmarks API — all data stays local in the browser.
 
-**Version**: 1.8.88
+**Version**: 1.8.89
 **License**: Personal use only (no commercial redistribution)
 
 ## Key Features
@@ -160,7 +160,9 @@ Section titles support an optional color suffix: `+Title #RRGGBB` or `-Title #RR
 
 ### Build & Packaging
 
-`pack.sh` reads the version from `manifest.json` and creates a zip archive excluding `.git`, `.DS_Store`, `node_modules`, `pack.sh`, and `icons/`.
+`pack.sh` reads the version from `manifest.json` and creates a zip archive excluding `.git`, `.DS_Store`, `node_modules`, `pack.sh`, docs (`AGENTS.md`, `README.md`), and `icons/*.png`.
+
+`icons/*.svg` are intentionally included in the package because top-right quick actions (`dashboard-gear.svg`, `dashboard-edit.svg`) depend on them at runtime.
 
 ```bash
 ./pack.sh   # produces ../mdash-chrome-<version>.zip
