@@ -365,7 +365,3 @@ When a section is moved between columns:
 - **Consistency**: unified `outline-offset: 2px` on all focus rings, input `border-radius: 10px` matching custom select, `width: 100%` + `box-sizing: border-box` on all form inputs.
 - **Performance**: `requestAnimationFrame` for drag-start class and spotlight focus instead of `setTimeout`, smooth `scrollIntoView` for spotlight keyboard navigation.
 - **Removed**: legacy `-webkit-` only prefixes in `ui.css` replaced with standard properties (with `-webkit-` kept where needed for older Chromium).
-
-## Known Issues
-
-- `img/icon.png` referenced but not in repository.
