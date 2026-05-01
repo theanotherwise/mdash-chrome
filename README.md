@@ -9,15 +9,17 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 - Responsive grid — auto-switches to single column on smaller screens
 - Sections keep a clean no-frame look with a uniform white surface layer for clear grouping
 - Bookmark tags are premium soft chips (`13px`, `8px` radius, `#F1F5F9` surface) with muted text and lightweight hover lift
-- In light mode, bookmark chips use stronger white-surface contrast and clearer borders so they do not blend into zebra group backgrounds
+- In light mode, bookmark chips use stronger white-surface contrast and clearer borders so they do not blend into section surfaces
 - Bookmark tile labels are one-line with adaptive tile width up to 32 characters, and show `...` when longer
 - Group sections use a single clean surface treatment (no alternating zebra tint)
+- Dark mode uses a neutral graphite palette with consistent section surfaces and softer borders
 - Top-right quick actions: 34px circular wrench + gear icons with green success styling
 - Color system: bright neutral background (`#F5F7FA`), subtle dividers (`#E6E9EF`), clean white section surfaces, and muted blue/green/orange accents
 - Smooth transitions on all interactive elements (hover, focus, drag & drop)
 - Theme mode selector: auto / light / dark (auto follows OS)
-- Eight font sizes: XXS, XS, S, M, L, XL, XXL, XXXL
+- Five font sizes: S, M, L, XL, XXL; S starts at the previous L-sized dashboard text
 - Font size scaling applies to dashboard content only (settings panel typography stays fixed)
+- Box Size selector: compact / large, where compact restores the previous chip height and large doubles the box height without changing font size
 - Motion preference toggle (full/reduced)
 - Full ARIA accessibility for screen readers
 
@@ -38,7 +40,7 @@ A Chrome extension that replaces the New Tab page with a clean, tile-based bookm
 - Drag & drop entire sections between left and right columns
 - Rename sections by clicking the section title
 - Collapse/expand sections via header chevron (persisted)
-- Custom section colors: click the color dot next to a section title to assign a color from a 16-color palette; color is stored in the bookmark folder title as a `#RRGGBB` suffix
+- Custom section colors: in edit mode use the `Color` action or click the colored header line to assign a color from a 16-color palette; color is stored in the bookmark folder title as a `#RRGGBB` suffix
 - Sort bookmarks within a section A→Z or Z→A via the sort button (↕) in the section header
 - Add new bookmarks via the `+` tile at the end of each section
 - Create new sections with the bottom `+` button (with optional color selection)

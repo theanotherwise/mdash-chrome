@@ -7,7 +7,7 @@
         <link rel="stylesheet" href="../css/ui.css" type="text/css" />
         <link rel="stylesheet" href="../css/styles.css" type="text/css" />
     </head>
-    <body class="large">
+    <body class="small tile-size-large">
         <div id="spotlight" class="spotlight-hidden">
             <div class="spotlight-backdrop"></div>
             <div class="spotlight-panel">
@@ -35,17 +35,22 @@
                 </div>
             </div>
 
-            <div id="fontctrl" class="setting-group" data-current="large">
+            <div id="fontctrl" class="setting-group" data-current="small">
                 <div class="setting-label">Font size</div>
                 <div class="setting-options">
-                    <a href="#" data-size="xxs">XXS</a>
-                    <a href="#" data-size="xs">XS</a>
-                    <a href="#" data-size="small">S</a>
+                    <a href="#" data-size="small" class="selected">S</a>
                     <a href="#" data-size="medium">M</a>
-                    <a href="#" data-size="large" class="selected">L</a>
+                    <a href="#" data-size="large">L</a>
                     <a href="#" data-size="xl">XL</a>
                     <a href="#" data-size="xxl">XXL</a>
-                    <a href="#" data-size="xxxl">XXXL</a>
+                </div>
+            </div>
+
+            <div id="tilesizectrl" class="setting-group" data-current="large">
+                <div class="setting-label">Box Size</div>
+                <div class="setting-options">
+                    <a href="#" data-tile-size="compact">compact</a>
+                    <a href="#" data-tile-size="large" class="selected">large</a>
                 </div>
             </div>
 
@@ -106,7 +111,8 @@
                     <li><strong>Undo everything</strong>: every action (add, delete, edit, move, rename, create/remove section) shows an <em>Undo</em> notification — click it within <em>30s</em> to revert.</li>
                     <li><strong>Search</strong>: press <kbd>Option+F</kbd> (macOS) or <kbd>Ctrl+F</kbd> (Windows) to open Spotlight search. Navigate with <kbd>↑</kbd>/<kbd>↓</kbd>, press <kbd>Enter</kbd> to open. Middle-click or <kbd>Cmd/Ctrl+Click</kbd> opens in a background tab.</li>
                     <li><strong>Themes</strong>: open the right-side <em>settings</em> panel and switch <em>auto / light / dark</em>.</li>
-                    <li><strong>Font size</strong>: open settings and choose <em>XXS / XS / S / M / L / XL / XXL / XXXL</em>.</li>
+                    <li><strong>Font size</strong>: open settings and choose <em>S / M / L / XL / XXL</em>.</li>
+                    <li><strong>Box Size</strong>: open settings and choose <em>compact / large</em>.</li>
                     <li><strong>Motion</strong>: choose full or reduced motion from settings.</li>
                     <li><strong>Refresh icons</strong>: click <em>refresh icons</em> to purge favicon cache and reload the page (full rebuild). <kbd>Alt+Click</kbd> also purges cache, then rebuilds favicons in place.</li>
                     <li><strong>Help</strong>: open settings and click <em>help</em> to toggle this panel. Click outside to close.</li>

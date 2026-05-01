@@ -696,19 +696,15 @@
             $section = $( '<section>' ).attr( 'id', section.id ),
             $h1      = $( '<h1>' ),
             $collapse= $( '<button type="button" class="section-collapse" aria-label="Collapse section" aria-expanded="true" title="Collapse section">▾</button>' ),
-            $dot     = $( '<span class="section-color-dot"></span>' );
+            $colorRail = $( '<button type="button" class="section-color-rail" aria-label="Change section color" title="Change section color" draggable="false"></button>' );
 
         if( section.color )
         {
-            $dot.css( 'background-color', section.color );
             $section.attr( 'data-section-color', section.color );
-        }
-        else
-        {
-            $dot.addClass( 'section-color-dot-empty' );
+            $section.css( '--section-accent-color', section.color );
         }
         var isCollapsed = !!( mdash.sectionState && mdash.sectionState.isCollapsed( section.id ) );
-        $h1.append( $collapse, $dot, $( '<span class="section-title-text">' ).text( section.title ) );
+        $h1.append( $collapse, $( '<span class="section-title-text">' ).text( section.title ), $colorRail );
         $section.append( $h1 );
         $section.attr( 'data-collapsed', isCollapsed ? 'true' : 'false' );
         if( isCollapsed )
@@ -724,9 +720,10 @@
             mdash.links[ $link.attr( 'href' ) ] = $link;
         } );
         
+        var $colorBtn = $( '<button type="button" class="section-color-action" aria-label="Change section color" title="Change section color" draggable="false">Color</button>' );
         var $sortBtn = $( '<button type="button" class="section-sort" aria-label="Sort bookmarks" title="Sort bookmarks" draggable="false">Sort</button>' );
         var $removeSectionBtn = $( '<button type="button" class="section-remove" aria-label="Delete section" title="Delete section" draggable="false">Delete</button>' );
-        $section.append( $sortBtn, $removeSectionBtn );
+        $section.append( $colorBtn, $sortBtn, $removeSectionBtn );
         
         var $addBtn = $( '<a href="#add" class="add" aria-label="Add bookmark" title="Add bookmark" draggable="false"><span>Add</span></a>' );
         $section.append( $addBtn );
@@ -776,6 +773,8 @@
 ( function( mdash )
 {
     'use strict';
+    var FONT_SIZE_VERSION_KEY = 'mdash:fontSizeVersion';
+    var FONT_SIZE_VERSION = '2';
     
     var FontCtrl = mdash.FontCtrl = function( $sizes )
     {
@@ -787,22 +786,19 @@
     FontCtrl.prototype.init = function()
     {
         var sizeFromStorage = localStorage.fontSize;
-        var valid = { xxs: true, xs: true, small: true, medium: true, large: true, xl: true, xxl: true, xxxl: true };
+        var valid = { small: true, medium: true, large: true, xl: true, xxl: true };
+        var migrated = this.normalizeStoredSize( sizeFromStorage );
 
-        var size = valid[sizeFromStorage] ? sizeFromStorage : (function(){
-            if( document.body.classList.contains('xxs') ) return 'xxs';
-            if( document.body.classList.contains('xs') ) return 'xs';
+        var size = valid[migrated] ? migrated : (function(){
             if( document.body.classList.contains('small') ) return 'small';
             if( document.body.classList.contains('medium') ) return 'medium';
             if( document.body.classList.contains('large') ) return 'large';
             if( document.body.classList.contains('xl') ) return 'xl';
             if( document.body.classList.contains('xxl') ) return 'xxl';
-            if( document.body.classList.contains('xxxl') ) return 'xxxl';
-            return 'large';
+            return 'small';
         })();
 
         this.applySize( size );
-        localStorage.fontSize = size;
         this.select( size );
         
         this.$sizes.on( 'click', this.sizeSelected.bind( this ) );
@@ -815,8 +811,29 @@
 
     FontCtrl.prototype.applySize = function( size )
     {
+        var normalized = this.normalizeSize( size );
         document.body.classList.remove('xxs','xs','small','medium','large','xl','xxl','xxxl');
-        document.body.classList.add( size );
+        document.body.classList.add( normalized );
+        localStorage.fontSize = normalized;
+        localStorage.setItem( FONT_SIZE_VERSION_KEY, FONT_SIZE_VERSION );
+    };
+
+    FontCtrl.prototype.normalizeSize = function( size )
+    {
+        return ( size === 'medium' || size === 'large' || size === 'xl' || size === 'xxl' ) ? size : 'small';
+    };
+
+    FontCtrl.prototype.normalizeStoredSize = function( size )
+    {
+        if( localStorage.getItem( FONT_SIZE_VERSION_KEY ) === FONT_SIZE_VERSION )
+        {
+            return this.normalizeSize( size );
+        }
+
+        if( size === 'xl' ) return 'medium';
+        if( size === 'xxl' ) return 'large';
+        if( size === 'xxxl' ) return 'xl';
+        return 'small';
     };
     
     FontCtrl.prototype.select = function( size )
@@ -834,9 +851,8 @@
         this.$sizes.removeClass( 'selected' );
         $this.addClass( 'selected' );
         
-        var size = $this.attr( 'data-size' );
+        var size = this.normalizeSize( $this.attr( 'data-size' ) );
         this.applySize( size );
-        localStorage.fontSize = size;
         if( this.$toggle.length ) this.$toggle.text( size + ' ▾' );
         if( this.$dropdown.length ) this.$dropdown.removeClass( 'open' );
     };
@@ -857,6 +873,88 @@
         }
     };
     
+} )( window.mdash || ( window.mdash = {} ) );
+
+
+/* --- tilesizectrl.js --- */
+
+( function( mdash )
+{
+    'use strict';
+
+    var KEY = 'mdash:tileSize';
+    var VERSION_KEY = 'mdash:tileSizeVersion';
+    var VERSION = '2';
+
+    var TileSizeCtrl = mdash.TileSizeCtrl = function( $sizes )
+    {
+        this.$sizes = $sizes;
+        this.$dropdown = this.$sizes.closest('.dropdown');
+        this.$toggle = this.$dropdown.find('.dropdown-toggle');
+    };
+
+    TileSizeCtrl.prototype.init = function()
+    {
+        var saved = localStorage.getItem( KEY );
+        var savedVersion = localStorage.getItem( VERSION_KEY );
+        var valid = { compact: true, large: true };
+        var size = savedVersion === VERSION && valid[saved] ? saved : (function(){
+            if( document.body.classList.contains( 'tile-size-compact' ) ) return 'compact';
+            if( document.body.classList.contains( 'tile-size-large' ) ) return 'large';
+            return 'large';
+        })();
+
+        this.applySize( size );
+        this.$sizes.on( 'click', this.onClick.bind( this ) );
+        if( this.$toggle.length )
+        {
+            this.$toggle.on( 'click', this.toggleOpen.bind( this ) );
+            $( document ).on( 'click', this.closeOnOutsideClick.bind( this ) );
+        }
+    };
+
+    TileSizeCtrl.prototype.applySize = function( size )
+    {
+        var normalized = size === 'compact' ? 'compact' : 'large';
+        document.body.classList.remove( 'tile-size-compact', 'tile-size-large' );
+        document.body.classList.add( 'tile-size-' + normalized );
+        localStorage.setItem( KEY, normalized );
+        localStorage.setItem( VERSION_KEY, VERSION );
+        this.select( normalized );
+    };
+
+    TileSizeCtrl.prototype.select = function( size )
+    {
+        this.$sizes.removeClass( 'selected' );
+        this.$sizes.filter( '[data-tile-size="' + size + '"]' ).addClass( 'selected' );
+        if( this.$toggle.length ) this.$toggle.text( size + ' ▾' );
+    };
+
+    TileSizeCtrl.prototype.onClick = function( e )
+    {
+        e.preventDefault();
+        var size = $( e.currentTarget ).attr( 'data-tile-size' );
+        this.applySize( size );
+        if( this.$dropdown.length ) this.$dropdown.removeClass( 'open' );
+    };
+
+    TileSizeCtrl.prototype.toggleOpen = function( e )
+    {
+        if( !this.$dropdown.length ) return;
+        e.preventDefault();
+        e.stopPropagation();
+        this.$dropdown.toggleClass( 'open' );
+    };
+
+    TileSizeCtrl.prototype.closeOnOutsideClick = function( e )
+    {
+        if( !this.$dropdown.length ) return;
+        if( !$( e.target ).closest( this.$dropdown ).length )
+        {
+            this.$dropdown.removeClass( 'open' );
+        }
+    };
+
 } )( window.mdash || ( window.mdash = {} ) );
 
 
@@ -1003,7 +1101,7 @@
         {
             if( !self.editMode ) return;
             if( self._sectionJustDragged ) return;
-            if( $( e.target ).hasClass( 'section-color-dot' ) ) return;
+            if( $( e.target ).hasClass( 'section-color-rail' ) ) return;
             if( $( e.target ).hasClass( 'section-collapse' ) ) return;
             e.preventDefault();
             e.stopPropagation();
@@ -1025,7 +1123,15 @@
             self.confirmRemoveSection( $( this ).closest( 'section' ) );
         } );
 
-        this.$docEl.on( 'click', '#bookmarks section .section-color-dot', function( e )
+        this.$docEl.on( 'click', '#bookmarks section .section-color-rail', function( e )
+        {
+            if( !self.editMode ) return;
+            e.preventDefault();
+            e.stopPropagation();
+            self.showColorPalette( $( this ) );
+        } );
+
+        this.$docEl.on( 'click', '#bookmarks section > .section-color-action', function( e )
         {
             if( !self.editMode ) return;
             e.preventDefault();
@@ -2473,14 +2579,15 @@
         } );
     };
     
-    EditCtrl.prototype.showColorPalette = function( $dot )
+    EditCtrl.prototype.showColorPalette = function( $trigger )
     {
         $( '.section-color-palette' ).remove();
         $( document ).off( 'click.mdash-palette' );
         
         var self = this;
-        var $h1 = $dot.closest( 'h1' );
-        var $section = $dot.closest( 'section' );
+        var $section = $trigger.closest( 'section' );
+        var $h1 = $trigger.closest( 'h1' );
+        if( !$h1.length ) $h1 = $section.children( 'h1' ).first();
         var sectionId = $section.attr( 'id' );
         var isLeft = $section.closest( '.left' ).length > 0;
         var prefix = isLeft ? '+' : '-';
@@ -2504,6 +2611,32 @@
         $palette.append( $none );
         
         $h1.append( $palette );
+
+        var placePalette = function()
+        {
+            if( !$trigger.length || !$h1.length || !$palette.length ) return;
+            var triggerRect = $trigger[0].getBoundingClientRect();
+            var h1Rect = $h1[0].getBoundingClientRect();
+            var paletteWidth = $palette.outerWidth();
+            var paletteHeight = $palette.outerHeight();
+            var h1Width = $h1.outerWidth();
+            var left = ( triggerRect.left + ( triggerRect.width / 2 ) ) - h1Rect.left - ( paletteWidth / 2 );
+            var top = triggerRect.bottom - h1Rect.top + 6;
+
+            left = Math.max( 0, Math.min( left, Math.max( 0, h1Width - paletteWidth ) ) );
+
+            $palette.css( {
+                left: Math.round( left ) + 'px',
+                top: Math.round( top ) + 'px'
+            } );
+
+            if( ( triggerRect.bottom + 6 + paletteHeight ) > window.innerHeight )
+            {
+                $palette.css( 'top', Math.round( triggerRect.top - h1Rect.top - paletteHeight - 6 ) + 'px' );
+            }
+        };
+
+        placePalette();
         
         $palette.on( 'click', '.color-swatch', function( e )
         {
@@ -2520,13 +2653,13 @@
                 if( self._hasApiError( 'Could not update section color' ) ) return;
                 if( newColor )
                 {
-                    $dot.css( 'background-color', newColor ).removeClass( 'section-color-dot-empty' );
                     $section.attr( 'data-section-color', newColor );
+                    $section.css( '--section-accent-color', newColor );
                 }
                 else
                 {
-                    $dot.css( 'background-color', '' ).addClass( 'section-color-dot-empty' );
                     $section.removeAttr( 'data-section-color' );
+                    $section.css( '--section-accent-color', '' );
                 }
                 
                 if( mdash.dashboard && mdash.dashboard.manager )
@@ -2544,13 +2677,13 @@
                         if( self._hasApiError( 'Could not undo section color change' ) ) return;
                         if( oldColor )
                         {
-                            $dot.css( 'background-color', oldColor ).removeClass( 'section-color-dot-empty' );
                             $section.attr( 'data-section-color', oldColor );
+                            $section.css( '--section-accent-color', oldColor );
                         }
                         else
                         {
-                            $dot.css( 'background-color', '' ).addClass( 'section-color-dot-empty' );
                             $section.removeAttr( 'data-section-color' );
+                            $section.css( '--section-accent-color', '' );
                         }
                         if( mdash.dashboard && mdash.dashboard.manager )
                         {
@@ -4037,7 +4170,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.8.89';
+    Dashboard.VERSION = '1.9.11';
 
     proto.init = function()
     {
@@ -4046,6 +4179,7 @@
         this.$settingsBackdrop = $( '#settings-backdrop' );
         this.$settingsClose = $( '#settings-close' );
         this.$fontSizes  = $( '#fontctrl [data-size]' );
+        this.$tileSizes  = $( '#tilesizectrl [data-tile-size]' );
         this.$helpCtrl   = $( '#helpctrl' );
         this.$themeCtrl  = $( '#themectrl [data-theme]' );
         this.$motionCtrl = $( '#motionctrl [data-motion]' );
@@ -4058,6 +4192,7 @@
 
         this.manager         = new mdash.Manager();
         this.fontCtrl        = new mdash.FontCtrl( this.$fontSizes );
+        this.tileSizeCtrl    = new mdash.TileSizeCtrl( this.$tileSizes );
         this.helpCtrl        = new mdash.HelpCtrl( this.$helpCtrl, this.$getStarted, this.$bookmarks );
         this.themeCtrl       = new mdash.ThemeCtrl( this.$themeCtrl );
         this.motionCtrl      = new mdash.MotionCtrl( this.$motionCtrl );
@@ -4065,6 +4200,7 @@
         this.keyboardManager = new mdash.KeyboardManager();
 
         this.fontCtrl.init();
+        this.tileSizeCtrl.init();
         this.helpCtrl.init();
         this.themeCtrl.init();
         this.motionCtrl.init();
@@ -4291,5 +4427,3 @@
     $( document ).ready( mdash.dashboard.init.bind( mdash.dashboard ) );
     
 } )( window.mdash || ( window.mdash = {} ) );
-
-
