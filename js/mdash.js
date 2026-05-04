@@ -3780,11 +3780,11 @@
             self.add(
                 $form.find( '#title' ).val(),
                 normalizeUrl( $form.find( '#url' ).val() ),
-                function( added, bookmark )
+                function( added, bookmark, errorMessage )
                 {
                     if( !added )
                     {
-                        ui.error( 'Error', 'Couldn\'t add the bookmark.' );
+                        ui.error( 'Error', errorMessage ? ( 'Couldn\'t add the bookmark: ' + errorMessage ) : 'Couldn\'t add the bookmark.' );
                         
                         modal.show();
                         return;
@@ -3819,20 +3819,25 @@
         } );
     };
     
+    AddBtn.prototype.getInsertIndex = function()
+    {
+        return this.$section.children( 'a' ).not( '.add,.drop-placeholder' ).length;
+    };
+
     AddBtn.prototype.add = function( title, url, callback )
     {
         this.api.create( {
             parentId: this.$section.attr( 'id' ),
             title: title,
             url: url,
-            index: this.$section.children().length - 4
+            index: this.getInsertIndex()
         },
         function( result )
         {
             var err = ( window.chrome && chrome.runtime ) ? chrome.runtime.lastError : null;
             if( err )
             {
-                callback && setTimeout( function() { callback( false, null ); }, 0 );
+                callback && setTimeout( function() { callback( false, null, err.message || '' ); }, 0 );
                 return;
             }
             callback && setTimeout( function() { callback( !!result, result ); }, 0 );
@@ -4170,7 +4175,7 @@
     var Dashboard = mdash.Dashboard = function() {},
         proto     = Dashboard.prototype;
 
-    Dashboard.VERSION = '1.9.11';
+    Dashboard.VERSION = '1.9.12';
 
     proto.init = function()
     {
